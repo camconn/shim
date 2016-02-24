@@ -135,7 +135,6 @@ func (s *Site) newPost(name string) (path string, err error) {
 	check(err)
 
 	cmd := exec.Command(hugoPath, "new", fmt.Sprintf("post/%s.md", name))
-	//cmd := exec.Command(hugoPath, "new", path)
 	cmd.Dir = s.location
 	err = cmd.Run()
 	if err != nil {

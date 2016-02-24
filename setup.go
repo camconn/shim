@@ -40,20 +40,16 @@ func copyFile(src, dst string) {
 }
 
 func setupConfig() {
-	fmt.Println("break 1")
 	// if there is no config.toml
 	if _, err := os.Stat("config.toml"); os.IsNotExist(err) {
-		fmt.Println("break 2")
 		if _, err = os.Stat("config.toml.example"); os.IsNotExist(err) {
 			// both files don't exist. Please try again
 			log.Fatal("Sorry, but both config.toml and config.toml.example don't exists. Please download these files and try again.")
 		}
-		fmt.Println("break 3")
 
 		copyFile("config.toml.example", "config.toml")
 		fmt.Println("config file copied because none already exists")
 	} else {
-		fmt.Println("break 4")
 		fmt.Println("detected existing config file")
 	}
 }

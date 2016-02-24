@@ -107,12 +107,12 @@ func main() {
 
 	fmt.Println("Staring webapp")
 
-	http.HandleFunc("/", Home)
 	http.HandleFunc("/posts/", ViewPosts)
 	http.HandleFunc("/edit/", EditPost)
 	http.HandleFunc("/new/", NewPost)
 	http.HandleFunc("/login/", Login)
 	http.HandleFunc("/admin/", Admin)
+	http.HandleFunc("/", Home)
 
 	staticFilesRoot := fmt.Sprintf("%s/%s/", shimAssets.root, shimAssets.static)
 	staticFileHandler := http.FileServer(http.Dir(staticFilesRoot))

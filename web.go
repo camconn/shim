@@ -58,7 +58,7 @@ func renderAnything(w http.ResponseWriter, tmpl string, i interface{}) {
 func Home(w http.ResponseWriter, req *http.Request) {
 	log.Println("got a hit on home")
 
-	http.Redirect(w, req, "http://127.0.0.1:8080/login/", http.StatusMovedPermanently)
+	http.Redirect(w, req, "/login/", http.StatusMovedPermanently)
 }
 
 // Admin - The admin page
@@ -245,7 +245,8 @@ func NewPost(w http.ResponseWriter, req *http.Request) {
 				status.Message = err.Error()
 				goto render
 			} else {
-				editLoc := fmt.Sprintf("http://127.0.0.1:8080/edit/%s", slug)
+				editLoc := fmt.Sprintf("/edit/%s", slug)
+				log.Printf("redirecting to %s\n", editLoc)
 				http.Redirect(w, req, editLoc, http.StatusTemporaryRedirect)
 			}
 		} else {
