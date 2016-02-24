@@ -1,0 +1,25 @@
+{{define "newPostPage"}}
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <title>SHIM | New Post</title>
+        {{template "stylesheets"}}
+    </head>
+    <body>
+        <h1>Create New Post</h1>
+        <p>Please fill out the form below:</p>
+        {{- if .Build -}}
+        <div class="error">
+            <p>Error:</p><br />
+            <pre>{{ .Message }}</pre>
+        </div>
+        {{- end -}}
+        <form action="/new/" method="post">
+            <div>New Post Slug: <input type="text" name="title" /></div>
+            <div><input type="submit" value="Create" /></div>
+        </form>
+        {{template "footer"}}
+    </body>
+</html>
+{{end}}

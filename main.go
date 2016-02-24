@@ -42,7 +42,7 @@ func check(err error) {
 }
 func checkReason(err error, reason string) {
 	if err != nil {
-		log.Fatalf("%s :\nError: %s\n", reason, err.Error())
+		log.Fatalf("%s\nDebug: %s\n", reason, err.Error())
 	}
 }
 
@@ -63,7 +63,9 @@ func assignAssets() {
 }
 
 func main() {
-	// TODO: First time setup
+
+	// Ensure that config exists before we try and load it.
+	setupConfig()
 
 	viper.SetConfigName("config")
 	viper.AddConfigPath(".")
@@ -72,6 +74,10 @@ func main() {
 		log.Fatalf("Couldn't read config. Does 'config.toml' not exist?\nError: %s\n", err.Error())
 	}
 
+	// Setup test sites, alright?
+	setupTestSite()
+
+	// Okay now load assets and sitess
 	assignAssets()
 	sites := viper.GetStringSlice("sites.all")
 
@@ -97,7 +103,6 @@ func main() {
 	mySite = loadSite(home, "test")
 	fmt.Printf("site: %s\n", mySite.String())
 
-	_, err = mySite.Build()
 	checkReason(err, "Site build failed WTF")
 
 	fmt.Println("Staring webapp")
@@ -105,6 +110,7 @@ func main() {
 	http.HandleFunc("/", Home)
 	http.HandleFunc("/posts/", ViewPosts)
 	http.HandleFunc("/edit/", EditPost)
+	http.HandleFunc("/new/", NewPost)
 	http.HandleFunc("/login/", Login)
 	http.HandleFunc("/admin/", Admin)
 

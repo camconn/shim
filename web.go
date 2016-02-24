@@ -24,6 +24,7 @@ import (
 	"os"
 )
 
+// TODO: Create a generic wrapper and use that to feed pages info.
 type loginStatus struct {
 	Failed bool
 }
@@ -201,5 +202,59 @@ func EditPost(w http.ResponseWriter, req *http.Request) {
 	} else {
 		http.Error(w, "File not found :(", 404)
 	}
+
+}
+
+// NewPost - Create a new post
+func NewPost(w http.ResponseWriter, req *http.Request) {
+	// TODO: Require login
+
+	log.Println("Got a hit on a new post!")
+
+	status := new(siteStatus)
+	status.Success = false
+	status.Build = false
+	status.Message = ""
+
+	if req.Method == "POST" {
+		req.ParseMultipartForm(fiveMegabytes)
+		log.Println("Got POST")
+
+		slug := req.FormValue("title")
+
+		if len(slug) > 0 {
+			status.Build = true
+			path, err := mySite.newPost(slug)
+			check(err)
+
+			post, err := loadPost(path)
+			if err != nil {
+				status.Message = "Could not edit post: " + err.Error()
+				goto render
+			}
+
+			post.slug = slug
+			post.draft = true
+			err = post.SavePost()
+			if err != nil {
+				status.Message = "Could not save post: " + err.Error()
+				goto render
+			}
+
+			if err != nil {
+				status.Message = err.Error()
+				goto render
+			} else {
+				editLoc := fmt.Sprintf("http://127.0.0.1:8080/edit/%s", slug)
+				http.Redirect(w, req, editLoc, http.StatusTemporaryRedirect)
+			}
+		} else {
+			status.Message = "you need to specify a name!"
+		}
+	}
+
+	// This is a failure point. Everything below this has to be safe.
+render:
+	renderAnything(w, "newPostPage", status)
 
 }

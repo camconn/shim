@@ -40,6 +40,10 @@ footer {
 	line-height: 1.0em;
 	font-size: 0.8em;
 }
+.error {
+	color: black;
+	background-color: red;
+}
 
 /* used on /posts/ */
 .author {

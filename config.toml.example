@@ -11,11 +11,13 @@ templatesDir = "templates"
 [sites]
     all = ["mysite", "test"]
 
+    # So, this site is in ./sites/test/
     [sites.test]
         dir = "test"
         public = true
         enabled = true
 
+    # So this site is in ./sites/mysite/
     [sites.mysite]
         dir = "mysite"
         public = true

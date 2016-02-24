@@ -129,6 +129,7 @@ func loadPost(path string) (p *Post, err error) {
 
 // hugo new post/`name`.md
 func (s *Site) newPost(name string) (path string, err error) {
+	// TODO: Check if post already exists
 
 	hugoPath, err := exec.LookPath("hugo")
 	check(err)
