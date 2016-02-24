@@ -110,7 +110,7 @@ func loadPost(path string) (p *Post, err error) {
 
 	fStat, err := file.Stat()
 	check(err)
-	bodySize := fStat.Size() - pos - 1
+	bodySize := fStat.Size() - pos
 	bodyReader := io.NewSectionReader(file, pos, bodySize)
 
 	p.body = bytes.NewBuffer([]byte{})
