@@ -1,0 +1,23 @@
+{{define "editPage"}}
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <title>SHIM | Editor</title>
+        {{template "stylesheets"}}
+    </head>
+    <body>
+        <form action="/edit/{{ .Slug }}" method="post">
+            <div><input type="text" id="srcTitle" name="title" value="{{ .Title }}" />
+            <textarea id="src" name="articleSrc" rows="30">{{- printf "%s" .GetBody | html }}</textarea></div>
+            {{ if .Draft }}
+            <div><input type="checkbox" name="doPublish" /> Publish Post?</div>
+            {{ else }}
+            <div><input type="checkbox" name="doPublish" checked /> Republish Post?</div>
+            {{ end }}
+            <div><input type="submit" value="Save" /></div>
+        </form>
+        {{template "footer"}}
+    </body>
+</html>
+{{end}}

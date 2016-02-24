@@ -1,0 +1,30 @@
+{{define "adminPage"}}
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <title>SHIM | Admin</title>
+        {{- template "stylesheets" -}}
+    </head>
+    <body>
+        <h1>Manage your site</h1>
+        <p>Do things</p>
+        {{- if .Build -}}
+            {{- if .Success -}}
+            <p>Build success!</p>
+            {{- else -}}
+            <p>Build failed.</p>
+            <p>Reason: {{- .Message -}}</p>
+            {{- end -}}
+        {{ else -}}
+            <p>You asked for nothing, so I did nothing.</p>
+        {{- end -}}
+        <div>
+            <form action="/admin/" method="post">
+                <input type="submit" value="1" name="doBuild">Build site with Hugo</input>
+            </form>
+        </div>
+        {{- template "footer" -}}
+    </body>
+</html>
+{{end}}

@@ -1,0 +1,22 @@
+
+# Where are the sites located
+sitesDir = "sites"
+
+# Where are static files served from
+staticDir = "static"
+
+# Where are templates served from?
+templatesDir = "templates"
+
+[sites]
+    all = ["mysite", "test"]
+
+    [sites.test]
+        dir = "test"
+        public = true
+        enabled = true
+
+    [sites.mysite]
+        dir = "mysite"
+        public = true
+        enabled = false
