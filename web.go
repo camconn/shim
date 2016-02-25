@@ -22,6 +22,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"path"
 )
 
 // TODO: Create a generic wrapper and use that to feed pages info.
@@ -258,4 +259,38 @@ func NewPost(w http.ResponseWriter, req *http.Request) {
 render:
 	renderAnything(w, "newPostPage", status)
 
+}
+
+// RemovePost - Remove a Post
+func RemovePost(w http.ResponseWriter, req *http.Request) {
+	// TODO: Require login
+
+	status := new(siteStatus)
+	log.Println("Got a hit on a remove!")
+
+	id := req.URL.Path[len("/delete/"):]
+	if len(id) == 0 {
+		http.Error(w, "File not found :'(", 404)
+	}
+	status.Message = id
+
+	fileLoc := path.Join(mySite.location, "content/post", id+".md")
+	if _, err := os.Stat(fileLoc); os.IsNotExist(err) {
+		http.Error(w, "File not found :'(", 404)
+		return
+	}
+
+	pageConfirmQuery := req.URL.Query()
+	confirmation := pageConfirmQuery.Get("confirm")
+
+	if confirmation == "yes" {
+		log.Printf("Deleting %s\n", id)
+		err := os.Remove(fileLoc)
+		if err != nil {
+			http.Error(w, "Couldn't delete file: "+err.Error(), 500)
+		}
+		http.Redirect(w, req, "/posts/", http.StatusTemporaryRedirect)
+	}
+
+	renderAnything(w, "deletePage", status)
 }

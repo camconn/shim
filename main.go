@@ -109,6 +109,7 @@ func main() {
 
 	http.HandleFunc("/posts/", ViewPosts)
 	http.HandleFunc("/edit/", EditPost)
+	http.HandleFunc("/delete/", RemovePost)
 	http.HandleFunc("/new/", NewPost)
 	http.HandleFunc("/login/", Login)
 	http.HandleFunc("/admin/", Admin)

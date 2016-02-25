@@ -1,0 +1,27 @@
+{{define "deletePage"}}
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <title>SHIM | Delete Post</title>
+        {{template "stylesheets"}}
+    </head>
+    <body>
+        <h1>Delete Post: <u>{{ .Message }}</u></h1>
+        <div>
+            <p>Are you sure you want to delete this post?</p>
+            <p><a href="/posts/">Please no!</a></p>
+            <p><a href="/posts/">Please no!</a></p>
+            <p><a href="/posts/">Please no!</a></p>
+            <p><a href="/posts/">Please no!</a></p>
+            <p><a href="/posts/">Please no!</a></p>
+            <p><a href="/posts/">Please no!</a></p>
+            <p><a href="/delete/ {{- .Message -}} ?confirm=yes">Yes, please! I really want it to be gone forever!</a></p>
+            <p><a href="/posts/">Please no!</a></p>
+            <p><a href="/posts/">Please no!</a></p>
+            <p><a href="/posts/">Please no!</a></p>
+        </div>
+        {{template "footer"}}
+    </body>
+</html>
+{{end}}
