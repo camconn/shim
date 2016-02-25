@@ -106,12 +106,20 @@ func (s Site) SiteInfo() []configOption {
 		}
 
 		// decide which interface to use
-		// help.Value = field.String()
 		switch field.Kind() {
 		case reflect.Bool:
 			help.Value = field.Bool()
+			help.Type = "bool"
 		case reflect.String:
 			help.Value = field.String()
+			help.Type = "string"
+		case reflect.Int:
+			help.Value = field.Int()
+			help.Type = "int"
+		case reflect.Float32:
+		case reflect.Float64:
+			help.Value = field.Float()
+			help.Type = "float"
 		default:
 			fmt.Printf("I don't know what reflect.Kind this is! %##v\n", field.Kind())
 		}

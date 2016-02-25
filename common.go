@@ -22,4 +22,5 @@ type configOption struct {
 	Name        string
 	Description string
 	Value       interface{}
+	Type        string
 }

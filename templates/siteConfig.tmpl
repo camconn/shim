@@ -10,10 +10,25 @@
         <div>
             <h1>Site Configuration</h1>
             {{- range $opt := .Config -}}
-            <div>
-                <p>Name: {{ $opt.Name }}</p>
-                <p>Description: {{ $opt.Description }}</p>
-                <p>Value: {{ $opt.Value }}</p>
+            <div class="configOption">
+                <p>Name: {{ $opt.Name | html -}}</p>
+                <p>Description {{ $opt.Description | html -}}</p>
+                {{- if eq $opt.Type "string" -}}
+                <p><input type="text" name="{{ $opt.Name | html }}" value="{{ $opt.Value | html }}" /></p>
+                {{- else if eq $opt.Type "bool" -}}
+                    {{- if $opt.Value -}}
+                    <p>Enable? <input type="checkbox" name="{{ $opt.Name | html }}" checked /></p>
+                    {{- else -}}
+                    <p>Enable? <input type="checkbox" name="{{ $opt.Name | html }}" /></p>
+                    {{- end -}}
+                {{ else if eq $opt.Type "int" }}
+                <p><input type="number" name="{{ $opt.Name | html }}" value="{{ $opt.Value | html }}" /></p>
+                {{ else if eq $opt.Type "float" }}
+                <p><input type="number" name="{{ $opt.Name | html }}" value="{{ $opt.Value | html }}" /></p>
+                {{- else -}}
+                <p>WTF IS THIS?</p>
+                <pre>{{ $opt | html }}</pre>
+                {{- end -}}
             </div>
             {{- end -}}
         </div>

@@ -28,7 +28,7 @@ p {
 body {
 	padding: 0;
 	margin: 0;
-	min-width: 60em;
+	min-width: 10em;
 	max-width: 80%;
 	margin-left: auto;
 	margin-right: auto;
@@ -73,4 +73,16 @@ form > * {
 	font-size: 14px;
 	line-height: 1.2em;
 	padding-bottom: 0.5em;
+}
+
+/* used on /config/ */
+.configOption {
+	padding: 0.4em;
+	margin-top: 0.1em;
+	margin-bottom: 0.1em;
+	background-color: silver;
+	height: 70px;
+}
+.configOption > p {
+	margin-top: 0.3em;
 }
