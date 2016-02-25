@@ -23,6 +23,7 @@ import (
 	"net/http"
 	"os"
 	"path"
+	"strings"
 )
 
 // TODO: Create a generic wrapper and use that to feed pages info.
@@ -316,24 +317,59 @@ func EditSite(w http.ResponseWriter, req *http.Request) {
 	wrapper := new(WebWrapper)
 	wrapper.Site = mySite
 	wrapper.Config = mySite.SiteInfo()
+	wrapper.Success = false
 
-	// TODO: Handle POSTs
 	if req.Method == "POST" {
 		req.ParseMultipartForm(fiveMegabytes)
 
 		// get values
-		title := req.FormValue("title")
-		subtitle := req.FormValue("articleSrc")
+		values := req.Form
 
-		// assign values to mysite
-		mySite.title = title
-		mySite.subtitle = subtitle
+		mySite.builddrafts = false
+		mySite.canonifyurls = false
+
+		for i, v := range values {
+			fmt.Printf("i: %s; v: %s\n", i, v)
+
+			value := v[0]
+
+			switch i {
+			case "title":
+				mySite.title = value
+			case "subtitle":
+				mySite.subtitle = value
+			case "baseurl":
+				mySite.baseurl = value
+			case "contentDir":
+				mySite.contentDir = value
+			case "layoutDir":
+				mySite.layoutDir = value
+			case "publishDir":
+				mySite.publishDir = value
+			case "builddrafts":
+				mySite.builddrafts = true
+			case "canonifyurls":
+				mySite.canonifyurls = true
+			default:
+				// If it isn't one of the above, it must be something else that isn't as important.
+				// TODO: Handle params prettier
+				if strings.Contains(i, "params.") {
+					log.Printf("Setting params value at %s to %s\n", i[len("params."):], value)
+					mySite.params[i[len("params."):]] = value
+				} else {
+					mySite.allSettings[i] = value
+					log.Printf("Setting hashmap value at %s to %s\n", i, value)
+				}
+			}
+		}
 
 		// save site
 		err := mySite.SaveConfig()
 		if err != nil {
 			http.Error(w, err.Error(), 500)
 		}
+
+		wrapper.Success = true
 	}
 
 	renderAnything(w, "siteConfig", wrapper)

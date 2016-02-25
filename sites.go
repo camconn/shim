@@ -45,10 +45,13 @@ type Site struct {
 	canonifyurls bool `desc:"are urls canonical?"`
 	Posts        []*Post
 
-	// Map of *all* settings. Used to modify site settings.
+	// Map of site settings.
 	// Don't modify these directly, if possible. If you do modify these,
 	// make sure the appropriate fields in this Site are also set.
 	allSettings map[string]interface{}
+
+	// Site parameters
+	params map[string]interface{}
 
 	// TODO: Are these even needed?
 	enabled bool // TODO: Implement Site.enabled
@@ -66,10 +69,10 @@ func (s *Site) String() string {
 }
 
 // SiteInfo - Print out basic information about this site
+// TODO: This is absolutely broken, as it will ignore things that aren't
+// the fields array, but are in the Site.allSettings map.
+// FIX THIS SOON PLS (camconn)
 func (s Site) SiteInfo() []configOption {
-	// fmt.Printf("Location: %s\n", s.location)
-
-	// TODO: Bugfix related to blank site object
 
 	fields := []string{
 		"title",
@@ -82,11 +85,16 @@ func (s Site) SiteInfo() []configOption {
 		"canonifyurls",
 	}
 
+	numItems := len(fields) + len(s.params)
+	fmt.Printf("number of items: %d\n", numItems)
+
+	items := make([]configOption, numItems)
+
 	stv := reflect.ValueOf(s)
 	stt := stv.Type()
-	items := make([]configOption, len(fields))
 
-	for i := 0; i < len(fields); i++ {
+	i := 0
+	for i = 0; i < len(fields); i++ {
 		help := configOption{}
 		name := fields[i]
 
@@ -128,31 +136,52 @@ func (s Site) SiteInfo() []configOption {
 		items[i] = help
 	}
 
+	for k, v := range s.params {
+		if i >= numItems {
+			break
+		}
+
+		help := configOption{}
+		help.Name = k
+		help.Value = v
+		help.Description = ""
+		help.Type = "param"
+
+		items[i] = help
+
+		i++
+	}
+
 	return items
 }
 
 // TODO: Don't implicitly rely on shimAssets being a global
 func loadSite(dir, name string) *Site {
-	s := Site{}
-
-	v := viper.New()
-	v.SetDefault("contentdir", "content")
-	v.SetDefault("layoutdir", "layouts")
-	v.SetDefault("publishdir", "public")
-	v.SetDefault("builddrafts", false)
-	v.SetDefault("baseurl", "http://yoursite.example.com/")
-	v.SetDefault("canonifyurls", true)
-	v.SetDefault("title", "My Hugo Site")
-	v.SetDefault("subtitle", "")
+	s := &Site{}
 
 	// This is (Hugo_ROOT/sites/sitename)
 	s.location = fmt.Sprintf("%s/%s/%s", shimAssets.root, shimAssets.sites, name)
 	s.shortName = name
 
-	file, err := os.Open(fmt.Sprintf("%s/config.toml", s.location))
+	confLoc := fmt.Sprintf("%s/config.toml", s.location)
+	fmt.Printf("Opening config at %s\n", confLoc)
+	file, err := os.Open(confLoc)
 	defer file.Close()
 	check(err)
-	v.ReadConfig(file)
+
+	v := viper.New()
+	v.SetConfigType("toml")
+	err = v.ReadConfig(file)
+	checkReason(err, "Can't read config")
+
+	v.SetDefault("contentdir", "content")
+	v.SetDefault("layoutdir", "layouts")
+	v.SetDefault("publishdir", "public")
+	v.SetDefault("builddrafts", false)
+	v.SetDefault("baseurl", "http://myblog.example.com/")
+	v.SetDefault("canonifyurls", true)
+	v.SetDefault("title", "My Hugo+Shim Site")
+	v.SetDefault("subtitle", "")
 
 	s.baseurl = v.GetString("baseurl")
 	s.contentDir = v.GetString("contentdir")
@@ -163,13 +192,33 @@ func loadSite(dir, name string) *Site {
 	s.title = v.GetString("title")
 	s.subtitle = v.GetString("subtitle")
 
-	s.allSettings = v.AllSettings()
+	// TODO: Be cleaner with implementing this
+	fullSettings := make(map[string]interface{})
+	fullParams := make(map[string]interface{})
+	for i, k := range v.AllKeys() {
+		fmt.Printf("i: %d; k: %s\n", i, k)
+
+		if k == "params" {
+			paramsMap := v.GetStringMap(k)
+			fmt.Println("params map:")
+			for key, value := range paramsMap {
+				fmt.Printf("key: %s, value: %s\n", key, value)
+				fullParams[key] = value
+			}
+			fmt.Println("params map done")
+			fullSettings[k] = fullParams
+		} else {
+			fullSettings[k] = v.Get(k)
+		}
+	}
+	s.allSettings = fullSettings
+	s.params = fullParams
 
 	// TODO: Implement these
 	s.public = true
 	s.enabled = true
 
-	return &s
+	return s
 }
 
 // Build - Build and generate the site using Hugo's generator function
@@ -194,8 +243,11 @@ func (s Site) Build() error {
 func (s Site) SaveConfig() error {
 	s.updateMap()
 
+	fmt.Printf("opening at %s/config.toml\n", s.location)
 	fileLoc := fmt.Sprintf("%s/config.toml", s.location)
-	file, err := os.Open(fileLoc)
+
+	mode := os.O_WRONLY | os.O_CREATE | os.O_TRUNC
+	file, err := os.OpenFile(fileLoc, mode, 0666)
 	if err != nil {
 		return err
 	}
@@ -203,6 +255,7 @@ func (s Site) SaveConfig() error {
 
 	// write TOML stuff
 	tomlEncoder := toml.NewEncoder(file)
+	tomlEncoder.Indent = "    "
 	tomlEncoder.Encode(s.allSettings)
 
 	return nil
@@ -210,11 +263,13 @@ func (s Site) SaveConfig() error {
 
 // internal method called by SaveConfig
 func (s *Site) updateMap() {
-	if s.allSettings == nil {
+	if s.AllSettings() == nil {
+		fmt.Println("why are we making a new map?")
 		s.allSettings = make(map[string]interface{})
 	}
 
 	s.allSettings["title"] = s.Title()
+	s.allSettings["subtitle"] = s.Subtitle()
 	s.allSettings["baseurl"] = s.BaseURL()
 	s.allSettings["contentdir"] = s.ContentDir()
 	s.allSettings["layoutdir"] = s.LayoutDir()
@@ -234,7 +289,7 @@ func (s Site) Title() string {
 
 // Subtitle - Get title of site
 func (s Site) Subtitle() string {
-	return s.title
+	return s.subtitle
 }
 
 // BaseURL - Get base url of site
@@ -265,4 +320,9 @@ func (s Site) BuildDrafts() bool {
 // Canonify - Do we canonify URLs?
 func (s Site) Canonify() bool {
 	return s.canonifyurls
+}
+
+// AllSettings - Get a map of all settings for this site
+func (s Site) AllSettings() map[string]interface{} {
+	return s.allSettings
 }
