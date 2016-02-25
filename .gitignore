@@ -1,5 +1,5 @@
 sites/
 *.swp
-shim
+shim*
 gin-bin
 config.toml
