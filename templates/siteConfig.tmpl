@@ -1,0 +1,23 @@
+{{define "siteConfig"}}
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <title>SHIM | Site Configuration</title>
+        {{template "stylesheets"}}
+    </head>
+    <body>
+        <div>
+            <h1>Site Configuration</h1>
+            {{- range $opt := .Config -}}
+            <div>
+                <p>Name: {{ $opt.Name }}</p>
+                <p>Description: {{ $opt.Description }}</p>
+                <p>Value: {{ $opt.Value }}</p>
+            </div>
+            {{- end -}}
+        </div>
+        {{template "footer"}}
+    </body>
+</html>
+{{end}}

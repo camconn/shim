@@ -36,6 +36,18 @@ type siteStatus struct {
 	Message string
 }
 
+// WebWrapper - Struct for passing values to the web
+// TODO: Use this instead of other structs
+type WebWrapper struct {
+	Message string
+	Action  string
+	Site    *Site
+	Post    *Post
+	Status  bool
+	Success bool
+	Config  []configOption
+}
+
 const (
 	fiveMegabytes = (int64)(5 * 1024 * 1024)
 )
@@ -293,4 +305,36 @@ func RemovePost(w http.ResponseWriter, req *http.Request) {
 	}
 
 	renderAnything(w, "deletePage", status)
+}
+
+// EditSite - Edit a site's configuration
+func EditSite(w http.ResponseWriter, req *http.Request) {
+	// TODO: Require login
+	log.Println("Got a hit on a siteedit!")
+
+	// TODO: Support multiple sites
+	wrapper := new(WebWrapper)
+	wrapper.Site = mySite
+	wrapper.Config = mySite.SiteInfo()
+
+	// TODO: Handle POSTs
+	if req.Method == "POST" {
+		req.ParseMultipartForm(fiveMegabytes)
+
+		// get values
+		title := req.FormValue("title")
+		subtitle := req.FormValue("articleSrc")
+
+		// assign values to mysite
+		mySite.title = title
+		mySite.subtitle = subtitle
+
+		// save site
+		err := mySite.SaveConfig()
+		if err != nil {
+			http.Error(w, err.Error(), 500)
+		}
+	}
+
+	renderAnything(w, "siteConfig", wrapper)
 }

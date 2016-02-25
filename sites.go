@@ -18,6 +18,7 @@ package main
 
 import (
 	"fmt"
+	"github.com/BurntSushi/toml"
 	"github.com/spf13/viper"
 	"log"
 	"os"
@@ -29,9 +30,11 @@ var blankBytes = []byte{0}
 
 // Site - Represent a Hugo site (as in blog.example.com)
 type Site struct {
-	location string
-	title    string `desc:"the site's title"`
-	baseurl  string `desc:"the baseurl of the site"`
+	location  string
+	shortName string
+	title     string `desc:"the site's title"`
+	subtitle  string `desc:"the site's subtitle"`
+	baseurl   string `desc:"the baseurl of the site"`
 
 	// The following directories are relative
 	contentDir string `desc:"the content directory"`
@@ -41,6 +44,11 @@ type Site struct {
 	builddrafts  bool `desc:"are drafts enabled?"`
 	canonifyurls bool `desc:"are urls canonical?"`
 	Posts        []*Post
+
+	// Map of *all* settings. Used to modify site settings.
+	// Don't modify these directly, if possible. If you do modify these,
+	// make sure the appropriate fields in this Site are also set.
+	allSettings map[string]interface{}
 
 	// TODO: Are these even needed?
 	enabled bool // TODO: Implement Site.enabled
@@ -58,14 +66,14 @@ func (s *Site) String() string {
 }
 
 // SiteInfo - Print out basic information about this site
-func (s *Site) SiteInfo() {
-	fmt.Printf("Location: %s\n", s.location)
+func (s Site) SiteInfo() []configOption {
+	// fmt.Printf("Location: %s\n", s.location)
 
 	// TODO: Bugfix related to blank site object
-	st := reflect.TypeOf(Site{})
 
 	fields := []string{
 		"title",
+		"subtitle",
 		"baseurl",
 		"contentDir",
 		"layoutDir",
@@ -74,58 +82,80 @@ func (s *Site) SiteInfo() {
 		"canonifyurls",
 	}
 
-	// rt := reflect.TypeOf(s)
-	for _, v := range fields {
-		field, ok := st.FieldByName(v)
+	stv := reflect.ValueOf(s)
+	stt := stv.Type()
+	items := make([]configOption, len(fields))
+
+	for i := 0; i < len(fields); i++ {
+		help := configOption{}
+		name := fields[i]
+
+		help.Name = name
+		// fmt.Printf("looking for %s\n", name)
+
+		field := stv.FieldByName(name)
+		// fmt.Printf("okay, now what?!")
+		// fmt.Println(field)
+		strField, ok := stt.FieldByName(name)
+
 		if ok {
-			strTag := field.Tag
-			if true {
-				// desc := field.Tag.Get("desc")
-				// desc := strTag.Tag.Get("desc")
-				desc := strTag.Get("desc")
-				if len(desc) > 0 {
-					fmt.Printf("%s: %s\n", v, desc)
-				} else {
-					fmt.Printf("%s\n", v)
-				}
-			} else {
-				log.Fatal("fuck")
-			}
+			// TODO: Is this bad?
+			help.Description = strField.Tag.Get("desc")
 		} else {
-			log.Fatal("lolpls, apparently " + v + " isn't a valid field!")
+			help.Description = ""
 		}
+
+		// decide which interface to use
+		// help.Value = field.String()
+		switch field.Kind() {
+		case reflect.Bool:
+			help.Value = field.Bool()
+		case reflect.String:
+			help.Value = field.String()
+		default:
+			fmt.Printf("I don't know what reflect.Kind this is! %##v\n", field.Kind())
+		}
+
+		// fmt.Printf("configOption struct: %##v\n", help)
+		items[i] = help
 	}
+
+	return items
 }
 
 // TODO: Don't implicitly rely on shimAssets being a global
 func loadSite(dir, name string) *Site {
 	s := Site{}
 
-	viper.SetDefault("contentdir", "content")
-	viper.SetDefault("layoutdir", "layouts")
-	viper.SetDefault("publishdir", "public")
-	viper.SetDefault("builddrafts", false)
-	viper.SetDefault("baseurl", "http://yoursite.example.com/")
-	viper.SetDefault("canonifyurls", true)
-	viper.SetDefault("title", "My Hugo Site")
+	v := viper.New()
+	v.SetDefault("contentdir", "content")
+	v.SetDefault("layoutdir", "layouts")
+	v.SetDefault("publishdir", "public")
+	v.SetDefault("builddrafts", false)
+	v.SetDefault("baseurl", "http://yoursite.example.com/")
+	v.SetDefault("canonifyurls", true)
+	v.SetDefault("title", "My Hugo Site")
+	v.SetDefault("subtitle", "")
 
-	// s.location = fmt.Sprintf("%s/%s/config.toml", dir, name)
-
-	// Hugo_ROOT/sites/sitename
+	// This is (Hugo_ROOT/sites/sitename)
 	s.location = fmt.Sprintf("%s/%s/%s", shimAssets.root, shimAssets.sites, name)
+	s.shortName = name
 
 	file, err := os.Open(fmt.Sprintf("%s/config.toml", s.location))
 	defer file.Close()
 	check(err)
-	viper.ReadConfig(file)
+	v.ReadConfig(file)
 
-	s.baseurl = viper.GetString("baseurl")
-	s.contentDir = viper.GetString("contentdir")
-	s.layoutDir = viper.GetString("layoutdir")
-	s.publishDir = viper.GetString("publishdir")
-	s.builddrafts = viper.GetBool("builddrafts")
-	s.canonifyurls = viper.GetBool("canonifyurls")
-	s.title = viper.GetString("title")
+	s.baseurl = v.GetString("baseurl")
+	s.contentDir = v.GetString("contentdir")
+	s.layoutDir = v.GetString("layoutdir")
+	s.publishDir = v.GetString("publishdir")
+	s.builddrafts = v.GetBool("builddrafts")
+	s.canonifyurls = v.GetBool("canonifyurls")
+	s.title = v.GetString("title")
+	s.subtitle = v.GetString("subtitle")
+
+	s.allSettings = v.AllSettings()
 
 	// TODO: Implement these
 	s.public = true
@@ -152,7 +182,79 @@ func (s Site) Build() error {
 	return nil
 }
 
-// ContentDir - Return the directory of content
+// SaveConfig - Saves this site's configuration with the intended changes
+func (s Site) SaveConfig() error {
+	s.updateMap()
+
+	fileLoc := fmt.Sprintf("%s/config.toml", s.location)
+	file, err := os.Open(fileLoc)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+
+	// write TOML stuff
+	tomlEncoder := toml.NewEncoder(file)
+	tomlEncoder.Encode(s.allSettings)
+
+	return nil
+}
+
+// internal method called by SaveConfig
+func (s *Site) updateMap() {
+	if s.allSettings == nil {
+		s.allSettings = make(map[string]interface{})
+	}
+
+	s.allSettings["title"] = s.Title()
+	s.allSettings["baseurl"] = s.BaseURL()
+	s.allSettings["contentdir"] = s.ContentDir()
+	s.allSettings["layoutdir"] = s.LayoutDir()
+	s.allSettings["publishdir"] = s.PublishDir()
+	s.allSettings["builddrafts"] = s.BuildDrafts()
+	s.allSettings["canonifyurls"] = s.Canonify()
+
+	// TODO: Load everything else
+}
+
+/* These are just accessors */
+
+// Title - Get title of site
+func (s Site) Title() string {
+	return s.title
+}
+
+// Subtitle - Get title of site
+func (s Site) Subtitle() string {
+	return s.title
+}
+
+// BaseURL - Get base url of site
+func (s Site) BaseURL() string {
+	return s.baseurl
+}
+
+// ContentDir - Directory where content (e.g. posts, images) will be stored
 func (s Site) ContentDir() string {
 	return s.contentDir
+}
+
+// LayoutDir - Directory containing layout tempates
+func (s Site) LayoutDir() string {
+	return s.layoutDir
+}
+
+// PublishDir - Where to publish the built site to
+func (s Site) PublishDir() string {
+	return s.publishDir
+}
+
+// BuildDrafts - Return the directory of content
+func (s Site) BuildDrafts() bool {
+	return s.builddrafts
+}
+
+// Canonify - Do we canonify URLs?
+func (s Site) Canonify() bool {
+	return s.canonifyurls
 }
