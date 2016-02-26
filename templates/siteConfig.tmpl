@@ -32,6 +32,12 @@
                         <p><input type="number" name="{{ $opt.Name | html }}" value="{{ $opt.Value | html }}" /></p>
                     {{- else if eq $opt.Type "float" }}
                         <p><input type="number" name="{{ $opt.Name | html }}" value="{{ $opt.Value | html }}" /></p>
+                    {{- else if eq $opt.Type "choice" -}}
+                        <p><select name="{{- $opt.Name | html -}}">
+                            {{- range $themeName := $.Choices -}}
+                                <option value=" {{- $themeName | html -}} "> {{- $themeName | html -}} </option>
+                            {{- end -}}
+                        </select></p>
                     {{- else -}}
                         <p>WTF IS THIS?</p>
                         <pre>{{ $opt | html }}</pre>

@@ -18,7 +18,7 @@
         {{ end }}
             <h5>Written by <i>{{ $post.Author | html }}</i></h5>
             <p>Published on {{ $post.Date.String | html -}}.
-            <a href="/edit/{{ $post.Slug }}">Edit?</a>
+            <a href="/edit/{{ $post.RelPath }}">Edit?</a>
             <a href="/delete/{{ $post.Slug }}">Delete?</a></p>
             <div>{{- printf "%s" $post.GetBody | html -}}</div>
         </div>

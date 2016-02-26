@@ -39,6 +39,7 @@ const (
 // Post - Represents a post along with all its metadata
 type Post struct {
 	location    string
+	relpath     string
 	title       string    `desc:"What the post is called"`
 	author      string    `desc:"The person who wrote this post"`
 	description string    `desc:"A short summary of this post"`
@@ -76,11 +77,13 @@ func (p *Post) handleFrontMatter(v *viper.Viper) {
 	p.all = v.AllSettings()
 }
 
-func loadPost(path string) (p *Post, err error) {
+// contentDirPath is used to find the relative path of the post
+func loadPost(postPath, contentDirPath string) (p *Post, err error) {
 	p = &Post{}
-	p.location = path
+	p.location, err = filepath.Abs(postPath)
+	check(err)
 
-	file, err := os.Open(path)
+	file, err := os.Open(postPath)
 	defer file.Close()
 	if err != nil {
 		return nil, err
@@ -101,7 +104,7 @@ func loadPost(path string) (p *Post, err error) {
 			_, err := frontMatter.WriteString(line)
 			// fmt.Printf("%d lines written\n", n)
 			if err != nil {
-				log.Fatal("Couldn't load TOML front matter for ", path)
+				log.Fatal("Couldn't load TOML front matter for ", postPath)
 			}
 		}
 	}
@@ -116,13 +119,18 @@ func loadPost(path string) (p *Post, err error) {
 	p.body = bytes.NewBuffer([]byte{})
 	p.body.ReadFrom(bodyReader)
 
-	// If the filename is still meh, then go ahead and change the slug
-	if len(p.slug) == 0 {
-		fNameWithSuffix := filepath.Base(path)
-		fNameNoSuffix := strings.TrimSuffix(fNameWithSuffix, filepath.Ext(fNameWithSuffix))
-		// fmt.Printf("Name with no suffix is %s\n", fNameNoSuffix)
-		p.slug = fNameNoSuffix
-	}
+	/*
+		// If the filename is still meh, then go ahead and change the slug
+		if len(p.slug) == 0 {
+			fNameWithSuffix := filepath.Base(postPath)
+			fNameNoSuffix := strings.TrimSuffix(fNameWithSuffix, filepath.Ext(fNameWithSuffix))
+			// fmt.Printf("Name with no suffix is %s\n", fNameNoSuffix)
+			p.slug = fNameNoSuffix
+
+		}
+	*/
+	relativePathWithSuffix, err := filepath.Rel(contentDirPath, postPath)
+	p.relpath = strings.TrimSuffix(relativePathWithSuffix, filepath.Ext(filepath.Base(postPath)))
 
 	return p, nil
 }
@@ -170,7 +178,9 @@ func (p Post) SavePost() error {
 	tomlEncoder.Encode(p.all)
 	file.WriteString(tomlBoundary)
 
-	_, err = p.body.WriteTo(file)
+	// TODO: Was this stupid?
+	// _, err = p.body.WriteTo(file)
+	_, err = file.WriteString(p.body.String())
 	if err != nil {
 		return err
 	}
@@ -198,8 +208,9 @@ func (p *Post) updateMap() {
 func (s *Site) GetAllPosts() {
 	// TODO: Also load posts that are just in /content/ directory, and not any
 	// of its subdirectories
-	path := fmt.Sprintf("%s/%s", s.location, s.ContentDir())
-	pattern := fmt.Sprintf("%s/*/*.md", path)
+	// path := filepath.Join(s.Location(), s.ContentDir())
+	path := filepath.Join(s.Location(), s.ContentDir(), "*", "*")
+	pattern := fmt.Sprintf("%s.md", path)
 	fmt.Printf("Searching in %s\n", pattern)
 
 	allNames, err := filepath.Glob(pattern)
@@ -211,7 +222,8 @@ func (s *Site) GetAllPosts() {
 
 	for i, v := range allNames {
 		//log.Printf("Loading post from file %s\n", v)
-		allPosts[i], err = loadPost(v)
+		contentDirPath := filepath.Join(s.Location(), s.ContentDir())
+		allPosts[i], err = loadPost(v, contentDirPath)
 
 		if err != nil {
 			log.Printf("Was unable to load post %s: %s\n", v, err.Error())
@@ -279,4 +291,9 @@ func (p *Post) String() string {
 // GetBody - Get the body of this post
 func (p Post) GetBody() []byte {
 	return p.body.Bytes()
+}
+
+// RelPath - Get the relative path of this post to the /content/ directory
+func (p Post) RelPath() string {
+	return p.relpath
 }

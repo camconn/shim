@@ -23,6 +23,7 @@ import (
 	"log"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"reflect"
 )
 
@@ -36,6 +37,7 @@ type Site struct {
 	subtitle  string `desc:"the site's subtitle"`
 	baseurl   string `desc:"the baseurl of the site"`
 	author    string `desc:"the default author for new posts"`
+	theme     string `desc:"which theme to use for this site"`
 
 	// The following directories are relative
 	contentDir string `desc:"the content directory"`
@@ -73,18 +75,19 @@ func (s Site) BasicConfig() []configOption {
 	// site-level configuration settings
 	siteFields := []string{
 		"title",
-		"subtitle",
 		"baseurl",
 		"contentDir",
 		"layoutDir",
 		"publishDir",
 		"builddrafts",
 		"canonifyurls",
+		"theme",
 	}
 
 	// global configuration settings accessible as `params.NAME`
 	paramFields := []string{
 		"author",
+		"subtitle",
 	}
 
 	numItems := len(siteFields) + len(paramFields)
@@ -138,6 +141,11 @@ func (s Site) BasicConfig() []configOption {
 			fmt.Printf("I don't know what reflect.Kind this is! %##v\n", field.Kind())
 		}
 
+		// This is so we use a <select> field to chose the theme
+		if name == "theme" {
+			help.Type = "choice"
+		}
+
 		items[i] = help
 	}
 
@@ -170,11 +178,12 @@ func loadSite(dir, name string) *Site {
 	v.SetDefault("baseurl", "http://myblog.example.com/")
 	v.SetDefault("canonifyurls", true)
 	v.SetDefault("title", "My Hugo+Shim Site")
-	v.SetDefault("subtitle", "")
+	v.SetDefault("theme", "slim")
 
 	// Struct-builtin fields that are in `params.NAME`
 	defaultParams := make(map[string]interface{})
 	defaultParams["author"] = "John Doe"
+	defaultParams["subtitle"] = "My Shim Blog"
 	v.SetDefault("params", defaultParams)
 
 	s.baseurl = v.GetString("baseurl")
@@ -184,7 +193,8 @@ func loadSite(dir, name string) *Site {
 	s.builddrafts = v.GetBool("builddrafts")
 	s.canonifyurls = v.GetBool("canonifyurls")
 	s.title = v.GetString("title")
-	s.subtitle = v.GetString("subtitle")
+	s.theme = v.GetString("theme")
+	s.subtitle = v.GetString("params.subtitle")
 	s.author = v.GetString("params.author")
 
 	s.allSettings = v.AllSettings()
@@ -203,7 +213,20 @@ func (s Site) Build() error {
 		return fmt.Errorf("Could not find hugo executable. Is hugo installed?\n")
 	}
 
-	publicDir := fmt.Sprintf("%s/public", s.location)
+	// go ahead and clean up the current public directory
+	publicDir := filepath.Join(s.Location(), "public")
+	err = os.RemoveAll(publicDir)
+	if err != nil {
+		log.Printf("error: %s\n", err.Error())
+		return fmt.Errorf("Could not remove existing public directory %s\n", publicDir)
+	}
+
+	err = os.MkdirAll(publicDir, 0777)
+	if err != nil {
+		log.Printf("error: %s\n", err.Error())
+		return fmt.Errorf("Could create public directory %s\n", publicDir)
+	}
+
 	cmd := exec.Command(hugoPath, "-s", s.location, "-d", publicDir)
 	// log.Printf("command: %s\n", cmd)
 	err = cmd.Run()
@@ -211,6 +234,7 @@ func (s Site) Build() error {
 		log.Printf("WTF: %s\n", err.Error())
 		return fmt.Errorf("Could not build site. Error: %s\n", err.Error())
 	}
+	log.Printf("New site built to %s!\n", publicDir)
 	return nil
 }
 
@@ -251,13 +275,19 @@ func (s *Site) updateMap() {
 	}
 
 	s.allSettings["title"] = s.Title()
-	s.allSettings["subtitle"] = s.Subtitle()
 	s.allSettings["baseurl"] = s.BaseURL()
 	s.allSettings["contentdir"] = s.ContentDir()
 	s.allSettings["layoutdir"] = s.LayoutDir()
 	s.allSettings["publishdir"] = s.PublishDir()
 	s.allSettings["builddrafts"] = s.BuildDrafts()
 	s.allSettings["canonifyurls"] = s.Canonify()
+	s.allSettings["theme"] = s.Theme()
+	s.allSettings["metaDataFormat"] = "toml"
+	s.allSettings["noTimes"] = false
+	s.allSettings["paginate"] = 10
+	s.allSettings["paginatePath"] = "page"
+	s.allSettings["staticdir"] = "static"
+	s.allSettings["notimes"] = false
 
 	paramsKey, ok := s.allSettings["params"]
 	if ok {
@@ -265,6 +295,7 @@ func (s *Site) updateMap() {
 		if ok {
 			// Site-wide parameters
 			paramsMap["author"] = s.Author()
+			paramsMap["subtitle"] = s.Subtitle()
 		} else {
 			log.Fatal("allSettings[\"params\"] is *not* a map[string]interface{}! WTF?!!?!?!")
 		}
@@ -323,4 +354,19 @@ func (s Site) AllSettings() map[string]interface{} {
 // Author - Default author for the site
 func (s Site) Author() string {
 	return s.author
+}
+
+// Theme - This site's theme
+func (s Site) Theme() string {
+	return s.theme
+}
+
+// ShortName - This site's short name
+func (s Site) ShortName() string {
+	return s.shortName
+}
+
+// Location - This site's location on disk
+func (s Site) Location() string {
+	return s.location
 }

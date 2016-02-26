@@ -24,6 +24,7 @@ import (
 	"net/http"
 	"os"
 	"path"
+	"path/filepath"
 )
 
 // TODO: Create a generic wrapper and use that to feed pages info.
@@ -48,6 +49,8 @@ type WebWrapper struct {
 	Success bool
 	Config  []configOption
 	Text    *bytes.Buffer
+	Choices []string
+	URL     string
 }
 
 const (
@@ -155,28 +158,27 @@ func EditPost(w http.ResponseWriter, req *http.Request) {
 	// TODO: Require login
 	log.Println("Got a hit on EditPost!")
 
-	var post *Post
-	post = nil
+	wrapper := new(WebWrapper)
+	wrapper.URL = req.URL.Path
+	postPath := req.URL.Path[len("/edit/"):]
 
-	// TODO: Be able to create a new post
-	// TODO: Randomize and handle zero-length ids
-	// TODO: Support loading posts from anywhere in site/content/
-	id := req.URL.Path[len("/edit/"):]
+	if len(postPath) == 0 {
+		http.Error(w, "File not found!", http.StatusNotFound)
+		http.Redirect(w, req, "/posts/", http.StatusTemporaryRedirect)
+	}
+
+	contentDirPath := filepath.Join(mySite.Location(), mySite.ContentDir())
+	postLoc := fmt.Sprintf("%s.md", filepath.Join(contentDirPath, postPath))
+	fmt.Printf("location: %s\n", postLoc)
+	post, err := loadPost(postLoc, contentDirPath)
+	if err != nil {
+		http.Error(w, err.Error(), 500)
+		return
+	}
+
 	if req.Method == "POST" {
 		req.ParseMultipartForm(fiveMegabytes)
 		log.Println("Got POST")
-
-		if len(id) == 0 {
-			id = "Untitled"
-		}
-
-		postLoc := fmt.Sprintf("%s/%s/post/%s.md", mySite.location, mySite.ContentDir(), id)
-		fmt.Printf("location: %s\n", postLoc)
-		post, err := loadPost(postLoc)
-		if err != nil {
-			http.Error(w, err.Error(), 500)
-			return
-		}
 
 		title := req.FormValue("title")
 		body := req.FormValue("articleSrc")
@@ -188,7 +190,11 @@ func EditPost(w http.ResponseWriter, req *http.Request) {
 		publish := req.FormValue("doPublish")
 		log.Printf("doPublish: %s\n", publish)
 
-		post.SavePost()
+		err = post.SavePost()
+		if err != nil {
+			log.Fatalf("Error while saving post: %s\n", err.Error())
+		}
+
 		// TODO: handle site build errors more gracefully
 		err = mySite.Build()
 		if err != nil {
@@ -196,36 +202,17 @@ func EditPost(w http.ResponseWriter, req *http.Request) {
 		}
 	}
 
-	// TODO: Show an editable list of posts if no post is available
-	if len(id) > 0 {
-		home, err := os.Getwd()
-		check(err)
+	wrapper.Post = post
 
-		if post == nil {
-			mySite := loadSite(home, "test")
-			postLoc := fmt.Sprintf("%s/%s/post/%s.md", mySite.location, mySite.ContentDir(), id)
-			log.Printf("Looking for %s\n", postLoc)
-
-			post, err = loadPost(postLoc)
-			if err != nil {
-				// TODO: allow us to do other things
-				http.Error(w, "File not found!", 404)
-				return
-			}
-		}
-
-		renderAnything(w, "editPage", post)
-
-	} else {
-		http.Error(w, "File not found :(", 404)
-	}
-
+	renderAnything(w, "editPage", wrapper)
 }
 
 // NewPost - Create a new post
 func NewPost(w http.ResponseWriter, req *http.Request) {
 	// TODO: Require login
 	log.Println("Got a hit on a NewPost!")
+
+	// TODO: Does this work with new path scheme?
 
 	status := new(siteStatus)
 	status.Success = false
@@ -243,7 +230,8 @@ func NewPost(w http.ResponseWriter, req *http.Request) {
 			path, err := mySite.newPost(slug)
 			check(err)
 
-			post, err := loadPost(path)
+			contentDirPath := filepath.Join(mySite.Location(), mySite.ContentDir())
+			post, err := loadPost(path, contentDirPath)
 			if err != nil {
 				status.Message = "Could not edit post: " + err.Error()
 				goto render
@@ -321,6 +309,13 @@ func EditSite(w http.ResponseWriter, req *http.Request) {
 	wrapper.Config = mySite.BasicConfig()
 	wrapper.Success = false
 
+	themesLoc := fmt.Sprintf("%s/%s", shimAssets.root, shimAssets.themes)
+	allThemes, err := GetThemes(themesLoc)
+	if err != nil {
+		http.Error(w, "Could not load themes!", 500)
+	}
+	wrapper.Choices = allThemes
+
 	if req.Method == "POST" {
 		req.ParseMultipartForm(fiveMegabytes)
 
@@ -338,10 +333,10 @@ func EditSite(w http.ResponseWriter, req *http.Request) {
 			switch i {
 			case "title":
 				mySite.title = value
-			case "subtitle":
-				mySite.subtitle = value
 			case "baseurl":
 				mySite.baseurl = value
+			case "theme":
+				mySite.theme = value
 			case "contentDir":
 				mySite.contentDir = value
 			case "layoutDir":
@@ -352,8 +347,12 @@ func EditSite(w http.ResponseWriter, req *http.Request) {
 				mySite.builddrafts = true
 			case "canonifyurls":
 				mySite.canonifyurls = true
+
+				// Now for site-wide params
 			case "params.author":
 				mySite.author = value
+			case "params.subtitle":
+				mySite.subtitle = value
 			default:
 				log.Printf("WTF IS %s and %s?\n", i, value)
 			}
@@ -363,6 +362,11 @@ func EditSite(w http.ResponseWriter, req *http.Request) {
 		err := mySite.SaveConfig()
 		if err != nil {
 			http.Error(w, err.Error(), 500)
+		}
+
+		err = ChangeTheme(mySite, mySite.Theme())
+		if err != nil {
+			http.Error(w, "Could not change theme!", 500)
 		}
 
 		wrapper.Success = true

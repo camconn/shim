@@ -34,6 +34,7 @@ type assets struct {
 	sites     string
 	templates string
 	static    string
+	themes    string
 }
 
 // Pretty methods to check errors
@@ -55,11 +56,13 @@ func assignAssets() {
 	viper.SetDefault("sitesDir", "sites")
 	viper.SetDefault("templatesDir", "templates")
 	viper.SetDefault("staticDir", "static")
+	viper.SetDefault("themeDir", "themes")
 
 	shimAssets.root = root
 	shimAssets.sites = viper.GetString("sitesDir")
 	shimAssets.templates = viper.GetString("templatesDir")
 	shimAssets.static = viper.GetString("staticDir")
+	shimAssets.themes = viper.GetString("themeDir")
 }
 
 func main() {
@@ -80,6 +83,13 @@ func main() {
 	// Okay now load assets and sitess
 	assignAssets()
 	sites := viper.GetStringSlice("sites.all")
+
+	themesDir := fmt.Sprintf("%s/themes", shimAssets.root)
+	allThemes, err := GetThemes(themesDir)
+	checkReason(err, "Could not load themes.")
+	for _, t := range allThemes {
+		fmt.Printf("Theme name: %s\n", t)
+	}
 
 	enabled := list.New()
 	for _, v := range sites {
