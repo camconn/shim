@@ -17,6 +17,7 @@
 package main
 
 import (
+	"bytes"
 	"fmt"
 	"html/template"
 	"log"
@@ -47,6 +48,7 @@ type WebWrapper struct {
 	Status  bool
 	Success bool
 	Config  []configOption
+	Text    *bytes.Buffer
 }
 
 const (
@@ -373,4 +375,57 @@ func EditSite(w http.ResponseWriter, req *http.Request) {
 	}
 
 	renderAnything(w, "siteConfig", wrapper)
+}
+
+// AdvancedConfig - Edit a site's configuration (for power users)
+func AdvancedConfig(w http.ResponseWriter, req *http.Request) {
+	// TODO: Require login
+	log.Println("Got a hit on a siteedit!")
+
+	// TODO: Support multiple sites
+	wrapper := new(WebWrapper)
+	wrapper.Site = mySite
+	wrapper.Config = mySite.SiteInfo()
+	wrapper.Success = false
+
+	if req.Method == "POST" {
+		req.ParseMultipartForm(fiveMegabytes)
+
+		// get values
+		values := req.Form
+		configSrc := values.Get("configSrc")
+
+		// now write configSrc to file
+		fileLoc := fmt.Sprintf("%s/config.toml", mySite.location)
+
+		mode := os.O_WRONLY | os.O_CREATE | os.O_TRUNC
+		file, err := os.OpenFile(fileLoc, mode, 0666)
+		if err != nil {
+			http.Error(w, err.Error(), 500)
+		}
+		defer file.Close()
+
+		// save site
+		file.WriteString(configSrc)
+		if err != nil {
+			http.Error(w, err.Error(), 500)
+		}
+
+		wrapper.Success = true
+	}
+
+	wrapper.Text = bytes.NewBuffer([]byte{})
+	configLoc := fmt.Sprintf("%s/config.toml", mySite.location)
+	file, err := os.Open(configLoc)
+	defer file.Close()
+	if err != nil {
+		http.Error(w, "Can't open config file!", 500)
+	}
+
+	_, err = wrapper.Text.ReadFrom(file)
+	if err != nil {
+		http.Error(w, "Can't read config file!", 500)
+	}
+
+	renderAnything(w, "siteConfigAdvanced", wrapper)
 }

@@ -11,12 +11,18 @@
     </head>
     <body>
         <div>
-            <h1>Site Configuration</h1>
+            <h1>Basic Site Configuration</h1>
+            <p>NOTE: THIS CONFIGURATION IS NOT YET SUPPORTED OFFICIALLY. USE THE ADVANCED CONFIGURATION OR EDIT <code>CONFIG.TOML</code> DIRECTLY.</p>
+            <p>Click <a href="/config/advanced/">here</a> for advanced settings.</p>
             <form action="/config/" method="post">
                 {{- range $opt := .Config -}}
                 <div class="configOption">
+                    {{- if ne $opt.Type "param" }}
                     <p>Name: {{ $opt.Name | html -}}</p>
-                    <p>Description {{ $opt.Description | html -}}</p>
+                    {{- else -}}
+                    <p>Name: param.{{ $opt.Name | html -}}</p>
+                    {{- end -}}
+                    <p>Description: {{ $opt.Description | html -}}</p>
                     {{- if eq $opt.Type "string" -}}
                         <p><input type="text" name="{{ $opt.Name | html }}" value="{{ $opt.Value | html }}" /></p>
                     {{- else if eq $opt.Type "bool" -}}

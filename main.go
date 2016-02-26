@@ -108,6 +108,7 @@ func main() {
 	fmt.Println("Staring webapp")
 
 	http.HandleFunc("/config/", EditSite)
+	http.HandleFunc("/config/advanced/", AdvancedConfig)
 	http.HandleFunc("/posts/", ViewPosts)
 	http.HandleFunc("/edit/", EditPost)
 	http.HandleFunc("/delete/", RemovePost)
