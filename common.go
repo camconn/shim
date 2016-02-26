@@ -23,4 +23,5 @@ type configOption struct {
 	Description string
 	Value       interface{}
 	Type        string
+	IsParam     bool
 }

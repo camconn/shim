@@ -24,7 +24,6 @@ import (
 	"net/http"
 	"os"
 	"path"
-	"strings"
 )
 
 // TODO: Create a generic wrapper and use that to feed pages info.
@@ -310,7 +309,7 @@ func RemovePost(w http.ResponseWriter, req *http.Request) {
 	renderAnything(w, "deletePage", status)
 }
 
-// EditSite - Edit a site's configuration
+// EditSite - Edit a site's basic configuration
 func EditSite(w http.ResponseWriter, req *http.Request) {
 	// TODO: Require login
 	log.Println("Got a hit on a siteedit!")
@@ -318,7 +317,7 @@ func EditSite(w http.ResponseWriter, req *http.Request) {
 	// TODO: Support multiple sites
 	wrapper := new(WebWrapper)
 	wrapper.Site = mySite
-	wrapper.Config = mySite.SiteInfo()
+	wrapper.Config = mySite.BasicConfig()
 	wrapper.Success = false
 
 	if req.Method == "POST" {
@@ -352,16 +351,10 @@ func EditSite(w http.ResponseWriter, req *http.Request) {
 				mySite.builddrafts = true
 			case "canonifyurls":
 				mySite.canonifyurls = true
+			case "params.author":
+				mySite.author = value
 			default:
-				// If it isn't one of the above, it must be something else that isn't as important.
-				// TODO: Handle params prettier
-				if strings.Contains(i, "params.") {
-					log.Printf("Setting params value at %s to %s\n", i[len("params."):], value)
-					mySite.params[i[len("params."):]] = value
-				} else {
-					mySite.allSettings[i] = value
-					log.Printf("Setting hashmap value at %s to %s\n", i, value)
-				}
+				log.Printf("WTF IS %s and %s?\n", i, value)
 			}
 		}
 
@@ -385,7 +378,6 @@ func AdvancedConfig(w http.ResponseWriter, req *http.Request) {
 	// TODO: Support multiple sites
 	wrapper := new(WebWrapper)
 	wrapper.Site = mySite
-	wrapper.Config = mySite.SiteInfo()
 	wrapper.Success = false
 
 	if req.Method == "POST" {

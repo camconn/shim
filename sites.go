@@ -35,6 +35,7 @@ type Site struct {
 	title     string `desc:"the site's title"`
 	subtitle  string `desc:"the site's subtitle"`
 	baseurl   string `desc:"the baseurl of the site"`
+	author    string `desc:"the default author for new posts"`
 
 	// The following directories are relative
 	contentDir string `desc:"the content directory"`
@@ -45,36 +46,32 @@ type Site struct {
 	canonifyurls bool `desc:"are urls canonical?"`
 	Posts        []*Post
 
-	// Map of site settings.
-	// Don't modify these directly, if possible. If you do modify these,
-	// make sure the appropriate fields in this Site are also set.
-	allSettings map[string]interface{}
+	// TODO: The following two maps should *just* hold the rest of the information
+	// about the site. These are only to preserve the site's configuration after
+	// modification. For the *basic* configuration settings, just modify the mySite
+	// struct directly for the appropriate field then call SaveConfig().
 
-	// Site parameters
-	params map[string]interface{}
+	// Don't prefer to modify this map directly! Instead, prefer to modify the fields
+	// of this Site struct, as they *overwrite* this hashmap!
+	allSettings map[string]interface{}
 
 	// TODO: Are these even needed?
 	enabled bool // TODO: Implement Site.enabled
 	public  bool // TODO: Implement Site.public
 }
 
-// Params - Parameters that the Hugo site uses globally in templates
-type Params struct {
-	description string `desc:"sort description of this site"`
-	author      string `desc:"default author name for this site"`
-}
-
 func (s *Site) String() string {
 	return fmt.Sprintf("Site \"%s\" - baseurl: \"%s\"", s.location, s.baseurl)
 }
 
-// SiteInfo - Print out basic information about this site
+// BasicConfig - Print out basic information about this site
 // TODO: This is absolutely broken, as it will ignore things that aren't
 // the fields array, but are in the Site.allSettings map.
 // FIX THIS SOON PLS (camconn)
-func (s Site) SiteInfo() []configOption {
+func (s Site) BasicConfig() []configOption {
 
-	fields := []string{
+	// site-level configuration settings
+	siteFields := []string{
 		"title",
 		"subtitle",
 		"baseurl",
@@ -85,7 +82,12 @@ func (s Site) SiteInfo() []configOption {
 		"canonifyurls",
 	}
 
-	numItems := len(fields) + len(s.params)
+	// global configuration settings accessible as `params.NAME`
+	paramFields := []string{
+		"author",
+	}
+
+	numItems := len(siteFields) + len(paramFields)
 	fmt.Printf("number of items: %d\n", numItems)
 
 	items := make([]configOption, numItems)
@@ -93,17 +95,23 @@ func (s Site) SiteInfo() []configOption {
 	stv := reflect.ValueOf(s)
 	stt := stv.Type()
 
-	i := 0
-	for i = 0; i < len(fields); i++ {
+	for i := 0; i < numItems; i++ {
 		help := configOption{}
-		name := fields[i]
+		help.IsParam = false
 
-		help.Name = name
-		// fmt.Printf("looking for %s\n", name)
+		name := ""
+
+		if i >= len(siteFields) {
+			help.IsParam = true
+			name = paramFields[i-len(siteFields)]
+			help.Name = fmt.Sprintf("params.%s", name)
+			help.Type = "param"
+		} else {
+			name = siteFields[i]
+			help.Name = name
+		}
 
 		field := stv.FieldByName(name)
-		// fmt.Printf("okay, now what?!")
-		// fmt.Println(field)
 		strField, ok := stt.FieldByName(name)
 
 		if ok {
@@ -132,24 +140,7 @@ func (s Site) SiteInfo() []configOption {
 			fmt.Printf("I don't know what reflect.Kind this is! %##v\n", field.Kind())
 		}
 
-		// fmt.Printf("configOption struct: %##v\n", help)
 		items[i] = help
-	}
-
-	for k, v := range s.params {
-		if i >= numItems {
-			break
-		}
-
-		help := configOption{}
-		help.Name = k
-		help.Value = v
-		help.Description = ""
-		help.Type = "param"
-
-		items[i] = help
-
-		i++
 	}
 
 	return items
@@ -183,6 +174,10 @@ func loadSite(dir, name string) *Site {
 	v.SetDefault("title", "My Hugo+Shim Site")
 	v.SetDefault("subtitle", "")
 
+	defaultParams := make(map[string]interface{})
+	defaultParams["author"] = "John Doe"
+	v.SetDefault("params", defaultParams)
+
 	s.baseurl = v.GetString("baseurl")
 	s.contentDir = v.GetString("contentdir")
 	s.layoutDir = v.GetString("layoutdir")
@@ -191,28 +186,9 @@ func loadSite(dir, name string) *Site {
 	s.canonifyurls = v.GetBool("canonifyurls")
 	s.title = v.GetString("title")
 	s.subtitle = v.GetString("subtitle")
+	s.author = v.GetString("params.author")
 
-	// TODO: Be cleaner with implementing this
-	fullSettings := make(map[string]interface{})
-	fullParams := make(map[string]interface{})
-	for i, k := range v.AllKeys() {
-		fmt.Printf("i: %d; k: %s\n", i, k)
-
-		if k == "params" {
-			paramsMap := v.GetStringMap(k)
-			fmt.Println("params map:")
-			for key, value := range paramsMap {
-				fmt.Printf("key: %s, value: %s\n", key, value)
-				fullParams[key] = value
-			}
-			fmt.Println("params map done")
-			fullSettings[k] = fullParams
-		} else {
-			fullSettings[k] = v.Get(k)
-		}
-	}
-	s.allSettings = fullSettings
-	s.params = fullParams
+	s.allSettings = v.AllSettings()
 
 	// TODO: Implement these
 	s.public = true
@@ -253,7 +229,14 @@ func (s Site) SaveConfig() error {
 	}
 	defer file.Close()
 
-	// write TOML stuff
+	failReason := "Could not write warning header to top of site configuration file. It may be corrupted."
+	_, err = file.WriteString("# WARNING: This file was automatically generated by shim.\n")
+	checkReason(err, failReason)
+	_, err = file.WriteString("# Editing this file directly may have adverse consequences.\n")
+	checkReason(err, failReason)
+	_, err = file.WriteString("# You have been warned!\n\n")
+	checkReason(err, failReason)
+
 	tomlEncoder := toml.NewEncoder(file)
 	tomlEncoder.Indent = "    "
 	tomlEncoder.Encode(s.allSettings)
@@ -277,7 +260,17 @@ func (s *Site) updateMap() {
 	s.allSettings["builddrafts"] = s.BuildDrafts()
 	s.allSettings["canonifyurls"] = s.Canonify()
 
-	// TODO: Load everything else
+	paramsKey, ok := s.allSettings["params"]
+	if ok {
+		paramsMap, ok := paramsKey.(map[string]interface{})
+		if ok {
+			paramsMap["author"] = s.Author()
+		} else {
+			log.Fatal("allSettings[\"params\"] is *not* a map[string]interface{}! WTF?!!?!?!")
+		}
+	} else {
+		log.Fatal("Could not find \"params\" map inside of configuration map.")
+	}
 }
 
 /* These are just accessors */
@@ -325,4 +318,9 @@ func (s Site) Canonify() bool {
 // AllSettings - Get a map of all settings for this site
 func (s Site) AllSettings() map[string]interface{} {
 	return s.allSettings
+}
+
+// Author - Default author for the site
+func (s Site) Author() string {
+	return s.author
 }

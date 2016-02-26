@@ -17,12 +17,9 @@
             <form action="/config/" method="post">
                 {{- range $opt := .Config -}}
                 <div class="configOption">
-                    {{- if ne $opt.Type "param" }}
                     <p>Name: {{ $opt.Name | html -}}</p>
-                    {{- else -}}
-                    <p>Name: param.{{ $opt.Name | html -}}</p>
-                    {{- end -}}
-                    <p>Description: {{ $opt.Description | html -}}</p>
+                    <p>Description: {{ $opt.Description | html -}}
+                    {{- if $opt.IsParam }} (Site-Wide){{- end -}}
                     {{- if eq $opt.Type "string" -}}
                         <p><input type="text" name="{{ $opt.Name | html }}" value="{{ $opt.Value | html }}" /></p>
                     {{- else if eq $opt.Type "bool" -}}
@@ -35,8 +32,6 @@
                         <p><input type="number" name="{{ $opt.Name | html }}" value="{{ $opt.Value | html }}" /></p>
                     {{- else if eq $opt.Type "float" }}
                         <p><input type="number" name="{{ $opt.Name | html }}" value="{{ $opt.Value | html }}" /></p>
-                    {{- else if eq $opt.Type "param" }}
-                        <p><input type="text" name="params.{{ $opt.Name | html }}" value="{{ $opt.Value | html }}" /></p>
                     {{- else -}}
                         <p>WTF IS THIS?</p>
                         <pre>{{ $opt | html }}</pre>
