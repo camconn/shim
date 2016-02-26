@@ -163,8 +163,8 @@ func EditPost(w http.ResponseWriter, req *http.Request) {
 	postPath := req.URL.Path[len("/edit/"):]
 
 	if len(postPath) == 0 {
-		http.Error(w, "File not found!", http.StatusNotFound)
 		http.Redirect(w, req, "/posts/", http.StatusTemporaryRedirect)
+		return
 	}
 
 	contentDirPath := filepath.Join(mySite.Location(), mySite.ContentDir())

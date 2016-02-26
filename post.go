@@ -19,6 +19,7 @@ package main
 import (
 	"bufio"
 	"bytes"
+	"container/list"
 	"fmt"
 	"github.com/BurntSushi/toml"
 	"github.com/spf13/viper"
@@ -206,28 +207,45 @@ func (p *Post) updateMap() {
 
 // GetAllPosts - Find all posts in a folder
 func (s *Site) GetAllPosts() {
-	// TODO: Also load posts that are just in /content/ directory, and not any
-	// of its subdirectories
+	// TODO: Use filepath.Walk
 	// path := filepath.Join(s.Location(), s.ContentDir())
-	path := filepath.Join(s.Location(), s.ContentDir(), "*", "*")
-	pattern := fmt.Sprintf("%s.md", path)
-	fmt.Printf("Searching in %s\n", pattern)
+	contentPath := filepath.Join(s.Location(), s.ContentDir())
+	fmt.Printf("Searching in %s\n", contentPath)
 
-	allNames, err := filepath.Glob(pattern)
-	if err != nil {
-		log.Fatalf("There was an error while matching:\n%s\n", err.Error())
+	allPostFiles := list.New()
+	numPosts := 0
+	var scanFunc = func(path string, fileInfo os.FileInfo, _ error) error {
+		if !fileInfo.IsDir() { // IDGAF about directories
+			ext := filepath.Ext(path)
+			// for now, we only care about Markdown files
+			if ext == ".md" {
+				allPostFiles.PushBack(path)
+				numPosts++
+			}
+		}
+		return nil
 	}
 
-	allPosts := make([]*Post, len(allNames))
+	err := filepath.Walk(contentPath, scanFunc)
+	check(err)
 
-	for i, v := range allNames {
-		//log.Printf("Loading post from file %s\n", v)
-		contentDirPath := filepath.Join(s.Location(), s.ContentDir())
-		allPosts[i], err = loadPost(v, contentDirPath)
+	allPosts := make([]*Post, numPosts)
 
-		if err != nil {
-			log.Printf("Was unable to load post %s: %s\n", v, err.Error())
+	elem := allPostFiles.Front()
+
+	for i := 0; i < numPosts; i++ {
+		nameValue := elem.Value
+		fileName, ok := nameValue.(string)
+		if ok {
+			allPosts[i], err = loadPost(fileName, contentPath)
+			if err != nil {
+				log.Fatalf("failed to load post %s!\n", fileName)
+			}
+		} else {
+			log.Fatal("Failed horribly while walking through file path")
 		}
+		elem = elem.Next()
+
 	}
 
 	s.Posts = allPosts
