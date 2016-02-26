@@ -71,7 +71,7 @@ func renderAnything(w http.ResponseWriter, tmpl string, i interface{}) {
 
 // Home - The home page -- Just redirect to login
 func Home(w http.ResponseWriter, req *http.Request) {
-	log.Println("got a hit on home")
+	log.Println("got a hit on Home!")
 
 	http.Redirect(w, req, "/login/", http.StatusMovedPermanently)
 }
@@ -79,6 +79,7 @@ func Home(w http.ResponseWriter, req *http.Request) {
 // Admin - The admin page
 func Admin(w http.ResponseWriter, req *http.Request) {
 	// TODO: Require Login
+	log.Println("got a hit on Admin!")
 
 	status := new(siteStatus)
 	status.Build = false
@@ -115,6 +116,7 @@ func Admin(w http.ResponseWriter, req *http.Request) {
 
 // Login - The login page
 func Login(w http.ResponseWriter, req *http.Request) {
+	log.Println("got a hit on Login!")
 	status := new(loginStatus)
 	status.Failed = false
 	if req.Method == "POST" {
@@ -151,7 +153,7 @@ func ViewPosts(w http.ResponseWriter, req *http.Request) {
 // EditPost - Edit a Post
 func EditPost(w http.ResponseWriter, req *http.Request) {
 	// TODO: Require login
-	log.Println("Got a hit on a edit!")
+	log.Println("Got a hit on EditPost!")
 
 	var post *Post
 	post = nil
@@ -223,8 +225,7 @@ func EditPost(w http.ResponseWriter, req *http.Request) {
 // NewPost - Create a new post
 func NewPost(w http.ResponseWriter, req *http.Request) {
 	// TODO: Require login
-
-	log.Println("Got a hit on a new post!")
+	log.Println("Got a hit on a NewPost!")
 
 	status := new(siteStatus)
 	status.Success = false
@@ -278,9 +279,9 @@ render:
 // RemovePost - Remove a Post
 func RemovePost(w http.ResponseWriter, req *http.Request) {
 	// TODO: Require login
+	log.Println("Got a hit on a RemovePost!")
 
 	status := new(siteStatus)
-	log.Println("Got a hit on a remove!")
 
 	id := req.URL.Path[len("/delete/"):]
 	if len(id) == 0 {
@@ -312,7 +313,7 @@ func RemovePost(w http.ResponseWriter, req *http.Request) {
 // EditSite - Edit a site's basic configuration
 func EditSite(w http.ResponseWriter, req *http.Request) {
 	// TODO: Require login
-	log.Println("Got a hit on a siteedit!")
+	log.Println("Got a hit on a EditSite!")
 
 	// TODO: Support multiple sites
 	wrapper := new(WebWrapper)
@@ -330,7 +331,7 @@ func EditSite(w http.ResponseWriter, req *http.Request) {
 		mySite.canonifyurls = false
 
 		for i, v := range values {
-			fmt.Printf("i: %s; v: %s\n", i, v)
+			//fmt.Printf("i: %s; v: %s\n", i, v)
 
 			value := v[0]
 
@@ -373,7 +374,7 @@ func EditSite(w http.ResponseWriter, req *http.Request) {
 // AdvancedConfig - Edit a site's configuration (for power users)
 func AdvancedConfig(w http.ResponseWriter, req *http.Request) {
 	// TODO: Require login
-	log.Println("Got a hit on a siteedit!")
+	log.Println("Got a hit on AdvancedConfig!")
 
 	// TODO: Support multiple sites
 	wrapper := new(WebWrapper)

@@ -88,8 +88,6 @@ func (s Site) BasicConfig() []configOption {
 	}
 
 	numItems := len(siteFields) + len(paramFields)
-	fmt.Printf("number of items: %d\n", numItems)
-
 	items := make([]configOption, numItems)
 
 	stv := reflect.ValueOf(s)
@@ -174,6 +172,7 @@ func loadSite(dir, name string) *Site {
 	v.SetDefault("title", "My Hugo+Shim Site")
 	v.SetDefault("subtitle", "")
 
+	// Struct-builtin fields that are in `params.NAME`
 	defaultParams := make(map[string]interface{})
 	defaultParams["author"] = "John Doe"
 	v.SetDefault("params", defaultParams)
@@ -219,7 +218,7 @@ func (s Site) Build() error {
 func (s Site) SaveConfig() error {
 	s.updateMap()
 
-	fmt.Printf("opening at %s/config.toml\n", s.location)
+	// fmt.Printf("opening at %s/config.toml\n", s.location)
 	fileLoc := fmt.Sprintf("%s/config.toml", s.location)
 
 	mode := os.O_WRONLY | os.O_CREATE | os.O_TRUNC
@@ -247,7 +246,7 @@ func (s Site) SaveConfig() error {
 // internal method called by SaveConfig
 func (s *Site) updateMap() {
 	if s.AllSettings() == nil {
-		fmt.Println("why are we making a new map?")
+		fmt.Println("Writing a new map in updateMap(). This is scary!")
 		s.allSettings = make(map[string]interface{})
 	}
 
@@ -264,6 +263,7 @@ func (s *Site) updateMap() {
 	if ok {
 		paramsMap, ok := paramsKey.(map[string]interface{})
 		if ok {
+			// Site-wide parameters
 			paramsMap["author"] = s.Author()
 		} else {
 			log.Fatal("allSettings[\"params\"] is *not* a map[string]interface{}! WTF?!!?!?!")
