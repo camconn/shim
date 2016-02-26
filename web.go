@@ -23,7 +23,6 @@ import (
 	"log"
 	"net/http"
 	"os"
-	"path"
 	"path/filepath"
 )
 
@@ -223,11 +222,11 @@ func NewPost(w http.ResponseWriter, req *http.Request) {
 		req.ParseMultipartForm(fiveMegabytes)
 		log.Println("Got POST")
 
-		slug := req.FormValue("title")
+		newFilename := req.FormValue("title")
 
-		if len(slug) > 0 {
+		if len(newFilename) > 0 {
 			status.Build = true
-			path, err := mySite.newPost(slug)
+			path, err := mySite.newPost(newFilename)
 			check(err)
 
 			contentDirPath := filepath.Join(mySite.Location(), mySite.ContentDir())
@@ -237,7 +236,6 @@ func NewPost(w http.ResponseWriter, req *http.Request) {
 				goto render
 			}
 
-			post.slug = slug
 			post.draft = true
 			err = post.SavePost()
 			if err != nil {
@@ -249,7 +247,7 @@ func NewPost(w http.ResponseWriter, req *http.Request) {
 				status.Message = err.Error()
 				goto render
 			} else {
-				editLoc := fmt.Sprintf("/edit/%s", slug)
+				editLoc := fmt.Sprintf("/edit/%s", post.RelPath())
 				log.Printf("redirecting to %s\n", editLoc)
 				http.Redirect(w, req, editLoc, http.StatusTemporaryRedirect)
 			}
@@ -269,15 +267,15 @@ func RemovePost(w http.ResponseWriter, req *http.Request) {
 	// TODO: Require login
 	log.Println("Got a hit on a RemovePost!")
 
-	status := new(siteStatus)
+	wrapper := new(WebWrapper)
+	wrapper.URL = req.URL.String()
 
-	id := req.URL.Path[len("/delete/"):]
-	if len(id) == 0 {
+	relPath := req.URL.Path[len("/delete/"):]
+	if len(relPath) == 0 {
 		http.Error(w, "File not found :'(", 404)
 	}
-	status.Message = id
 
-	fileLoc := path.Join(mySite.location, "content/post", id+".md")
+	fileLoc := filepath.Join(mySite.Location(), mySite.ContentDir(), relPath+".md")
 	if _, err := os.Stat(fileLoc); os.IsNotExist(err) {
 		http.Error(w, "File not found :'(", 404)
 		return
@@ -287,7 +285,7 @@ func RemovePost(w http.ResponseWriter, req *http.Request) {
 	confirmation := pageConfirmQuery.Get("confirm")
 
 	if confirmation == "yes" {
-		log.Printf("Deleting %s\n", id)
+		log.Printf("Deleting %s\n", relPath)
 		err := os.Remove(fileLoc)
 		if err != nil {
 			http.Error(w, "Couldn't delete file: "+err.Error(), 500)
@@ -295,7 +293,7 @@ func RemovePost(w http.ResponseWriter, req *http.Request) {
 		http.Redirect(w, req, "/posts/", http.StatusTemporaryRedirect)
 	}
 
-	renderAnything(w, "deletePage", status)
+	renderAnything(w, "deletePage", wrapper)
 }
 
 // EditSite - Edit a site's basic configuration
