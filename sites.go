@@ -215,16 +215,14 @@ func (s Site) Build() error {
 
 	// go ahead and clean up the current public directory
 	publicDir := filepath.Join(s.Location(), "public")
-	err = os.RemoveAll(publicDir)
-	if err != nil {
-		log.Printf("error: %s\n", err.Error())
-		return fmt.Errorf("Could not remove existing public directory %s\n", publicDir)
+	publicFiles, _ := filepath.Glob(filepath.Join(s.Location(), "public", "*"))
+	for _, fName := range publicFiles {
+		_ = os.Remove(fName)
 	}
 
 	err = os.MkdirAll(publicDir, 0777)
-	if err != nil {
-		log.Printf("error: %s\n", err.Error())
-		return fmt.Errorf("Could create public directory %s\n", publicDir)
+	if !os.IsExist(err) { // It's okay to ignore file exists errors
+		return err
 	}
 
 	cmd := exec.Command(hugoPath, "-s", s.location, "-d", publicDir)
