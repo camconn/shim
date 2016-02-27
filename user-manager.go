@@ -17,31 +17,30 @@
 package main
 
 import (
-	"io/ioutil"
-	"golang.org/x/crypto/bcrypt"
 	"crypto/sha256"
 	"encoding/hex"
-	"time"
+	"fmt"
+	"golang.org/x/crypto/bcrypt"
+	"io/ioutil"
 	"os"
 	"strings"
-	"fmt"
+	"time"
 )
 
 type session struct {
-	user string
+	user      string
 	timestamp int64
-	lifespan int64
+	lifespan  int64
 }
 
 type userManager struct {
-	users map[string][]byte
+	users        map[string][]byte
 	databasePath string
-	sessions map[string]*session
-	debug bool
+	sessions     map[string]*session
+	debug        bool
 }
 
-const DEFAULT_LIFESPAN int64 = 3600
-
+const defaultLifespan int64 = 3600
 
 /**
  * Constructor of userManager.
@@ -70,7 +69,7 @@ func umInit(databasePath string) *userManager {
 func (um *userManager) Hash(this []byte) []byte {
 	// cost: minimum is 4, max is 31, default is 10
 	// (https://godoc.org/golang.org/x/crypto/bcrypt)
-	cost := 10 
+	cost := 10
 
 	hash, err := bcrypt.GenerateFromPassword(this, cost)
 	um.Check(err)
@@ -89,9 +88,9 @@ func (um *userManager) Hash(this []byte) []byte {
 func (um *userManager) CheckHash(hash []byte, original []byte) bool {
 	if bcrypt.CompareHashAndPassword(hash, original) != nil {
 		return false
-	} else {
-		return true
 	}
+
+	return true
 }
 
 /**
@@ -157,7 +156,7 @@ func (um *userManager) Register(user string, pass string) bool {
 
 	um.users[user] = um.Hash([]byte(pass))
 
-	f, err := os.OpenFile(um.databasePath, os.O_APPEND | os.O_WRONLY, 0666)
+	f, err := os.OpenFile(um.databasePath, os.O_APPEND|os.O_WRONLY, 0666)
 	defer f.Close()
 	um.Check(err)
 
@@ -203,7 +202,7 @@ func (um *userManager) ChangePass(user string, oldpass string, newpass string) b
 
 		if um.debug {
 			fmt.Println("[userManager][Debug] Changed the password of user[" + user + "],\n\t" +
-			"from[" + oldpass + "] to[" + string(um.users[user]) + "].")
+				"from[" + oldpass + "] to[" + string(um.users[user]) + "].")
 		}
 
 		return true
@@ -244,7 +243,7 @@ func (sess *session) IsLogged() bool {
  **/
 func (um *userManager) CheckSessions() {
 	for hash, sess := range um.sessions {
-		if sess.timestamp + sess.lifespan < time.Now().Unix() {
+		if sess.timestamp+sess.lifespan < time.Now().Unix() {
 			if um.debug {
 				fmt.Println("[userManager][Debug] Session[" + hash + "] has expired. \n")
 			}
@@ -280,15 +279,15 @@ func (um *userManager) GetSession(ua string, id string) *session {
 
 	if _, exists := um.sessions[hash]; exists {
 		return um.sessions[hash]
-	} else {
-		sess := new(session)
-		sess.lifespan = DEFAULT_LIFESPAN
-		sess.timestamp = time.Now().Unix()
-
-		um.sessions[hash] = sess
-
-		return sess
 	}
+
+	sess := new(session)
+	sess.lifespan = defaultLifespan
+	sess.timestamp = time.Now().Unix()
+
+	um.sessions[hash] = sess
+
+	return sess
 }
 
 /**
@@ -308,11 +307,11 @@ func (um *userManager) Login(user string, pass string, sess *session) bool {
 		}
 
 		return true
-	} else {
-		if um.debug {
-			fmt.Println("[userManager][Debug] Attempted user[" + user + "] failed to log in.")
-		}
-
-		return false
 	}
+
+	if um.debug {
+		fmt.Println("[userManager][Debug] Attempted user[" + user + "] failed to log in.")
+	}
+
+	return false
 }
