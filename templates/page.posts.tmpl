@@ -1,0 +1,33 @@
+{{define "postsPage"}}
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8">
+		<title>SHIM | View Posts</title>
+		{{template "stylesheets"}}
+	</head>
+	<body>
+		{{template "navbar"}}
+
+		<div id="content" class="content">
+			<h1>All available posts</h1>
+			{{ range $post := .Posts }}
+			<h3>
+				{{ $post.Title | html }}
+				{{ if $post.Draft }}<i>(draft)</i>{{ end }}
+			</h3>
+			<div style="margin-bottom:2em">
+				<h5>
+					Published by <b>{{ $post.Author | html }}</b> on {{ $post.Date.String | html }}.
+					<a href="/edit/{{ $post.RelPath }}">Edit?</a>
+					<a href="/delete/{{ $post.RelPath }}">Delete?</a>
+				</h5>
+				<blockquote>{{- printf "%s" $post.GetBody | html -}}</blockquote>
+			</div>
+			{{ end }}
+		</div>
+
+		{{template "footer"}}
+	</body>
+</html>
+{{end}}

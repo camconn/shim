@@ -1,0 +1,63 @@
+{{define "siteConfig"}}
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8">
+		<title>SHIM | Site Configuration</title>
+		{{template "stylesheets"}}
+	</head>
+	<body>
+		{{template "navbar"}}
+
+		<div id="content" class="content">
+			<h1>Basic Site Configuration</h1>
+
+			{{- if .Success -}}
+			<div class="notification is-success">Changes saved successfully!</div>
+			{{- end -}}
+
+			<p>Warning: This editor is experimental and not fully supported. We recommend using the advanced editor and manually changing values.</p>
+			<p>Click <a href="/config/advanced/">here</a> for advanced settings.</p>
+
+			<form action="/config/" method="post">
+				{{- range $opt := .Config -}}
+				<div class="columns">
+					<div class="column is-third">
+						<p><code><b>{{ $opt.Name | html -}}</b></code>: {{ $opt.Description | html -}}</p>
+						{{- if $opt.IsParam }}Applies to entire site{{- end -}}
+					</div>
+					<div class="column">
+					{{- if eq $opt.Type "string" -}}
+						<input class="input" type="text" name="{{ $opt.Name | html }}" value="{{ $opt.Value | html }}">
+					{{- else if eq $opt.Type "bool" -}}
+						{{- if $opt.Value -}}
+							<label class="checkbox"> Enable? <input type="checkbox" name="{{ $opt.Name | html }}" checked></label>
+						{{- else -}}
+							<label class="checkbox"> Enable? <input type="checkbox" name="{{ $opt.Name | html }}"></label>
+						{{- end -}}
+					{{- else if eq $opt.Type "int" }}
+						<input class="input" type="number" name="{{ $opt.Name | html }}" value="{{ $opt.Value | html }}">
+					{{- else if eq $opt.Type "float" }}
+						<input class="input" type="number" name="{{ $opt.Name | html }}" value="{{ $opt.Value | html }}">
+					{{- else if eq $opt.Type "choice" -}}
+						<span class="select">
+							<select name="{{- $opt.Name | html -}}">
+								{{- range $themeName := $.Choices -}}
+								<option value=" {{- $themeName | html -}} ">{{- $themeName | html -}}</option>
+								{{- end -}}
+							</select>
+						</span>
+					{{- else -}}
+						Unknown object: <code>{{ $opt | html }}</code>
+					{{- end -}}
+					</div>
+				</div>
+				{{- end -}}
+				<input class="button is-primary" type="submit" value="Save">
+			</form>
+		</div>
+
+		{{template "footer"}}
+	</body>
+</html>
+{{end}}

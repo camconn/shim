@@ -1,0 +1,35 @@
+#content, #navbar nav, #footer {
+	max-width: 768px;
+	margin: 0 auto;
+}
+
+#content {
+	padding: 1em 2em;
+}
+
+#navbar {
+	padding: 1em;
+	border-bottom: 1px solid #bbb;
+	margin-bottom: 1em;
+}
+
+#footer {
+	padding: 1em;
+	border-top: 1px solid #bbb;
+	margin-top: 1em;
+	text-align: center;
+}
+
+@media (min-width: 1280px) {
+	#content, #navbar nav, #footer {
+		max-width: 960px;
+	}
+}
+
+form[action^="/config"] .columns {
+	margin-bottom: 1em;
+}
+
+form[action^="/edit"] input, form[action^="/edit"] textarea {
+	margin-bottom: 1em;
+}
