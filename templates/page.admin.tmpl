@@ -1,0 +1,35 @@
+{{define "adminPage"}}
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8">
+		<title>SHIM | Admin</title>
+		{{template "stylesheets"}}
+	</head>
+	<body>
+		{{template "navbar"}}
+
+		<div id="content" class="content">
+			<h1>Manage your site</h1>
+			<p>Someone please write something here.</p>
+			{{- if .Build -}}
+				{{- if .Success -}}
+				<div class="notification is-success">
+					Build success!
+				</div>
+				{{- else -}}
+				<div class="notification is-danger">
+					Oh no! Build failed. Reason: {{- .Message -}}
+				</div>
+				{{- end -}}
+			{{- end -}}
+
+			<form action="/admin/" method="post">
+				<button class="button" type="submit" value="1" name="doBuild">Build site with Hugo</button>
+			</form>
+		</div>
+
+		{{template "footer"}}
+	</body>
+</html>
+{{end}}

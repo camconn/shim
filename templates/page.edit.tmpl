@@ -1,0 +1,29 @@
+{{define "editPage"}}
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8">
+		<title>SHIM | Editor</title>
+		{{template "stylesheets"}}
+	</head>
+	{{- $Post := .Post -}}
+	<body>
+		{{template "navbar"}}
+
+		<div id="content">
+			<form action="{{- .URL -}}" method="post">
+				<input class="input" type="text" name="title" value="{{ $Post.Title }}">
+				<textarea class="textarea" name="articleSrc" style="min-height:320px">{{- printf "%s" $Post.GetBody | html -}}</textarea>
+				{{ if $Post.Draft }}
+				<label class="checkbox"><input type="checkbox" name="doPublish"> Publish Post?</label>
+				{{ else }}
+				<label class="checkbox"><input type="checkbox" name="doPublish" checked> Republish Post?</label>
+				{{ end }}
+				<div><input class="button is-primary" type="submit" value="Save"></div>
+			</form>
+		</div>
+
+		{{template "footer"}}
+	</body>
+</html>
+{{end}}

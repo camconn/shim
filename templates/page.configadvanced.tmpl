@@ -1,0 +1,31 @@
+{{define "siteConfigAdvanced"}}
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8">
+		<title>SHIM | Site Configuration</title>
+		{{template "stylesheets"}}
+	</head>
+	<body>
+		{{template "navbar"}}
+
+		<div id="content" class="content">
+			<h1>Advanced Site Configuration</h1>
+			{{- if .Success -}}
+			<div class="notification is-success">Changes saved successfully! Please restart SHIM</div>
+			{{- end -}}
+
+			<p>Warning: SHIM needs to be reloaded after directly changing the configuration file.</p>
+			<p>Click <a href="/config/">here</a> for basic settings.</p>
+
+			<form action="/config/advanced/" method="post">
+				<textarea class="textarea" name="configSrc" cols="100" style="min-height:320px">{{- printf "%s" .Text | html -}}</textarea>
+				<br/>
+				<input class="button is-primary" type="submit" value="Save">
+			</form>
+		</div>
+
+		{{template "footer"}}
+	</body>
+</html>
+{{end}}
