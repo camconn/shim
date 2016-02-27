@@ -84,13 +84,6 @@ func main() {
 	assignAssets()
 	sites := viper.GetStringSlice("sites.all")
 
-	themesDir := fmt.Sprintf("%s/themes", shimAssets.root)
-	allThemes, err := GetThemes(themesDir)
-	checkReason(err, "Could not load themes.")
-	for _, t := range allThemes {
-		fmt.Printf("Theme name: %s\n", t)
-	}
-
 	enabled := list.New()
 	for _, v := range sites {
 		boolVal := "sites." + v + ".enabled"
