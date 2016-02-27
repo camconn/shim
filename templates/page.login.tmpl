@@ -1,0 +1,25 @@
+{{define "loginPage"}}
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8">
+		<title>SHIM | Login</title>
+		{{template "stylesheets"}}
+	</head>
+	<body>
+		{{template "navbar"}}
+		<div id="content" class="content">
+			<h1>Authentication required</h1>
+			{{- if .Failed -}}
+			<p class="notification is-danger">Invalid Username/Password. Please try again.</p>
+			{{- end -}}
+			<form action="/login/" method="post">
+				<p>Username: <input type="text" name="username" class="creds"></p>
+				<p>Password: <input type="password" name="password" class="creds"></p>
+				<p><input type="submit" value="Login"></p>
+			</form>
+		</div>
+		{{template "footer"}}
+	</body>
+</html>
+{{end}}

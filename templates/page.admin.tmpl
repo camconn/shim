@@ -12,7 +12,7 @@
 		<div id="content" class="content">
 			<h1>Manage your site</h1>
 			<p>Someone please write something here.</p>
-			{{- if .Build -}}
+			{{- if eq .Action "build" -}}
 				{{- if .Success -}}
 				<div class="notification is-success">
 					Build success!

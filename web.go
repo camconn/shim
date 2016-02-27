@@ -26,17 +26,6 @@ import (
 	"path/filepath"
 )
 
-// TODO: Create a generic wrapper and use that to feed pages info.
-type loginStatus struct {
-	Failed bool
-}
-
-type siteStatus struct {
-	Success bool
-	Build   bool
-	Message string
-}
-
 // WebWrapper - Struct for passing values to the web
 // TODO: Use this instead of other structs
 type WebWrapper struct {
@@ -45,11 +34,13 @@ type WebWrapper struct {
 	Site    *Site
 	Post    *Post
 	Status  bool
-	Success bool
 	Config  []configOption
 	Text    *bytes.Buffer
 	Choices []string
 	URL     string
+	// Even though these things are opposite, they imply different things
+	Success bool
+	Failed  bool
 }
 
 const (
@@ -83,8 +74,8 @@ func Admin(w http.ResponseWriter, req *http.Request) {
 	// TODO: Require Login
 	log.Println("got a hit on Admin!")
 
-	status := new(siteStatus)
-	status.Build = false
+	status := new(WebWrapper)
+	status.Action = ""
 	status.Message = ""
 	status.Success = false
 
@@ -99,11 +90,11 @@ func Admin(w http.ResponseWriter, req *http.Request) {
 
 		doBuild := req.FormValue("doBuild")
 		if doBuild == "1" {
-			status.Build = true
+			status.Action = "build"
 		}
 	}
 
-	if status.Build {
+	if status.Action == "build" {
 		err := mySite.Build()
 		if err != nil {
 			status.Success = false
@@ -118,9 +109,10 @@ func Admin(w http.ResponseWriter, req *http.Request) {
 
 // Login - The login page
 func Login(w http.ResponseWriter, req *http.Request) {
+	// TODO: Actually login
 	log.Println("got a hit on Login!")
-	status := new(loginStatus)
-	status.Failed = false
+	wrapper := new(WebWrapper)
+	wrapper.Success = false
 	if req.Method == "POST" {
 		err := req.ParseForm()
 		if err != nil {
@@ -132,13 +124,12 @@ func Login(w http.ResponseWriter, req *http.Request) {
 		password := req.FormValue("password")
 
 		log.Printf("User tried to login with \"%s\" and \"%s\"\n", username, password)
+		wrapper.Failed = true
 
-		status.Failed = true
-
-		renderAnything(w, "loginPage", &status)
+		renderAnything(w, "loginPage", &wrapper)
 
 	} else {
-		renderAnything(w, "loginPage", &status)
+		renderAnything(w, "loginPage", &wrapper)
 	}
 }
 
@@ -213,10 +204,10 @@ func NewPost(w http.ResponseWriter, req *http.Request) {
 
 	// TODO: Does this work with new path scheme?
 
-	status := new(siteStatus)
-	status.Success = false
-	status.Build = false
-	status.Message = ""
+	wrapper := new(WebWrapper)
+	wrapper.Success = false
+	wrapper.Action = ""
+	wrapper.Message = ""
 
 	if req.Method == "POST" {
 		req.ParseMultipartForm(fiveMegabytes)
@@ -225,26 +216,26 @@ func NewPost(w http.ResponseWriter, req *http.Request) {
 		newFilename := req.FormValue("title")
 
 		if len(newFilename) > 0 {
-			status.Build = true
+			wrapper.Action = "build"
 			path, err := mySite.newPost(newFilename)
 			check(err)
 
 			contentDirPath := filepath.Join(mySite.Location(), mySite.ContentDir())
 			post, err := loadPost(path, contentDirPath)
 			if err != nil {
-				status.Message = "Could not edit post: " + err.Error()
+				wrapper.Message = "Could not edit post: " + err.Error()
 				goto render
 			}
 
 			post.draft = true
 			err = post.SavePost()
 			if err != nil {
-				status.Message = "Could not save post: " + err.Error()
+				wrapper.Message = "Could not save post: " + err.Error()
 				goto render
 			}
 
 			if err != nil {
-				status.Message = err.Error()
+				wrapper.Message = err.Error()
 				goto render
 			} else {
 				editLoc := fmt.Sprintf("/edit/%s", post.RelPath())
@@ -252,13 +243,13 @@ func NewPost(w http.ResponseWriter, req *http.Request) {
 				http.Redirect(w, req, editLoc, http.StatusTemporaryRedirect)
 			}
 		} else {
-			status.Message = "you need to specify a name!"
+			wrapper.Message = "you need to specify a name!"
 		}
 	}
 
 	// This is a failure point. Everything below this has to be safe.
 render:
-	renderAnything(w, "newPostPage", status)
+	renderAnything(w, "newPostPage", wrapper)
 
 }
 

@@ -12,7 +12,7 @@
 		<div id="content" class="content">
 			<h1>Create New Post</h1>
 			<p>Please fill out the form below:</p>
-			{{- if .Build -}}
+			{{- if eq .Action "build" -}}
 			<div class="notification is-danger">
 				Error: <code>{{ .Message }}</code>
 			</div>
