@@ -3,3 +3,4 @@ sites/
 shim*
 gin-bin
 config.toml
+users.db

@@ -17,16 +17,18 @@
 package main
 
 import (
-	"container/list"
 	"fmt"
+	"github.com/justinas/alice"
 	"github.com/spf13/viper"
 	"log"
 	"net/http"
 	"os"
+	"path/filepath"
 )
 
 var mySite *Site
 var shimAssets *assets
+var um *userManager
 
 // Location of assets on disk for Shim
 type assets struct {
@@ -66,10 +68,10 @@ func assignAssets() {
 }
 
 func main() {
-
 	// Ensure that config exists before we try and load it.
 	setupConfig()
 
+	// Loading configuration
 	viper.SetConfigName("config")
 	viper.AddConfigPath(".")
 	err := viper.ReadInConfig()
@@ -77,52 +79,42 @@ func main() {
 		log.Fatalf("Couldn't read config. Does 'config.toml' not exist?\nError: %s\n", err.Error())
 	}
 
-	// Setup test sites, alright?
+	// Make sure that *some* site exists
 	setupTestSite()
 
-	// Okay now load assets and sitess
+	// Setup assets and appropriate folders
 	assignAssets()
-	sites := viper.GetStringSlice("sites.all")
 
-	enabled := list.New()
-	for _, v := range sites {
-		boolVal := "sites." + v + ".enabled"
-		viper.SetDefault(boolVal, false)
-		if viper.GetBool(boolVal) {
-			fmt.Printf("%s is enabled\n", v)
-			enabled.PushBack(v)
-		}
-	}
+	um = umInit(filepath.Join(shimAssets.root, "users.db"))
+	um.Register("root", "hunter2") // Super secure initial password
 
-	// list of sites
-	// sites := list.New()
+	fmt.Printf("Root directory is: %s\n", shimAssets.root)
 
-	home, err := os.Getwd()
-	check(err)
-	fmt.Printf("Root directory is: %s\n", home)
-
-	//mySiteElem := enabled.Front().Value
-	//mySite, ok := mySiteElem.(Site)
-	mySite = loadSite(home, "test")
+	// For now, have a fixed site to load
+	mySite = loadSite(shimAssets.root, "test")
 	fmt.Printf("site: %s\n", mySite.String())
 
-	checkReason(err, "Site build failed WTF")
+	// Things for running webapp
+	mux := http.NewServeMux()
 
-	fmt.Println("Staring webapp")
+	loginRequirer := newLoginHandler(um).authHandler
+	withAuth := alice.New(timeoutHandler, loggingHandler, loginRequirer)
 
-	http.HandleFunc("/config/", EditSite)
-	http.HandleFunc("/config/advanced/", AdvancedConfig)
-	http.HandleFunc("/posts/", ViewPosts)
-	http.HandleFunc("/edit/", EditPost)
-	http.HandleFunc("/delete/", RemovePost)
-	http.HandleFunc("/new/", NewPost)
-	http.HandleFunc("/login/", Login)
-	http.HandleFunc("/admin/", Admin)
-	http.HandleFunc("/", Home)
+	mux.Handle("/", withAuth.ThenFunc(Home))
+	mux.Handle("/config/", withAuth.ThenFunc(EditSite))
+	mux.Handle("/config/advanced/", withAuth.ThenFunc(AdvancedConfig))
+	mux.Handle("/posts/", withAuth.ThenFunc(ViewPosts))
+	mux.Handle("/edit/", withAuth.ThenFunc(EditPost))
+	mux.Handle("/delete/", withAuth.ThenFunc(RemovePost))
+	mux.Handle("/new/", withAuth.ThenFunc(NewPost))
+	mux.Handle("/admin/", withAuth.ThenFunc(Admin))
 
-	staticFilesRoot := fmt.Sprintf("%s/%s/", shimAssets.root, shimAssets.static)
+	noAuth := alice.New(timeoutHandler, loggingHandler)
+	staticFilesRoot := filepath.Join(shimAssets.root, shimAssets.static)
 	staticFileHandler := http.FileServer(http.Dir(staticFilesRoot))
-	http.Handle("/static/", http.StripPrefix("/static/", staticFileHandler))
+
+	mux.Handle("/login/", noAuth.ThenFunc(Login))
+	mux.Handle("/static/", http.StripPrefix("/static/", noAuth.Then(staticFileHandler)))
 
 	// Get port from environment variable for compatibility with gin for easy reloads
 	portEnv := os.Getenv("PORT")
@@ -133,11 +125,12 @@ func main() {
 	}
 	fmt.Printf("portenv: %s\n", portEnv)
 
-	fmt.Printf("Now serving on http://127.0.0.1:%s\n", portEnv)
-	listenAddress := fmt.Sprintf(":%s", portEnv)
-	err = http.ListenAndServe(listenAddress, nil)
+	mServ := http.Server{}
+	addr := fmt.Sprintf(":%s", portEnv)
+	mServ.Addr = fmt.Sprintf(addr)
+	mServ.Handler = mux
+	err = mServ.ListenAndServe()
 	if err != nil {
-		log.Fatal("ListenAndServer: ", err)
+		log.Fatalf("Error serving: %s\n", err.Error())
 	}
-
 }

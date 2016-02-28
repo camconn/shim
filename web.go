@@ -51,7 +51,6 @@ const (
 // var t = template.Must(template.ParseGlob("templates/*"))
 // var t = template.Must(template.ParseGlob(fmt.Sprintf("%s/*", shimAssets.templates)))
 
-// TODO: These templates aren't reloaded dynamically. Let's load them dynamically.
 func renderAnything(w http.ResponseWriter, tmpl string, i interface{}) {
 	// TODO: Move this to a global variable
 	t := template.Must(template.ParseGlob(fmt.Sprintf("%s/*", shimAssets.templates)))
@@ -64,16 +63,11 @@ func renderAnything(w http.ResponseWriter, tmpl string, i interface{}) {
 
 // Home - The home page -- Just redirect to login
 func Home(w http.ResponseWriter, req *http.Request) {
-	log.Println("got a hit on Home!")
-
 	http.Redirect(w, req, "/login/", http.StatusMovedPermanently)
 }
 
 // Admin - The admin page
 func Admin(w http.ResponseWriter, req *http.Request) {
-	// TODO: Require Login
-	log.Println("got a hit on Admin!")
-
 	status := new(WebWrapper)
 	status.Action = ""
 	status.Message = ""
@@ -109,8 +103,10 @@ func Admin(w http.ResponseWriter, req *http.Request) {
 
 // Login - The login page
 func Login(w http.ResponseWriter, req *http.Request) {
-	// TODO: Actually login
-	log.Println("got a hit on Login!")
+	ua := req.UserAgent()
+	ip := req.RemoteAddr
+	session := um.GetSession(ua, ip)
+
 	wrapper := new(WebWrapper)
 	wrapper.Success = false
 	if req.Method == "POST" {
@@ -123,9 +119,13 @@ func Login(w http.ResponseWriter, req *http.Request) {
 		username := req.FormValue("username")
 		password := req.FormValue("password")
 
-		log.Printf("User tried to login with \"%s\" and \"%s\"\n", username, password)
-		wrapper.Failed = true
+		_ = um.Login(username, password, session)
+		if session.IsLogged() {
+			http.Redirect(w, req, "/admin/", http.StatusTemporaryRedirect)
+			return
+		}
 
+		wrapper.Failed = true
 		renderAnything(w, "loginPage", &wrapper)
 
 	} else {
@@ -135,9 +135,6 @@ func Login(w http.ResponseWriter, req *http.Request) {
 
 // ViewPosts - View all posts
 func ViewPosts(w http.ResponseWriter, req *http.Request) {
-	// TODO: Require login
-	log.Println("Got a hit on a post!")
-
 	mySite.GetAllPosts()
 
 	renderAnything(w, "postsPage", &mySite)
@@ -145,9 +142,6 @@ func ViewPosts(w http.ResponseWriter, req *http.Request) {
 
 // EditPost - Edit a Post
 func EditPost(w http.ResponseWriter, req *http.Request) {
-	// TODO: Require login
-	log.Println("Got a hit on EditPost!")
-
 	wrapper := new(WebWrapper)
 	wrapper.URL = req.URL.Path
 	postPath := req.URL.Path[len("/edit/"):]
@@ -199,11 +193,6 @@ func EditPost(w http.ResponseWriter, req *http.Request) {
 
 // NewPost - Create a new post
 func NewPost(w http.ResponseWriter, req *http.Request) {
-	// TODO: Require login
-	log.Println("Got a hit on a NewPost!")
-
-	// TODO: Does this work with new path scheme?
-
 	wrapper := new(WebWrapper)
 	wrapper.Success = false
 	wrapper.Action = ""
@@ -211,16 +200,25 @@ func NewPost(w http.ResponseWriter, req *http.Request) {
 
 	if req.Method == "POST" {
 		req.ParseMultipartForm(fiveMegabytes)
-		log.Println("Got POST")
-
 		newFilename := req.FormValue("title")
 
 		if len(newFilename) > 0 {
 			wrapper.Action = "build"
-			path, err := mySite.newPost(newFilename)
-			check(err)
 
 			contentDirPath := filepath.Join(mySite.Location(), mySite.ContentDir())
+			testPostPath := filepath.Join(contentDirPath, "post", newFilename) + ".md"
+
+			if _, err := os.Stat(testPostPath); !os.IsNotExist(err) {
+				wrapper.Message = "Post already exists!"
+				goto render
+			}
+
+			path, err := mySite.newPost(newFilename)
+			if err != nil {
+				wrapper.Message = "Could not edit post: " + err.Error()
+				goto render
+			}
+
 			post, err := loadPost(path, contentDirPath)
 			if err != nil {
 				wrapper.Message = "Could not edit post: " + err.Error()
@@ -235,7 +233,7 @@ func NewPost(w http.ResponseWriter, req *http.Request) {
 			}
 
 			if err != nil {
-				wrapper.Message = err.Error()
+				wrapper.Message = "Could not save post: " + err.Error()
 				goto render
 			} else {
 				editLoc := fmt.Sprintf("/edit/%s", post.RelPath())
@@ -255,9 +253,6 @@ render:
 
 // RemovePost - Remove a Post
 func RemovePost(w http.ResponseWriter, req *http.Request) {
-	// TODO: Require login
-	log.Println("Got a hit on a RemovePost!")
-
 	wrapper := new(WebWrapper)
 	wrapper.URL = req.URL.String()
 
@@ -289,9 +284,6 @@ func RemovePost(w http.ResponseWriter, req *http.Request) {
 
 // EditSite - Edit a site's basic configuration
 func EditSite(w http.ResponseWriter, req *http.Request) {
-	// TODO: Require login
-	log.Println("Got a hit on a EditSite!")
-
 	// TODO: Support multiple sites
 	wrapper := new(WebWrapper)
 	wrapper.Site = mySite
@@ -366,9 +358,6 @@ func EditSite(w http.ResponseWriter, req *http.Request) {
 
 // AdvancedConfig - Edit a site's configuration (for power users)
 func AdvancedConfig(w http.ResponseWriter, req *http.Request) {
-	// TODO: Require login
-	log.Println("Got a hit on AdvancedConfig!")
-
 	// TODO: Support multiple sites
 	wrapper := new(WebWrapper)
 	wrapper.Site = mySite
