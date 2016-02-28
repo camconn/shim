@@ -165,7 +165,7 @@ func (um *userManager) Register(user string, pass string) bool {
  * Changes the password of a user, given his old password matches the oldpass input variable.
  * Writes both into the database file and the memory.
  *
- * Returns false if the old password given doesn't match the actual old password, or user 
+ * Returns false if the old password given doesn't match the actual old password, or user
  * doesn't exist.
  *
  **/

@@ -119,8 +119,7 @@ func Login(w http.ResponseWriter, req *http.Request) {
 		username := req.FormValue("username")
 		password := req.FormValue("password")
 
-		_ = um.Login(username, password, session)
-		if session.IsLogged() {
+		if um.Login(username, password, session) {
 			http.Redirect(w, req, "/admin/", http.StatusTemporaryRedirect)
 			return
 		}
