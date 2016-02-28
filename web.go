@@ -174,7 +174,12 @@ func EditPost(w http.ResponseWriter, req *http.Request) {
 		post.body.WriteString(body)
 
 		publish := req.FormValue("doPublish")
-		log.Printf("doPublish: %s\n", publish)
+		if publish == "on" {
+			err = post.Publish()
+			if err != nil {
+				log.Fatalf("Could not publish post: %s\n", err.Error())
+			}
+		}
 
 		err = post.SavePost()
 		if err != nil {
