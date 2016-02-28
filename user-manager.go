@@ -173,6 +173,7 @@ func (um *userManager) ChangePass(user string, oldpass string, newpass string) b
 	if um.CheckHash(um.users[user], []byte(oldpass)) {
 		oldpass := string(um.users[user])
 		um.users[user] = um.Hash([]byte(newpass))
+		newpass = string(um.users[user])
 
 		data, err := ioutil.ReadFile(um.databasePath)
 		um.Check(err)
@@ -180,7 +181,7 @@ func (um *userManager) ChangePass(user string, oldpass string, newpass string) b
 		lines := strings.Split(string(data), "\n")
 		for i, line := range lines {
 			if strings.Contains(line, user) && strings.Contains(line, oldpass) {
-				lines[i] = user + ":" + string(um.users[user])
+				lines[i] = user + ":" + newpass
 				break
 			}
 		}
@@ -190,7 +191,7 @@ func (um *userManager) ChangePass(user string, oldpass string, newpass string) b
 		um.Check(err)
 
 		um.Debug("Changed the password of user[" + user + "],\n\t" +
-			"from[" + oldpass + "] to[" + string(um.users[user]) + "].")
+			"from[" + oldpass + "] to[" + newpass + "].")
 		return true
 	}
 
