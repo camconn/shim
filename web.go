@@ -103,10 +103,6 @@ func Admin(w http.ResponseWriter, req *http.Request) {
 
 // Login - The login page
 func Login(w http.ResponseWriter, req *http.Request) {
-	ua := req.UserAgent()
-	ip := req.RemoteAddr
-	session := um.GetSession(ua, ip)
-
 	wrapper := new(WebWrapper)
 	wrapper.Success = false
 	if req.Method == "POST" {
@@ -119,11 +115,17 @@ func Login(w http.ResponseWriter, req *http.Request) {
 		username := req.FormValue("username")
 		password := req.FormValue("password")
 
-		_ = um.Login(username, password, session)
-		if session.IsLogged() {
-			http.Redirect(w, req, "/admin/", http.StatusTemporaryRedirect)
+		cookie, success := um.LoginCookie(username, password, w, req)
+		if success {
+			log.Println("Redirecting to /admin/.")
+			fmt.Printf("Cookie: %s\n", cookie.String())
+			wrapper.Success = true
+
+			// This is broken or something!
+			http.Redirect(w, req, "/admin/", http.StatusContinue)
 			return
 		}
+		log.Println("No success logging in")
 
 		wrapper.Failed = true
 		renderAnything(w, "loginPage", &wrapper)

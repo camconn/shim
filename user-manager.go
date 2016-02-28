@@ -17,11 +17,15 @@
 package main
 
 import (
+	"crypto/rand"
 	"crypto/sha256"
+	"encoding/base64"
 	"encoding/hex"
 	"fmt"
 	"golang.org/x/crypto/bcrypt"
 	"io/ioutil"
+	"log"
+	"net/http"
 	"os"
 	"strings"
 	"time"
@@ -29,6 +33,8 @@ import (
 
 type session struct {
 	user      string
+	ip        string
+	ua        string
 	timestamp int64
 	lifespan  int64
 }
@@ -40,7 +46,7 @@ type userManager struct {
 	debug        bool
 }
 
-const defaultLifespan int64 = 3600
+const defaultLifespan int64 = 3600 * 12
 
 /**
  * Constructor of userManager.
@@ -77,20 +83,18 @@ func (um *userManager) Hash(this []byte) []byte {
 	return hash
 }
 
-/**
- * Checks a hash against its possible plaintext. This exists because of
- * bcrypt's mechanism, we shouldn't just um.Hash() and check it ourselves.
- *
- * @param hash (byte slice): The existing hash.
- * @param origin (byte silce): The possible plaintext.
- * @return (bool): The result.
- **/
-func (um *userManager) CheckHash(hash []byte, original []byte) bool {
-	if bcrypt.CompareHashAndPassword(hash, original) != nil {
-		return false
+// CheckHash - Checks a hash against its possible plaintext. This exists because of
+// bcrypt's mechanism, we shouldn't just um.Hash() and check it ourselves.
+// If the password `test` is correct, then return true. Otherwise, return false.
+func (um *userManager) CheckHash(user string, test []byte) bool {
+	realHash, exists := um.users[user]
+	if exists {
+		if bcrypt.CompareHashAndPassword(realHash, test) != nil {
+			return false
+		}
+		return true
 	}
-
-	return true
+	return false
 }
 
 /**
@@ -181,7 +185,7 @@ func (um *userManager) Register(user string, pass string) bool {
  * if the user doesn't exist. true if the password has changed.
  **/
 func (um *userManager) ChangePass(user string, oldpass string, newpass string) bool {
-	if um.CheckHash(um.users[user], []byte(oldpass)) {
+	if um.CheckHash(user, []byte(oldpass)) {
 		oldpass := string(um.users[user])
 		um.users[user] = um.Hash([]byte(newpass))
 
@@ -265,53 +269,91 @@ func (um *userManager) HashSessionToken(token string) string {
 	return hex.EncodeToString(hash.Sum(nil))
 }
 
-/**
- * Generates a new session or returns the existing one.
- * It uses 2 identifiers, ua and id, one could translate those variables into
- * user agent and IP address.
- *
- * @param ua (string): Identifier #1 (user agent).
- * @param id (string): Identifier #2 (IP address).
- * @return (session): The session object.
- **/
-func (um *userManager) GetSession(ua string, id string) *session {
-	hash := um.HashSessionToken(ua + id)
-
-	if _, exists := um.sessions[hash]; exists {
-		return um.sessions[hash]
+// GetSessionFromRequest - Get the user's session from their Request using
+// the user's session cookie. If there is no session, returns an error and
+// nil session. If the user's session actually exists, then return an actual
+// session with a nil error.
+func (um *userManager) GetSessionFromRequest(w http.ResponseWriter, req *http.Request) (*session, error) {
+	loginCookie, err := req.Cookie("sessionID")
+	if err != nil {
+		log.Println("No session found!")
+		log.Printf("error: %s\n", err.Error())
+		return nil, err
 	}
 
-	sess := new(session)
-	sess.lifespan = defaultLifespan
-	sess.timestamp = time.Now().Unix()
+	userSessionTest := new(session)
+	userSessionTest.ip = req.RemoteAddr
+	userSessionTest.ua = req.UserAgent()
 
-	um.sessions[hash] = sess
+	sessionIDStr := loginCookie.Value
+	fmt.Printf("Session id: %s\n", sessionIDStr)
 
-	return sess
+	if realSession, exists := um.sessions[sessionIDStr]; exists {
+		log.Println("Looking for matching session")
+		if userSessionTest.ip == realSession.ip &&
+			userSessionTest.ua == realSession.ua {
+			return realSession, nil
+		}
+
+	}
+	log.Println("No matching session found.")
+
+	// Get rid of invalid cookie
+	expiredCookie := new(http.Cookie)
+	expiredCookie.Expires = time.Unix(0, 0)
+	expiredCookie.Name = "sessionID"
+	expiredCookie.Value = ""
+	http.SetCookie(w, expiredCookie)
+
+	log.Println("Set cookie!")
+
+	return nil, fmt.Errorf("The user's session does not exist!\n")
 }
 
-/**
- * Attempts to log in a user.
- *
- * @param user (string): Username.
- * @param pass (string): Password.
- * @param sess (session): The current session object.
- * @return (bool): false if wrong credentials combination, true if user has logged in.
- **/
-func (um *userManager) Login(user string, pass string, sess *session) bool {
-	if um.CheckHash(um.users[user], []byte(pass)) {
-		sess.user = user
+// LoginCookie - Login a user. If the user is successfully logged in, give them
+// a cookie to say logged in with. Return true if the login is successful.
+func (um *userManager) LoginCookie(user string, pass string, w http.ResponseWriter, req *http.Request) (*http.Cookie, bool) {
+	log.Println("Checking login.")
 
+	if um.CheckHash(user, []byte(pass)) {
+		log.Println("Login matched.")
 		if um.debug {
 			fmt.Println("[userManager][Debug] User[" + user + "] has logged in.")
 		}
 
-		return true
+		newSession := new(session)
+		newSession.ip = req.RemoteAddr
+		newSession.ua = req.UserAgent()
+		newSession.user = user
+		newSession.SetLifespan((int)(defaultLifespan))
+		newSession.timestamp = time.Now().Unix()
+
+		randomID := make([]byte, 32)
+		_, err := rand.Read(randomID)
+		if err != nil {
+			log.Fatal("Could not generate new randomID")
+		}
+		randomIDStr := base64.StdEncoding.EncodeToString(randomID)
+		fmt.Printf("ID String: %s\n", randomIDStr)
+		um.sessions[randomIDStr] = newSession
+
+		// WTF IS THIS AND WHY DOESN'T IT WORK?
+		loginCookie := new(http.Cookie)
+		loginCookie.Expires = time.Now().Add(time.Duration(defaultLifespan))
+		loginCookie.Name = "sessionID"
+		loginCookie.Value = randomIDStr
+		loginCookie.Secure = true
+		loginCookie.HttpOnly = true
+
+		http.SetCookie(w, loginCookie)
+
+		return loginCookie, true
 	}
 
+	log.Println("Login did not match.")
 	if um.debug {
 		fmt.Println("[userManager][Debug] Attempted user[" + user + "] failed to log in.")
 	}
 
-	return false
+	return nil, false
 }

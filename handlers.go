@@ -17,6 +17,7 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"net/http"
 	"time"
@@ -52,16 +53,16 @@ func newLoginHandler(um *userManager) *loginHandler {
 // Simple syntax candy method to
 func (l *loginHandler) authHandler(h http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		ua := r.UserAgent()
-		ip := r.RemoteAddr
+		session, err := l.userMan.GetSessionFromRequest(w, r)
 
-		session := l.userMan.GetSession(ua, ip)
-
-		if session.IsLogged() {
+		if err == nil {
+			fmt.Printf("session: %##v\n", session)
+			log.Println("User is properly logged in.")
 			h.ServeHTTP(w, r)
 			return
 		}
 
+		fmt.Printf("session: %##v\n", session)
 		log.Println("Not logged in! Redirecting to login page.")
 		http.Redirect(w, r, "/login/", http.StatusTemporaryRedirect)
 	})
