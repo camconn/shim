@@ -31,8 +31,9 @@ func loggingHandler(next http.Handler) http.Handler {
 	return http.HandlerFunc(fn)
 }
 
+// TODO: This is horribly broken. Fix it please.
 func timeoutHandler(next http.Handler) http.Handler {
-	return http.Handler(http.TimeoutHandler(next, 15*time.Second, "Sorry, but we took too long to handle your request. Sorry?"))
+	return http.Handler(http.TimeoutHandler(next, time.Duration(15*time.Second), "Sorry, but we took too long to handle your request. Sorry?"))
 }
 
 // Middleware for requiring login on certain pages.

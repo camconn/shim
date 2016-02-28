@@ -111,7 +111,7 @@ func main() {
 	mux := http.NewServeMux()
 
 	loginRequirer := newLoginHandler(um).authHandler
-	withAuth := alice.New(loggingHandler, timeoutHandler, loginRequirer)
+	withAuth := alice.New(loggingHandler, loginRequirer)
 
 	mux.Handle("/", withAuth.ThenFunc(Home))
 	mux.Handle("/config/", withAuth.ThenFunc(EditSite))
@@ -122,7 +122,7 @@ func main() {
 	mux.Handle("/new/", withAuth.ThenFunc(NewPost))
 	mux.Handle("/admin/", withAuth.ThenFunc(Admin))
 
-	noAuth := alice.New(loggingHandler, timeoutHandler)
+	noAuth := alice.New(loggingHandler)
 	staticFilesRoot := filepath.Join(shimAssets.root, shimAssets.static)
 	staticFileHandler := http.FileServer(http.Dir(staticFilesRoot))
 
