@@ -119,15 +119,15 @@ func Login(w http.ResponseWriter, req *http.Request) {
 		if success {
 			log.Println("Redirecting to /admin/.")
 			fmt.Printf("Cookie: %s\n", cookie.String())
-			wrapper.Success = true
+			http.SetCookie(w, cookie)
 
-			// This is broken or something!
-			http.Redirect(w, req, "/admin/", http.StatusTemporaryRedirect)
+			http.Redirect(w, req, "/admin/", http.StatusSeeOther)
 			return
 		}
-		log.Println("No success logging in")
 
+		log.Println("No success logging in")
 		wrapper.Failed = true
+
 		renderAnything(w, "loginPage", &wrapper)
 
 	} else {

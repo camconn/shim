@@ -24,6 +24,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"time"
 )
 
 var mySite *Site
@@ -88,17 +89,29 @@ func main() {
 	um = umInit(filepath.Join(shimAssets.root, "users.db"))
 	um.Register("root", "hunter2") // Super secure initial password
 
+	// Scrub expired sessions every minute
+	exitChan := make(chan bool)
+	go func(exitCh chan bool, userMan *userManager) {
+		timer := time.Tick(time.Minute)
+		select {
+		case <-exitCh:
+			return
+		case <-timer:
+			userMan.CheckSessions()
+		}
+	}(exitChan, um)
+
 	fmt.Printf("Root directory is: %s\n", shimAssets.root)
 
 	// For now, have a fixed site to load
 	mySite = loadSite(shimAssets.root, "test")
 	fmt.Printf("site: %s\n", mySite.String())
 
-	// Things for running webapp
+	// Below this line are things exclusively for running the webapp
 	mux := http.NewServeMux()
 
 	loginRequirer := newLoginHandler(um).authHandler
-	withAuth := alice.New(timeoutHandler, loggingHandler, loginRequirer)
+	withAuth := alice.New(loggingHandler, timeoutHandler, loginRequirer)
 
 	mux.Handle("/", withAuth.ThenFunc(Home))
 	mux.Handle("/config/", withAuth.ThenFunc(EditSite))
@@ -109,7 +122,7 @@ func main() {
 	mux.Handle("/new/", withAuth.ThenFunc(NewPost))
 	mux.Handle("/admin/", withAuth.ThenFunc(Admin))
 
-	noAuth := alice.New(timeoutHandler, loggingHandler)
+	noAuth := alice.New(loggingHandler, timeoutHandler)
 	staticFilesRoot := filepath.Join(shimAssets.root, shimAssets.static)
 	staticFileHandler := http.FileServer(http.Dir(staticFilesRoot))
 

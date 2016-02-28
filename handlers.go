@@ -17,7 +17,6 @@
 package main
 
 import (
-	"fmt"
 	"log"
 	"net/http"
 	"time"
@@ -50,19 +49,20 @@ func newLoginHandler(um *userManager) *loginHandler {
 	}
 }
 
-// Simple syntax candy method to
+// Simple syntax candy method to ensure that users are logged in whenever accessing
+// protected Shim pages.
 func (l *loginHandler) authHandler(h http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		session, err := l.userMan.GetSessionFromRequest(w, r)
 
-		if err == nil {
-			fmt.Printf("session: %##v\n", session)
-			log.Println("User is properly logged in.")
+		if err == nil && session.IsLogged() {
+			// fmt.Printf("session: %##v\n", session)
+			// log.Println("User is properly logged in.")
 			h.ServeHTTP(w, r)
 			return
 		}
 
-		fmt.Printf("session: %##v\n", session)
+		// fmt.Printf("session: %##v\n", session)
 		log.Println("Not logged in! Redirecting to login page.")
 		http.Redirect(w, r, "/login/", http.StatusTemporaryRedirect)
 	})

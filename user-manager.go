@@ -18,9 +18,7 @@ package main
 
 import (
 	"crypto/rand"
-	"crypto/sha256"
 	"encoding/base64"
-	"encoding/hex"
 	"fmt"
 	"golang.org/x/crypto/bcrypt"
 	"io/ioutil"
@@ -240,16 +238,6 @@ func (um *userManager) CheckSessions() {
 	}
 }
 
-/**
- * Uses SHA256 to hash a session token (the sum of identifiers).
- *
- **/
-func (um *userManager) HashSessionToken(token string) string {
-	hash := sha256.New()
-	hash.Write([]byte(token))
-	return hex.EncodeToString(hash.Sum(nil))
-}
-
 // GetSessionFromRequest - Get the user's session from their Request using
 // the user's session cookie. If there is no session, returns an error and
 // nil session. If the user's session actually exists, then return an actual
@@ -257,8 +245,7 @@ func (um *userManager) HashSessionToken(token string) string {
 func (um *userManager) GetSessionFromRequest(w http.ResponseWriter, req *http.Request) (*session, error) {
 	loginCookie, err := req.Cookie("sessionID")
 	if err != nil {
-		log.Println("No session found!")
-		log.Printf("error: %s\n", err.Error())
+		um.Debug("No session cookie found.")
 		return nil, err
 	}
 
@@ -267,40 +254,39 @@ func (um *userManager) GetSessionFromRequest(w http.ResponseWriter, req *http.Re
 	userSessionTest.ua = req.UserAgent()
 
 	sessionIDStr := loginCookie.Value
-	fmt.Printf("Session id: %s\n", sessionIDStr)
+	um.Debug("Test session id: " + sessionIDStr)
 
+	// Sessions are based on the user's IP and User Agent. If either of these
+	// differs, then the session is invalid. Thus, let's make it invalid.
 	if realSession, exists := um.sessions[sessionIDStr]; exists {
-		log.Println("Looking for matching session")
 		if userSessionTest.ip == realSession.ip &&
 			userSessionTest.ua == realSession.ua {
+			um.Debug("Found valid session.")
 			return realSession, nil
 		}
-
 	}
-	log.Println("No matching session found.")
 
-	// Get rid of invalid cookie
+	um.Debug("No matching session found. Removing invalid cookie.")
+
 	expiredCookie := new(http.Cookie)
+	expiredCookie.MaxAge = 0
 	expiredCookie.Expires = time.Unix(0, 0)
 	expiredCookie.Name = "sessionID"
 	expiredCookie.Value = ""
+	expiredCookie.Path = "/"
 	http.SetCookie(w, expiredCookie)
-
-	log.Println("Set cookie!")
 
 	return nil, fmt.Errorf("The user's session does not exist!\n")
 }
 
-// LoginCookie - Login a user. If the user is successfully logged in, give them
-// a cookie to say logged in with. Return true if the login is successful.
+// LoginCookie - Login a user. If the user is successfully logged in, return a cookie
+// and a true boolean value. If the user isn't logged in, then return nil and a false
+// boolean value.
 func (um *userManager) LoginCookie(user string, pass string, w http.ResponseWriter, req *http.Request) (*http.Cookie, bool) {
 	log.Println("Checking login.")
 
 	if um.CheckHash(user, []byte(pass)) {
-		log.Println("Login matched.")
-		if um.debug {
-			fmt.Println("[userManager][Debug] User[" + user + "] has logged in.")
-		}
+		um.Debug("[userManager][Debug] User[" + user + "] has logged in.")
 
 		newSession := new(session)
 		newSession.ip = req.RemoteAddr
@@ -310,31 +296,30 @@ func (um *userManager) LoginCookie(user string, pass string, w http.ResponseWrit
 		newSession.timestamp = time.Now().Unix()
 
 		randomID := make([]byte, 32)
-		_, err := rand.Read(randomID)
+		_, err := rand.Read(randomID) // yes, crypto/rand is secure for this
 		if err != nil {
 			log.Fatal("Could not generate new randomID")
 		}
+		// We encode the id using base64 so that it only contains characters which
+		// are valid in cookies.
 		randomIDStr := base64.StdEncoding.EncodeToString(randomID)
-		fmt.Printf("ID String: %s\n", randomIDStr)
+		um.Debug("ID String: " + randomIDStr)
 		um.sessions[randomIDStr] = newSession
 
-		// WTF IS THIS AND WHY DOESN'T IT WORK?
 		loginCookie := new(http.Cookie)
-		loginCookie.Expires = time.Now().Add(time.Duration(defaultLifespan))
+		expires := time.Now().Add(time.Duration(defaultLifespan))
+		loginCookie.Expires = expires
 		loginCookie.Name = "sessionID"
 		loginCookie.Value = randomIDStr
-		loginCookie.Secure = true
+		loginCookie.Path = "/"
 		loginCookie.HttpOnly = true
-
-		http.SetCookie(w, loginCookie)
+		loginCookie.MaxAge = (int)(defaultLifespan)
+		// loginCookie.Secure = true  // TODO: Is this needed?
 
 		return loginCookie, true
 	}
 
-	log.Println("Login did not match.")
-	if um.debug {
-		fmt.Println("[userManager][Debug] Attempted user[" + user + "] failed to log in.")
-	}
+	um.Debug("[userManager][Debug] Attempted user[" + user + "] failed to log in.")
 
 	return nil, false
 }
