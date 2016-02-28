@@ -51,9 +51,6 @@ const defaultLifespan int64 = 3600 * 12
 /**
  * Constructor of userManager.
  *
- * @param databasePath (string): The path to a database file.
- *		(doesn't even need to exist)
- * @return userManager (userManager): An instance of userManager.
  **/
 func umInit(databasePath string) *userManager {
 	userManager := new(userManager)
@@ -67,10 +64,18 @@ func umInit(databasePath string) *userManager {
 }
 
 /**
+ * Handles checking for debug mode and if so prints text.
+ *
+ **/
+func (um *userManager) Debug(message string) {
+	if um.debug {
+		fmt.Println("[userManager]: " + message)
+	}
+}
+
+/**
  * Hashes any given input using bcrypt.
  *
- * @param this (byte slice): Input.
- * @return hash (byte slice): Output.
  **/
 func (um *userManager) Hash(this []byte) []byte {
 	// cost: minimum is 4, max is 31, default is 10
@@ -103,19 +108,14 @@ func (um *userManager) CheckHash(user string, test []byte) bool {
  * a stdout message pops before panic()'ing, due to a panic possibility occuring
  * out of the blue.
  *
- * @param err (error): The error object.
  **/
 func (um *userManager) Check(err error) {
 	if err != nil {
 		if _, ok := err.(*os.PathError); ok {
-			if um.debug {
-				fmt.Println("[userManager][Debug]: Path error occured, creating database now.")
-			}
+			um.Debug("Path error occured, creating database now.")
 			os.Create(um.databasePath)
 		} else {
-			if um.debug {
-				fmt.Println("[userManager][Debug] Error: " + err.Error() + ". Panicking now!")
-			}
+			um.Debug(err.Error() + "\nPanicking.")
 			panic(err)
 		}
 	}
@@ -148,10 +148,6 @@ func (um *userManager) Reload() {
 /**
  * Registers a new user, writing both into the database file and the memory.
  *
- * @param user (string): The username.
- * @param pass (string): The password.
- * @return (bool): false if the username already exists. true if the user
- * registered successfully.
  **/
 func (um *userManager) Register(user string, pass string) bool {
 	if _, exists := um.users[user]; exists {
@@ -159,18 +155,16 @@ func (um *userManager) Register(user string, pass string) bool {
 	}
 
 	um.users[user] = um.Hash([]byte(pass))
+	pass = string(um.users[user])
 
 	f, err := os.OpenFile(um.databasePath, os.O_APPEND|os.O_WRONLY, 0666)
 	defer f.Close()
 	um.Check(err)
 
-	_, err = f.WriteString(user + ":" + string(um.users[user]) + "\n")
+	_, err = f.WriteString(user + ":" + pass + "\n")
 	um.Check(err)
 
-	if um.debug {
-		fmt.Println("[userManager][Debug] Registered user[" + user + "] with password[" + string(um.users[user]) + "].")
-	}
-
+	um.Debug("Registered user[" + user + "] with password[" + pass + "].")
 	return true
 }
 
@@ -178,16 +172,15 @@ func (um *userManager) Register(user string, pass string) bool {
  * Changes the password of a user, given his old password matches the oldpass input variable.
  * Writes both into the database file and the memory.
  *
- * @param user (string): The username.
- * @param oldpass (string): The old password.
- * @param newpass (string): The new password.
- * @return (bool): false if the old password given doesn't match the actual old password, or
- * if the user doesn't exist. true if the password has changed.
+ * Returns false if the old password given doesn't match the actual old password, or user
+ * doesn't exist.
+ *
  **/
 func (um *userManager) ChangePass(user string, oldpass string, newpass string) bool {
 	if um.CheckHash(user, []byte(oldpass)) {
 		oldpass := string(um.users[user])
 		um.users[user] = um.Hash([]byte(newpass))
+		newpass = string(um.users[user])
 
 		data, err := ioutil.ReadFile(um.databasePath)
 		um.Check(err)
@@ -195,7 +188,7 @@ func (um *userManager) ChangePass(user string, oldpass string, newpass string) b
 		lines := strings.Split(string(data), "\n")
 		for i, line := range lines {
 			if strings.Contains(line, user) && strings.Contains(line, oldpass) {
-				lines[i] = user + ":" + string(um.users[user])
+				lines[i] = user + ":" + newpass
 				break
 			}
 		}
@@ -204,18 +197,12 @@ func (um *userManager) ChangePass(user string, oldpass string, newpass string) b
 		err = ioutil.WriteFile(um.databasePath, []byte(output), 0666)
 		um.Check(err)
 
-		if um.debug {
-			fmt.Println("[userManager][Debug] Changed the password of user[" + user + "],\n\t" +
-				"from[" + oldpass + "] to[" + string(um.users[user]) + "].")
-		}
-
+		um.Debug("Changed the password of user[" + user + "],\n\t" +
+			"from[" + oldpass + "] to[" + newpass + "].")
 		return true
 	}
 
-	if um.debug {
-		fmt.Println("[userManager][Debug] Failed to change the password of user[" + user + "].")
-	}
-
+	um.Debug("Failed to change the password of user[" + user + "].")
 	return false
 }
 
@@ -223,16 +210,14 @@ func (um *userManager) ChangePass(user string, oldpass string, newpass string) b
  * Changes the lifespan of a session.
  * Mainly exists to handle the typecasting between int and int64.
  *
- * @param seconds (int): The desired value in seconds.
  **/
 func (sess *session) SetLifespan(seconds int) {
 	sess.lifespan = int64(seconds)
 }
 
 /**
- * Pretty much self-explained. Checks if a session is logged.
+ * Checks if a session is logged.
  *
- * @return (bool): true if logged, false if not.
  **/
 func (sess *session) IsLogged() bool {
 	if sess.user != "" {
@@ -244,14 +229,12 @@ func (sess *session) IsLogged() bool {
 
 /**
  * Checks for expired sessions.
+ *
  **/
 func (um *userManager) CheckSessions() {
 	for hash, sess := range um.sessions {
 		if sess.timestamp+sess.lifespan < time.Now().Unix() {
-			if um.debug {
-				fmt.Println("[userManager][Debug] Session[" + hash + "] has expired. \n")
-			}
-
+			um.Debug("Session[" + hash + "] has expired.")
 			delete(um.sessions, hash)
 		}
 	}
@@ -260,8 +243,6 @@ func (um *userManager) CheckSessions() {
 /**
  * Uses SHA256 to hash a session token (the sum of identifiers).
  *
- * @param token (string): The input.
- * @return (string): The hash as string.
  **/
 func (um *userManager) HashSessionToken(token string) string {
 	hash := sha256.New()

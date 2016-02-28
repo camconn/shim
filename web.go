@@ -122,7 +122,7 @@ func Login(w http.ResponseWriter, req *http.Request) {
 			wrapper.Success = true
 
 			// This is broken or something!
-			http.Redirect(w, req, "/admin/", http.StatusContinue)
+			http.Redirect(w, req, "/admin/", http.StatusTemporaryRedirect)
 			return
 		}
 		log.Println("No success logging in")
