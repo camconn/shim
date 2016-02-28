@@ -179,6 +179,8 @@ func EditPost(w http.ResponseWriter, req *http.Request) {
 			if err != nil {
 				log.Fatalf("Could not publish post: %s\n", err.Error())
 			}
+		} else {
+			post.draft = true
 		}
 
 		err = post.SavePost()
