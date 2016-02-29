@@ -11,7 +11,7 @@
 		{{template "navbar"}}
 
 		<div id="content" class="content">
-			<form action="{{- .URL -}}" method="post">
+			<form action="{{- .URL -}}" method="post" class="container is-fluid">
 				<noscript>
 					<div>
 						<style type="text/css">
@@ -69,10 +69,8 @@
 				<label class="checkbox"><input type="checkbox" name="doPublish" checked> Republish Post?</label>
 				{{ end }}
 				<div class="columns is-mobile">
-					<div class="column is-quarter">
-						<a class="button is-info is-outlined" href="/preview/{{- $Post.PreviewPath -}}">Preview</a>
-					</div>
 					<div class="column is-half">
+						<a class="button is-info is-outlined" href="/preview/{{- $Post.PreviewPath -}}">Preview</a>
 					</div>
 					<div class="column is-right is-text-right">
 						<input class="button is-primary" type="submit" value="Save">
