@@ -17,6 +17,7 @@
 package main
 
 import (
+	"html/template"
 	"log"
 	"net/http"
 	"time"
@@ -65,6 +66,6 @@ func (l *loginHandler) authHandler(h http.Handler) http.Handler {
 
 		// fmt.Printf("session: %##v\n", session)
 		log.Println("Not logged in! Redirecting to login page.")
-		http.Redirect(w, r, "/login/", http.StatusTemporaryRedirect)
+		http.Redirect(w, r, "/login/?redirect="+template.URLQueryEscaper(r.URL.String())+"&warn=yes", http.StatusTemporaryRedirect)
 	})
 }

@@ -105,6 +105,20 @@ func Admin(w http.ResponseWriter, req *http.Request) {
 func Login(w http.ResponseWriter, req *http.Request) {
 	wrapper := new(WebWrapper)
 	wrapper.Success = false
+
+	q := req.URL.Query()
+	wrapper.URL = req.URL.String()
+	redirect := q.Get("redirect")
+	if len(redirect) > 0 {
+
+		warn := q.Get("warn")
+		if len(warn) > 0 {
+			wrapper.Message = "warn"
+			q.Del("warn")
+			wrapper.URL = "/login/?" + q.Encode()
+		}
+	}
+
 	if req.Method == "POST" {
 		err := req.ParseForm()
 		if err != nil {
@@ -117,10 +131,16 @@ func Login(w http.ResponseWriter, req *http.Request) {
 
 		cookie, success := um.LoginCookie(username, password, w, req)
 		if success {
-			log.Println("Redirecting to /admin/.")
 			fmt.Printf("Cookie: %s\n", cookie.String())
 			http.SetCookie(w, cookie)
 
+			if len(redirect) > 0 {
+				log.Println("Redirecting to " + redirect)
+				http.Redirect(w, req, redirect, http.StatusSeeOther)
+				return
+			}
+
+			log.Println("Redirecting to /admin/.")
 			http.Redirect(w, req, "/admin/", http.StatusSeeOther)
 			return
 		}
