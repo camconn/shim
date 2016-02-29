@@ -206,7 +206,8 @@ func EditPost(w http.ResponseWriter, req *http.Request) {
 				if err != nil {
 					fmt.Printf("Couldn't parse time! %s\n", err.Error())
 					wrapper.Failed = true
-					wrapper.Message = "Could not parse publishing time! Please use a valid format, date, and time for time published."
+					wrapper.Message = "Could not parse publishing time! " +
+						"Please use a valid format, date, and time for time published."
 					continue
 				}
 				post.published = &parsedTime
@@ -416,6 +417,8 @@ func EditSite(w http.ResponseWriter, req *http.Request) {
 			}
 		}
 
+		wrapper.Config = mySite.BasicConfig()
+
 		// save site
 		err := mySite.SaveConfig()
 		if err != nil {
@@ -431,8 +434,6 @@ func EditSite(w http.ResponseWriter, req *http.Request) {
 			goto renderBasicConfig
 		}
 
-		wrapper.Config = mySite.BasicConfig()
-
 		wrapper.Success = true
 	}
 renderBasicConfig:
@@ -446,6 +447,11 @@ func AdvancedConfig(w http.ResponseWriter, req *http.Request) {
 	wrapper.Site = mySite
 	wrapper.Success = false
 
+	wrapper.Text = bytes.NewBuffer([]byte{})
+	configLoc := filepath.Join(mySite.Location(), "config.toml")
+	var file *os.File
+	var err error
+
 	if req.Method == "POST" {
 		req.ParseMultipartForm(fiveMegabytes)
 
@@ -453,37 +459,47 @@ func AdvancedConfig(w http.ResponseWriter, req *http.Request) {
 		values := req.Form
 		configSrc := values.Get("configSrc")
 
-		// now write configSrc to file
-		fileLoc := fmt.Sprintf("%s/config.toml", mySite.location)
-
 		mode := os.O_WRONLY | os.O_CREATE | os.O_TRUNC
-		file, err := os.OpenFile(fileLoc, mode, 0666)
+		file, err := os.OpenFile(configLoc, mode, 0666)
 		if err != nil {
-			http.Error(w, err.Error(), 500)
+			wrapper.Message = fmt.Sprintf(
+				"Settings could not be saved because an error occurred: %s", err.Error())
+			wrapper.Failed = true
+			goto renderAdvancedConfig
 		}
 		defer file.Close()
 
 		// save site
 		file.WriteString(configSrc)
 		if err != nil {
-			http.Error(w, err.Error(), 500)
+			wrapper.Message = fmt.Sprintf("Your settings may be corrupted -- "+
+				"Settings could not be saved because an error occurred: %s", err.Error())
+			wrapper.Failed = true
+			goto renderAdvancedConfig
 		}
 
+		wrapper.Site.Reload()
 		wrapper.Success = true
 	}
 
 	wrapper.Text = bytes.NewBuffer([]byte{})
-	configLoc := fmt.Sprintf("%s/config.toml", mySite.location)
-	file, err := os.Open(configLoc)
+	file, err = os.Open(configLoc)
 	defer file.Close()
 	if err != nil {
-		http.Error(w, "Can't open config file!", 500)
+		wrapper.Message = fmt.Sprintf(
+			"Config could not be read because an error occurred: %s", err.Error())
+		wrapper.Failed = true
+		goto renderAdvancedConfig
 	}
 
 	_, err = wrapper.Text.ReadFrom(file)
 	if err != nil {
-		http.Error(w, "Can't read config file!", 500)
+		wrapper.Message = fmt.Sprintf(
+			"Config could not be read because an error occurred: %s", err.Error())
+		wrapper.Failed = true
+		goto renderAdvancedConfig
 	}
 
+renderAdvancedConfig:
 	renderAnything(w, "siteConfigAdvanced", wrapper)
 }

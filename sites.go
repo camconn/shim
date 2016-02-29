@@ -166,10 +166,18 @@ func (s Site) BasicConfig() []configOption {
 	return items
 }
 
-// TODO: Don't implicitly rely on shimAssets being a global
-func loadSite(dir, name string) *Site {
-	s := &Site{}
+// Reload - Reload this site from configuration
+func (s *Site) Reload() {
+	s.loadConfig(s.ShortName())
+}
 
+func loadSite(name string) *Site {
+	s := &Site{}
+	s.loadConfig(name)
+	return s
+}
+
+func (s *Site) loadConfig(name string) {
 	// This is (Hugo_ROOT/sites/sitename)
 	s.location = filepath.Join(shimAssets.root, shimAssets.sites, name)
 	s.shortName = name
@@ -214,8 +222,6 @@ func loadSite(dir, name string) *Site {
 	s.allSettings = v.AllSettings()
 
 	s.previewOutdated = true
-
-	return s
 }
 
 // GetAllPosts - Find all posts in a folder

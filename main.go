@@ -113,7 +113,7 @@ func main() {
 	fmt.Printf("Root directory is: %s\n", shimAssets.root)
 
 	// For now, have a fixed site to load
-	mySite = loadSite(shimAssets.root, "test")
+	mySite = loadSite("test")
 	fmt.Printf("site: %s\n", mySite.String())
 
 	// Below this line are things exclusively for running the webapp
