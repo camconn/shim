@@ -30,6 +30,7 @@ that shim can actually do its job.
 $ go get github.com/spf13/hugo
 $ git clone https://github.com/camconn/shim
 $ cd shim
+$ git submodule init
 $ go build
 $ ./shim
 ```
@@ -44,6 +45,10 @@ you can run the following command:
 ```
 $ gin -p 8080 run
 ```
+
+For further configuration, you can modify `config.toml`. If that file doesn't
+exist, then copy `config.toml.example` to `config.toml` and edit the newly
+copied file.
 
 ## Contributing
 If you wish to contribute to Shim, you **must** grant the project maintainer
