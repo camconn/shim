@@ -44,11 +44,11 @@ type Post struct {
 	title       string     `desc:"What the post is called"`
 	author      string     `desc:"The person who wrote this post (by default, you)."`
 	description string     `desc:"A short summary of this post. If none is provided, this will be automatically generated."`
-	slug        string     `desc:"The memorable URL of this post. If none is provided, a longform link will be used."`
+	slug        string     `desc:"The token to appear in the tail of the URL. If none is provided, the filename will be used."`
 	draft       bool       `desc:"Is this post a draft?"`
 	published   *time.Time `desc:"When the post was published"`
 
-	site *Site
+	site *Site // TODO: Is this really needed?
 
 	body *bytes.Buffer
 	all  map[string]interface{}
