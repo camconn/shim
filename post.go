@@ -19,7 +19,6 @@ package main
 import (
 	"bufio"
 	"bytes"
-	"container/list"
 	"fmt"
 	"github.com/BurntSushi/toml"
 	"github.com/spf13/viper"
@@ -267,50 +266,6 @@ func (p Post) Options() []configOption {
 	}
 
 	return items
-}
-
-// GetAllPosts - Find all posts in a folder
-func (s *Site) GetAllPosts() {
-	contentPath := filepath.Join(s.Location(), s.ContentDir())
-	fmt.Printf("Searching in %s\n", contentPath)
-
-	allPostFiles := list.New()
-	numPosts := 0
-	var scanFunc = func(path string, fileInfo os.FileInfo, _ error) error {
-		if !fileInfo.IsDir() { // IDGAF about directories
-			ext := filepath.Ext(path)
-			// for now, we only care about Markdown files
-			if ext == ".md" {
-				allPostFiles.PushBack(path)
-				numPosts++
-			}
-		}
-		return nil
-	}
-
-	err := filepath.Walk(contentPath, scanFunc)
-	check(err)
-
-	allPosts := make([]*Post, numPosts)
-
-	elem := allPostFiles.Front()
-
-	for i := 0; i < numPosts; i++ {
-		nameValue := elem.Value
-		fileName, ok := nameValue.(string)
-		if ok {
-			allPosts[i], err = loadPost(fileName, contentPath)
-			if err != nil {
-				log.Fatalf("failed to load post %s!\n", fileName)
-			}
-		} else {
-			log.Fatal("Failed horribly while walking through file path")
-		}
-		elem = elem.Next()
-
-	}
-
-	s.Posts = allPosts
 }
 
 // Publish - Publish this post

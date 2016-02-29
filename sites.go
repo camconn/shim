@@ -17,6 +17,7 @@
 package main
 
 import (
+	"container/list"
 	"fmt"
 	"github.com/BurntSushi/toml"
 	"github.com/spf13/viper"
@@ -25,9 +26,13 @@ import (
 	"os/exec"
 	"path/filepath"
 	"reflect"
+	"sort"
 )
 
 var blankBytes = []byte{0}
+
+// SitePosts - An array of pointers to all of this site's posts
+type SitePosts []*Post
 
 // Site - Represent a Hugo site (as in blog.example.com)
 type Site struct {
@@ -46,12 +51,7 @@ type Site struct {
 
 	builddrafts  bool `desc:"are drafts enabled?"`
 	canonifyurls bool `desc:"are urls canonical?"`
-	Posts        []*Post
-
-	// TODO: The following two maps should *just* hold the rest of the information
-	// about the site. These are only to preserve the site's configuration after
-	// modification. For the *basic* configuration settings, just modify the mySite
-	// struct directly for the appropriate field then call SaveConfig().
+	Posts        SitePosts
 
 	// Don't prefer to modify this map directly! Instead, prefer to modify the fields
 	// of this Site struct, as they *overwrite* this hashmap!
@@ -66,10 +66,24 @@ func (s *Site) String() string {
 	return fmt.Sprintf("Site \"%s\" - baseurl: \"%s\"", s.location, s.baseurl)
 }
 
+// Sorting stuff used to order posts on the view posts page.
+// Posts are sorted in the order such that drafts come first, then come
+// older posts in ascending order.
+func (s SitePosts) Len() int      { return len(s) }
+func (s SitePosts) Swap(i, j int) { s[i], s[j] = s[j], s[i] }
+func (s SitePosts) Less(i, j int) bool {
+	postA := s[i]
+	postB := s[j]
+	if postA.Draft() && !postB.Draft() {
+		return true
+	}
+
+	timeA := postA.Date().Add(0)
+	timeB := postB.Date().Add(0)
+	return !timeA.Before(timeB)
+}
+
 // BasicConfig - Print out basic information about this site
-// TODO: This is absolutely broken, as it will ignore things that aren't
-// the fields array, but are in the Site.allSettings map.
-// FIX THIS SOON PLS (camconn)
 func (s Site) BasicConfig() []configOption {
 
 	// site-level configuration settings
@@ -204,6 +218,51 @@ func loadSite(dir, name string) *Site {
 	s.enabled = true
 
 	return s
+}
+
+// GetAllPosts - Find all posts in a folder
+func (s *Site) GetAllPosts() {
+	contentPath := filepath.Join(s.Location(), s.ContentDir())
+	fmt.Printf("Searching in %s\n", contentPath)
+
+	allPostFiles := list.New()
+	numPosts := 0
+	var scanFunc = func(path string, fileInfo os.FileInfo, _ error) error {
+		if !fileInfo.IsDir() { // IDGAF about directories
+			ext := filepath.Ext(path)
+			// for now, we only care about Markdown files
+			if ext == ".md" {
+				allPostFiles.PushBack(path)
+				numPosts++
+			}
+		}
+		return nil
+	}
+
+	err := filepath.Walk(contentPath, scanFunc)
+	check(err)
+
+	allPosts := make([]*Post, numPosts)
+
+	elem := allPostFiles.Front()
+
+	for i := 0; i < numPosts; i++ {
+		nameValue := elem.Value
+		fileName, ok := nameValue.(string)
+		if ok {
+			allPosts[i], err = loadPost(fileName, contentPath)
+			if err != nil {
+				log.Fatalf("failed to load post %s!\n", fileName)
+			}
+		} else {
+			log.Fatal("Failed horribly while walking through file path")
+		}
+		elem = elem.Next()
+
+	}
+
+	s.Posts = allPosts
+	sort.Sort(s.Posts)
 }
 
 // BuildPublic - Build the public site using Hugo
