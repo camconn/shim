@@ -69,3 +69,28 @@ func (l *loginHandler) authHandler(h http.Handler) http.Handler {
 		http.Redirect(w, r, "/login/?redirect="+template.URLQueryEscaper(r.URL.String())+"&warn=yes", http.StatusTemporaryRedirect)
 	})
 }
+
+type previewHandler struct {
+}
+
+func (p *previewHandler) previewHandler(h http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// Set baseurl to /preview/ to help view
+		origPath := mySite.BaseURL()
+		mySite.baseurl = origPath + "/preview"
+		_ = mySite.SaveConfig()
+
+		err := mySite.BuildPreview()
+		if err != nil {
+			http.Error(w, "Couldn't build preview", http.StatusInternalServerError)
+			return
+		}
+
+		// reset to original path
+		mySite.baseurl = origPath
+		_ = mySite.SaveConfig()
+
+		h.ServeHTTP(w, r)
+
+	})
+}

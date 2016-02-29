@@ -122,6 +122,13 @@ func main() {
 	mux.Handle("/new/", withAuth.ThenFunc(NewPost))
 	mux.Handle("/admin/", withAuth.ThenFunc(Admin))
 
+	ph := new(previewHandler)
+	// withPreview := withAuth.Append(ph.previewHandler)
+	withPreview := alice.New(ph.previewHandler, loggingHandler, loginRequirer)
+	previewSiteRoot := filepath.Join(mySite.Location(), "preview")
+	previewSiteHandler := http.StripPrefix("/preview/", http.FileServer(http.Dir(previewSiteRoot)))
+	mux.Handle("/preview/", withPreview.Then(previewSiteHandler))
+
 	noAuth := alice.New(loggingHandler)
 	staticFilesRoot := filepath.Join(shimAssets.root, shimAssets.static)
 	staticFileHandler := http.FileServer(http.Dir(staticFilesRoot))

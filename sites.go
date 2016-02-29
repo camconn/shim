@@ -206,33 +206,44 @@ func loadSite(dir, name string) *Site {
 	return s
 }
 
-// Build - Build and generate the site using Hugo's generator function
-func (s Site) Build() error {
+// BuildPublic - Build the public site using Hugo
+func (s *Site) BuildPublic() (err error) {
+	publicDir := filepath.Join(s.Location(), "public")
+	err = s.build(publicDir, false)
+	return
+}
+
+// BuildPreview - Build a preview with hugo
+func (s *Site) BuildPreview() (err error) {
+	previewDir := filepath.Join(s.Location(), "preview")
+	err = s.build(previewDir, true)
+	return
+}
+
+// Build and generate the site using Hugo's generator function
+func (s *Site) build(path string, drafts bool) error {
 	hugoPath, err := exec.LookPath("hugo")
 	if err != nil {
 		return fmt.Errorf("Could not find hugo executable. Is hugo installed?\n")
 	}
 
 	// go ahead and clean up the current public directory
-	publicDir := filepath.Join(s.Location(), "public")
-	publicFiles, _ := filepath.Glob(filepath.Join(s.Location(), "public", "*"))
-	for _, fName := range publicFiles {
-		_ = os.Remove(fName)
+	err = os.RemoveAll(path)
+	if err != nil {
+		log.Fatalf("Could not clean up target %s\nError: %s", path, err.Error())
 	}
 
-	err = os.MkdirAll(publicDir, 0777)
-	if !os.IsExist(err) { // It's okay to ignore file exists errors
-		return err
+	cmd := &exec.Cmd{}
+	if drafts {
+		cmd = exec.Command(hugoPath, "-D", "-s", s.Location(), "-d", path)
+	} else {
+		cmd = exec.Command(hugoPath, "-s", s.Location(), "-d", path)
 	}
-
-	cmd := exec.Command(hugoPath, "-s", s.location, "-d", publicDir)
-	// log.Printf("command: %s\n", cmd)
 	err = cmd.Run()
 	if err != nil {
-		log.Printf("WTF: %s\n", err.Error())
+		log.Println("WTF: " + err.Error())
 		return fmt.Errorf("Could not build site. Error: %s\n", err.Error())
 	}
-	log.Printf("New site built to %s!\n", publicDir)
 	return nil
 }
 

@@ -89,7 +89,7 @@ func Admin(w http.ResponseWriter, req *http.Request) {
 	}
 
 	if status.Action == "build" {
-		err := mySite.Build()
+		err := mySite.BuildPublic()
 		if err != nil {
 			status.Success = false
 			status.Message = err.Error()
@@ -233,11 +233,7 @@ func EditPost(w http.ResponseWriter, req *http.Request) {
 			log.Fatalf("Error while saving post: %s\n", err.Error())
 		}
 
-		// TODO: handle site build errors more gracefully
-		err = mySite.Build()
-		if err != nil {
-			http.Error(w, err.Error(), 500)
-		}
+		wrapper.Success = true
 	}
 
 	wrapper.Post = post
