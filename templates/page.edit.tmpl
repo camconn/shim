@@ -11,6 +11,12 @@
 		{{template "navbar"}}
 
 		<div id="content" class="content">
+			<h1>Edit Post</h1>
+			{{- if .Failed -}}
+			<div class="notification is-danger">
+				{{- .Message | html -}}
+			</div>
+			{{- end -}}
 			<form action="{{- .URL -}}" method="post" class="container is-fluid">
 				<noscript>
 					<div>
@@ -27,7 +33,7 @@
 				</noscript>
 				<script type="text/javascript">
 				function toggleCollapse() {
-					coll = document.getElementById("collapse");
+					var coll = document.getElementById("collapse");
 					if (coll === null) { return; }
 					dis = coll.style.display;
 					if (dis === "inline") {
@@ -47,10 +53,12 @@
 					{{- range $opt := $.Config -}}
 					<div class="columns">
 						<div class="column is-third">
-							<p><code>{{ $opt.Name | html -}}</code>: {{ $opt.Description | html -}}</p>
+							<p><code>{{- $opt.Name | html -}}</code>: {{ $opt.Description | html -}}</p>
 						</div>
 						<div class="column">
-						{{- if eq $opt.Type "string" -}}
+						{{- if eq $opt.Name "published" -}}
+							<input class="input" type="text" name="{{- $opt.Name | html -}}" value="{{- $opt.Value | html -}}" placeholder="25 Dec 2000 @ 23:59">
+						{{- else if eq $opt.Type "string" -}}
 							<input class="input" type="text" name="{{- $opt.Name | html -}}" value="{{- $opt.Value | html -}}">
 						{{- else -}}
 							Unknown object: <code>{{ $opt | html -}}</code>

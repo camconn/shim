@@ -195,15 +195,18 @@ func EditPost(w http.ResponseWriter, req *http.Request) {
 			case "author":
 				post.author = value
 			case "doPublish":
-				if value == "on" {
-					publish = true
-				}
+				// Don't do anything, because we handled this earlier
+				publish = true
 			case "description":
 				post.description = value
 			case "published":
+				// In reality, this doesn't matter for drafts because when a draft
+				// is saved it's time published is set to when it was last modified.
 				parsedTime, err := time.Parse(dateFormat, value)
 				if err != nil {
 					fmt.Printf("Couldn't parse time! %s\n", err.Error())
+					wrapper.Failed = true
+					wrapper.Message = "Could not parse publishing time! Please use a valid format, date, and time for time published."
 					continue
 				}
 				post.published = &parsedTime
@@ -219,23 +222,35 @@ func EditPost(w http.ResponseWriter, req *http.Request) {
 			}
 		}
 
+		err = post.SavePost()
+		if err != nil {
+			log.Printf("Error while saving post: %s\n", err.Error())
+			wrapper.Failed = true
+			wrapper.Message = "Could not save post to disk. Error: " + err.Error()
+			goto renderEditedPost
+		} else if wrapper.Failed {
+			// We try and save whatever data we do have if something failed before
+			// this point (for example, if the time the user gave us was wrong, try
+			// parsing it anyways, then try saving their post, then tell them that
+			// an error occurred.
+			goto renderEditedPost
+		}
+
 		if publish {
 			err = post.Publish()
 			if err != nil {
-				log.Fatalf("Could not publish post: %s\n", err.Error())
+				log.Printf("Could not publish post: %s\n", err.Error())
+				wrapper.Failed = true
+				wrapper.Message = "Could not publish post: " + err.Error()
 			}
 		} else {
 			post.draft = true
 		}
 
-		err = post.SavePost()
-		if err != nil {
-			log.Fatalf("Error while saving post: %s\n", err.Error())
-		}
-
 		wrapper.Success = true
 	}
 
+renderEditedPost:
 	wrapper.Post = post
 	wrapper.Config = post.Options()
 

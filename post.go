@@ -73,10 +73,7 @@ func (p *Post) handleFrontMatter(v *viper.Viper) {
 
 	// Handle time parsing and error checking
 	publishString := v.GetString("date")
-	if publishString == "" {
-		zero := time.Unix(0, 0)
-		p.published = &zero
-	} else {
+	if publishString != "" {
 		pTime, err := time.Parse(time.RFC3339, publishString)
 		if err != nil {
 			log.Fatalf("Error parsing time: %s\n", err)
@@ -155,7 +152,11 @@ func (s *Site) newPost(name string) (path string, err error) {
 }
 
 // SavePost - Save post to disk to path path
-func (p Post) SavePost() error {
+func (p *Post) SavePost() error {
+	if p.Draft() { // If saving a draft, the time updated is right now
+		now := time.Now()
+		p.published = &now
+	}
 
 	// Go ahead and update the map of all TOML keys
 	p.updateMap()
@@ -306,6 +307,10 @@ func (p Post) Slug() string {
 
 // Date - The published date of this post
 func (p Post) Date() *time.Time {
+	if p.published == nil {
+		now := time.Now()
+		return &now
+	}
 	return p.published
 }
 
@@ -338,7 +343,7 @@ func (p Post) RelPath() string {
 
 // WebDate - Get the date displayed in shim for this post
 func (p Post) WebDate() string {
-	return p.published.Format(dateFormat)
+	return p.Date().Format(dateFormat)
 }
 
 // PreviewPath - Get the preview path for this post. This is effectively final
