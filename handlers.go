@@ -66,7 +66,7 @@ func (l *loginHandler) authHandler(h http.Handler) http.Handler {
 
 		// fmt.Printf("session: %##v\n", session)
 		log.Println("Not logged in! Redirecting to login page.")
-		http.Redirect(w, r, "/login/?redirect="+template.URLQueryEscaper(r.URL.String())+"&warn=yes", http.StatusTemporaryRedirect)
+		http.Redirect(w, r, "/login/?redirect="+template.URLQueryEscaper(r.URL.String()+"/")+"&warn=yes", http.StatusTemporaryRedirect)
 	})
 }
 
@@ -75,21 +75,15 @@ type previewHandler struct {
 
 func (p *previewHandler) previewHandler(h http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		// Set baseurl to /preview/ to help view
-		origPath := mySite.BaseURL()
-		mySite.baseurl = origPath + "/preview"
-		_ = mySite.SaveConfig()
-
-		err := mySite.BuildPreview()
-		if err != nil {
-			http.Error(w, "Couldn't build preview", http.StatusInternalServerError)
-			return
+		// TODO: Support multiple sites
+		// TODO: Support building with and without drafts
+		if mySite.previewOutdated {
+			log.Println("Building another preview.")
+			err := mySite.BuildPreview()
+			if err != nil {
+				http.Error(w, "There was an error generating your preview: "+err.Error(), 500)
+			}
 		}
-
-		// reset to original path
-		mySite.baseurl = origPath
-		_ = mySite.SaveConfig()
-
 		h.ServeHTTP(w, r)
 
 	})

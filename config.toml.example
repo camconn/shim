@@ -1,12 +1,26 @@
 
-# Where are the sites located
+# Assets #######################################################################
+# The following are relative to the directory which shim is started in. 
+#
+# sitesDir         where sites should be stored
+# staticDir        where static assets should be stored
+# templatesDir     where shim's templates should be stored
+#
 sitesDir = "sites"
-
-# Where are static files served from
 staticDir = "static"
-
-# Where are templates served from?
 templatesDir = "templates"
+
+# Miscellaneous ################################################################
+# Other things that shim needs to know to work properly.
+#
+# baseurl          the base URL a user should use to access shim.
+#                  Note: This is different than a hugo site's baseurl.
+#                  Note: This port will override the PORT environment variable
+#                  and use this port for hyperlinks. This is useful for, say,
+#                  running gin or fresh while hosting shim or working on shim
+#                  (as in developing).
+baseurl = "http://127.0.0.1:8080/"
+
 
 [sites]
     all = ["mysite", "test"]

@@ -48,6 +48,8 @@ type Post struct {
 	draft       bool       `desc:"Is this post a draft?"`
 	published   *time.Time `desc:"When the post was published"`
 
+	site *Site
+
 	body *bytes.Buffer
 	all  map[string]interface{}
 }
@@ -87,6 +89,7 @@ func (p *Post) handleFrontMatter(v *viper.Viper) {
 // contentDirPath is used to find the relative path of the post
 func loadPost(postPath, contentDirPath string) (p *Post, err error) {
 	p = &Post{}
+	p.site = mySite // TODO: Support multiple sites
 	p.location, err = filepath.Abs(postPath)
 	check(err)
 
@@ -182,6 +185,8 @@ func (p *Post) SavePost() error {
 		return err
 	}
 
+	// The post was modified, therefore our preview of the site is outdated
+	mySite.previewOutdated = true
 	return nil
 }
 

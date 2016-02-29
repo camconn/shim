@@ -363,11 +363,14 @@ func EditSite(w http.ResponseWriter, req *http.Request) {
 	wrapper.Site = mySite
 	wrapper.Config = mySite.BasicConfig()
 	wrapper.Success = false
+	wrapper.Failed = false
 
 	themesLoc := fmt.Sprintf("%s/%s", shimAssets.root, shimAssets.themes)
 	allThemes, err := GetThemes(themesLoc)
 	if err != nil {
-		http.Error(w, "Could not load themes!", 500)
+		wrapper.Failed = true
+		wrapper.Message = fmt.Sprintf("Failed to load themes: %s", err.Error())
+		goto renderBasicConfig
 	}
 	wrapper.Choices = allThemes
 
@@ -416,17 +419,23 @@ func EditSite(w http.ResponseWriter, req *http.Request) {
 		// save site
 		err := mySite.SaveConfig()
 		if err != nil {
-			http.Error(w, err.Error(), 500)
+			wrapper.Failed = true
+			wrapper.Message = fmt.Sprintf("Failed to save site: %s", err.Error())
+			goto renderBasicConfig
 		}
 
 		err = ChangeTheme(mySite, mySite.Theme())
 		if err != nil {
-			http.Error(w, "Could not change theme!", 500)
+			wrapper.Failed = true
+			wrapper.Message = fmt.Sprintf("Failed to change theme: %s", err.Error())
+			goto renderBasicConfig
 		}
+
+		wrapper.Config = mySite.BasicConfig()
 
 		wrapper.Success = true
 	}
-
+renderBasicConfig:
 	renderAnything(w, "siteConfig", wrapper)
 }
 

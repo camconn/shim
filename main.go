@@ -22,6 +22,7 @@ import (
 	"github.com/spf13/viper"
 	"log"
 	"net/http"
+	"net/url"
 	"os"
 	"path/filepath"
 	"time"
@@ -38,6 +39,7 @@ type assets struct {
 	templates string
 	static    string
 	themes    string
+	url       *url.URL
 }
 
 // Pretty methods to check errors
@@ -60,12 +62,19 @@ func assignAssets() {
 	viper.SetDefault("templatesDir", "templates")
 	viper.SetDefault("staticDir", "static")
 	viper.SetDefault("themeDir", "themes")
+	viper.SetDefault("baseurl", "http://127.0.0.1:8080/")
 
 	shimAssets.root = root
 	shimAssets.sites = viper.GetString("sitesDir")
 	shimAssets.templates = viper.GetString("templatesDir")
 	shimAssets.static = viper.GetString("staticDir")
 	shimAssets.themes = viper.GetString("themeDir")
+
+	baseurl := viper.GetString("baseurl")
+	shimAssets.url, err = url.Parse(baseurl)
+	if err != nil {
+		log.Fatal("Invalid URL for \"baseurl\"!")
+	}
 }
 
 func main() {
@@ -123,7 +132,7 @@ func main() {
 	mux.Handle("/admin/", withAuth.ThenFunc(Admin))
 
 	ph := new(previewHandler)
-	// withPreview := withAuth.Append(ph.previewHandler)
+
 	withPreview := alice.New(ph.previewHandler, loggingHandler, loginRequirer)
 	previewSiteRoot := filepath.Join(mySite.Location(), "preview")
 	previewSiteHandler := http.StripPrefix("/preview/", http.FileServer(http.Dir(previewSiteRoot)))

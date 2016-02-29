@@ -22,11 +22,13 @@ import (
 	"github.com/BurntSushi/toml"
 	"github.com/spf13/viper"
 	"log"
+	"net/url"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"reflect"
 	"sort"
+	"strings"
 )
 
 var blankBytes = []byte{0}
@@ -57,9 +59,7 @@ type Site struct {
 	// of this Site struct, as they *overwrite* this hashmap!
 	allSettings map[string]interface{}
 
-	// TODO: Are these even needed?
-	enabled bool // TODO: Implement Site.enabled
-	public  bool // TODO: Implement Site.public
+	previewOutdated bool
 }
 
 func (s *Site) String() string {
@@ -171,7 +171,7 @@ func loadSite(dir, name string) *Site {
 	s := &Site{}
 
 	// This is (Hugo_ROOT/sites/sitename)
-	s.location = fmt.Sprintf("%s/%s/%s", shimAssets.root, shimAssets.sites, name)
+	s.location = filepath.Join(shimAssets.root, shimAssets.sites, name)
 	s.shortName = name
 
 	confLoc := fmt.Sprintf("%s/config.toml", s.location)
@@ -213,9 +213,7 @@ func loadSite(dir, name string) *Site {
 
 	s.allSettings = v.AllSettings()
 
-	// TODO: Implement these
-	s.public = true
-	s.enabled = true
+	s.previewOutdated = true
 
 	return s
 }
@@ -273,10 +271,49 @@ func (s *Site) BuildPublic() (err error) {
 }
 
 // BuildPreview - Build a preview with hugo
+// TODO: Support building with and without drafts.
 func (s *Site) BuildPreview() (err error) {
+	// Set baseurl to /preview/ to help view
+	origPath := s.BaseURL()[:]
+	siteURL, err := url.Parse(s.BaseURL())
+	if err != nil {
+		return
+	}
+
+	// NOTE: The way that we are publishing these sites means that all of the URLs
+	// **CANNOT** be canonical. So what's happening here is that we're temporarily
+	// making the site not canonical for the entirety of this build process.
+	wasCanonical := s.Canonify()
+	if wasCanonical {
+		s.canonifyurls = false
+		shimURL := shimAssets.url.Path
+		s.baseurl = filepath.Join(strings.TrimRight(shimURL, "/"), "/preview/", siteURL.Path)
+	} else {
+		s.baseurl = strings.TrimRight(origPath, "/") + "/preview/"
+	}
+	log.Printf("Temporarily %s\n", s.BaseURL())
+	// s.baseurl = origPath + "/preview/"
+	err = s.SaveConfig()
+	if err != nil {
+		return
+	}
+
 	previewDir := filepath.Join(s.Location(), "preview")
 	err = s.build(previewDir, true)
-	return
+	if err != nil {
+		return
+	}
+
+	// reset to original path
+	s.baseurl = origPath
+	s.canonifyurls = wasCanonical
+	_ = s.SaveConfig()
+	log.Printf("Now %s\n", s.BaseURL())
+
+	// Manually override because SaveConfig() set this to true
+	s.previewOutdated = false
+
+	return err
 }
 
 // Build and generate the site using Hugo's generator function
@@ -331,6 +368,8 @@ func (s Site) SaveConfig() error {
 	tomlEncoder := toml.NewEncoder(file)
 	tomlEncoder.Indent = "    "
 	tomlEncoder.Encode(s.allSettings)
+
+	s.previewOutdated = true
 
 	return nil
 }
