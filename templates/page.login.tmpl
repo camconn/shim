@@ -13,11 +13,19 @@
 			{{- if .Failed -}}
 			<p class="notification is-danger">Invalid Username/Password. Please try again.</p>
 			{{- end -}}
-			<form action="/login/" method="post">
-				<p>Username: <input type="text" name="username" class="creds"></p>
-				<p>Password: <input type="password" name="password" class="creds"></p>
-				<p><input type="submit" value="Login"></p>
-			</form>
+			<div class="container">
+				<form action="/login/" method="post">
+					<div class="columns">
+						<div class="column is-2">Username: </div>
+						<div class="column"><input type="text" name="username" autofocus="autofocus"></div>
+					</div>
+					<div class="columns">
+						<div class="column is-2">Password: </div>
+						<div class="column"><input type="password" name="password"></div>
+					</div>
+					<p><input type="submit" value="Login"></p>
+				</form>
+			</div>
 		</div>
 		{{template "footer"}}
 	</body>
