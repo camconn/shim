@@ -19,7 +19,7 @@
 			<p>Click <a href="/config/">here</a> for basic settings.</p>
 
 			<form action="/config/advanced/" method="post">
-				<textarea class="textarea" name="configSrc" cols="100" style="min-height:320px">{{- printf "%s" .Text | html -}}</textarea>
+				<textarea class="textarea monospace" name="configSrc" cols="100" style="min-height:320px">{{- printf "%s" .Text | html -}}</textarea>
 				<br/>
 				<input class="button is-primary" type="submit" value="Save">
 			</form>
