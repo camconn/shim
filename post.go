@@ -340,3 +340,14 @@ func (p Post) RelPath() string {
 func (p Post) WebDate() string {
 	return p.published.Format(dateFormat)
 }
+
+// PreviewPath - Get the preview path for this post. This is effectively final
+// path of the URL the page will be at after Hugo generates this page.
+// TODO: Permalinks?
+func (p Post) PreviewPath() string {
+	if len(p.Slug()) == 0 {
+		return p.RelPath() + "/"
+	}
+
+	return filepath.Join(p.RelPath(), "..", p.Slug()) + "/"
+}
