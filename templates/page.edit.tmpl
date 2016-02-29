@@ -44,7 +44,7 @@
 					<br />
 				</div>
 				<div id="collapse">
-					{{- range $opt := $Post.Options -}}
+					{{- range $opt := $.Config -}}
 					<div class="columns">
 						<div class="column is-third">
 							<p><code>{{ $opt.Name | html -}}</code>: {{ $opt.Description | html -}}</p>

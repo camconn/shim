@@ -221,6 +221,7 @@ func EditPost(w http.ResponseWriter, req *http.Request) {
 	}
 
 	wrapper.Post = post
+	wrapper.Config = post.Options()
 
 	renderAnything(w, "editPage", wrapper)
 }
