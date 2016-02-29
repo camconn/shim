@@ -28,27 +28,29 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"reflect"
 	"strings"
 	"time"
 )
 
 const (
 	tomlBoundary = "+++\n"
-	// dateFormat   = "2016-02-21T02:34:27-01:00"
+	dateFormat   = "_2 Jan 2006 @ 15:04"
 )
 
 // Post - Represents a post along with all its metadata
 type Post struct {
 	location    string
 	relpath     string
-	title       string    `desc:"What the post is called"`
-	author      string    `desc:"The person who wrote this post"`
-	description string    `desc:"A short summary of this post"`
-	slug        string    `desc:"The memorable URL of this post"`
-	published   time.Time `desc:"When the post was published"`
-	draft       bool      `desc:"Is this post a draft"`
-	body        *bytes.Buffer
-	all         map[string]interface{}
+	title       string     `desc:"What the post is called"`
+	author      string     `desc:"The person who wrote this post (by default, you)."`
+	description string     `desc:"A short summary of this post. If none is provided, this will be automatically generated."`
+	slug        string     `desc:"The memorable URL of this post. If none is provided, a longform link will be used."`
+	draft       bool       `desc:"Is this post a draft?"`
+	published   *time.Time `desc:"When the post was published"`
+
+	body *bytes.Buffer
+	all  map[string]interface{}
 }
 
 // Read the TOML metadata from a byte array and return a hashmap
@@ -63,17 +65,25 @@ func (p *Post) readTOMLMetadata(data io.Reader) {
 func (p *Post) handleFrontMatter(v *viper.Viper) {
 	p.title = v.GetString("title")
 	p.author = v.GetString("author")
+	if len(p.author) == 0 {
+		p.author = mySite.Author()
+	}
 	p.description = v.GetString("description")
 	p.slug = v.GetString("slug")
 	p.draft = v.GetBool("draft")
 
 	// Handle time parsing and error checking
 	publishString := v.GetString("date")
-	pTime, err := time.Parse(time.RFC3339, publishString)
-	if err != nil {
-		log.Fatalf("Error parsing time: %s\n", err)
+	if publishString == "" {
+		zero := time.Unix(0, 0)
+		p.published = &zero
+	} else {
+		pTime, err := time.Parse(time.RFC3339, publishString)
+		if err != nil {
+			log.Fatalf("Error parsing time: %s\n", err)
+		}
+		p.published = &pTime
 	}
-	p.published = pTime
 
 	p.all = v.AllSettings()
 }
@@ -120,16 +130,6 @@ func loadPost(postPath, contentDirPath string) (p *Post, err error) {
 	p.body = bytes.NewBuffer([]byte{})
 	p.body.ReadFrom(bodyReader)
 
-	/*
-		// If the filename is still meh, then go ahead and change the slug
-		if len(p.slug) == 0 {
-			fNameWithSuffix := filepath.Base(postPath)
-			fNameNoSuffix := strings.TrimSuffix(fNameWithSuffix, filepath.Ext(fNameWithSuffix))
-			// fmt.Printf("Name with no suffix is %s\n", fNameNoSuffix)
-			p.slug = fNameNoSuffix
-
-		}
-	*/
 	relativePathWithSuffix, err := filepath.Rel(contentDirPath, postPath)
 	p.relpath = strings.TrimSuffix(relativePathWithSuffix, filepath.Ext(filepath.Base(postPath)))
 
@@ -170,8 +170,6 @@ func (p Post) SavePost() error {
 		return err
 	}
 
-	// TODO: Be safer with writing to file
-
 	// write TOML stuff
 	tomlEncoder := toml.NewEncoder(file)
 
@@ -179,8 +177,6 @@ func (p Post) SavePost() error {
 	tomlEncoder.Encode(p.all)
 	file.WriteString(tomlBoundary)
 
-	// TODO: Was this stupid?
-	// _, err = p.body.WriteTo(file)
 	_, err = file.WriteString(p.body.String())
 	if err != nil {
 		return err
@@ -205,10 +201,76 @@ func (p *Post) updateMap() {
 	// TODO: Load everything else
 }
 
+// Options - Get the post options for this post, to modify things
+// such as publish time, the description, the author, the date, etc.
+func (p Post) Options() []configOption {
+	postFields := []string{
+		"author",
+		"description",
+		"slug",
+		"published",
+	}
+
+	// TODO: Handle tags and categories
+
+	numItems := len(postFields)
+	items := make([]configOption, numItems)
+
+	stv := reflect.ValueOf(p)
+	stt := stv.Type()
+
+	for i := 0; i < numItems; i++ {
+		help := configOption{}
+		help.IsParam = false
+
+		name := ""
+
+		name = postFields[i]
+		help.Name = name
+
+		field := stv.FieldByName(name)
+		strField, ok := stt.FieldByName(name)
+
+		if ok {
+			help.Description = strField.Tag.Get("desc")
+		} else {
+			help.Description = ""
+		}
+
+		if name == "published" {
+			help.Value = p.Date().Format(dateFormat)
+			help.Type = "string"
+			goto assign
+		}
+
+		// decide which interface to use
+		switch field.Kind() {
+		case reflect.Bool:
+			help.Value = field.Bool()
+			help.Type = "bool"
+		case reflect.String:
+			help.Value = field.String()
+			help.Type = "string"
+		case reflect.Int:
+			help.Value = field.Int()
+			help.Type = "int"
+		case reflect.Float32:
+		case reflect.Float64:
+			help.Value = field.Float()
+			help.Type = "float"
+		default:
+			fmt.Printf("I don't know what reflect.Kind this is! %##v\n", field.Kind())
+		}
+
+	assign:
+		items[i] = help
+	}
+
+	return items
+}
+
 // GetAllPosts - Find all posts in a folder
 func (s *Site) GetAllPosts() {
-	// TODO: Use filepath.Walk
-	// path := filepath.Join(s.Location(), s.ContentDir())
 	contentPath := filepath.Join(s.Location(), s.ContentDir())
 	fmt.Printf("Searching in %s\n", contentPath)
 
@@ -253,8 +315,11 @@ func (s *Site) GetAllPosts() {
 
 // Publish - Publish this post
 func (p *Post) Publish() error {
+	if p.published == nil {
+		now := time.Now()
+		p.published = &now
+	}
 	p.draft = false
-	p.published = time.Now()
 
 	err := p.SavePost()
 	if err != nil {
@@ -286,7 +351,7 @@ func (p Post) Slug() string {
 
 // Date - The published date of this post
 func (p Post) Date() *time.Time {
-	return &p.published
+	return p.published
 }
 
 // Draft - Is this post a draft?

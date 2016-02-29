@@ -16,73 +16,29 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-
 /* Globally used */
-* {
-	padding: 0;
-	margin: 0;
-}
-p {
-	height: 16px;
-}
-body {
-	padding: 0;
-	margin: 0;
-	min-width: 10em;
-	max-width: 80%;
-	margin-left: auto;
-	margin-right: auto;
-}
-footer {
-	margin-top: 2em;
-	color: #0F0F0F;
+.toggle {
+	width: 15px;
+	height: 15px;
+	border-radius: 15px;
+	font-size: 10px;
+	color: #fff;
+	text-shadow: 0 1px 0 #666;
 	text-align: center;
-	line-height: 1.0em;
-	font-size: 0.8em;
-}
-.error {
-	color: black;
-	background-color: red;
-}
-
-/* used on /posts/ */
-.author {
-	font-style: italic;
-}
-.articleEntry {
-	padding: 1em 2em 1em 2em;
-	margin-top: 0.5em;
-	margin-bottom: 0.5em;
-	background: red;
-}
-.articleDraft {
-	/* drafts should be easy to tell apart from published materials */
-	background: gray !important;
+	text-decoration: none;
+	box-shadow: 1px 1px 2px #000;
+	background: #cccbbb;
+	opacity: .95;
+	margin-right: 10px;
+	float: left;
+	margin-bottom: 10px;
 }
 
-/* used on /edit/ */
-#src {
-	font-size: 14px;
-	width: 100%;
-}
-#srcTitle {
-	font-size: 18px;
-	width: 100%;
-}
-form > * {
-	font-size: 14px;
-	line-height: 1.2em;
-	padding-bottom: 0.5em;
-}
-
-/* used on /config/ */
-.configOption {
-	padding: 0.4em;
-	margin-top: 0.1em;
-	margin-bottom: 0.1em;
-	background-color: silver;
-	height: 70px;
-}
-.configOption > p {
-	margin-top: 0.3em;
+.toggle:hover {
+	color: #eee;
+	text-shadow: 0 0 1px #666;
+	text-decoration: none;
+	box-shadow: 0 0 4px #222 inset;
+	opacity: 1;
+	margin-bottom: 10px;
 }

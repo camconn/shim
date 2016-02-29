@@ -24,10 +24,10 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"time"
 )
 
 // WebWrapper - Struct for passing values to the web
-// TODO: Use this instead of other structs
 type WebWrapper struct {
 	Message string
 	Action  string
@@ -164,17 +164,42 @@ func EditPost(w http.ResponseWriter, req *http.Request) {
 
 	if req.Method == "POST" {
 		req.ParseMultipartForm(fiveMegabytes)
-		log.Println("Got POST")
 
-		title := req.FormValue("title")
-		body := req.FormValue("articleSrc")
+		publish := false
+		values := req.Form
 
-		post.title = title
-		post.body.Reset()
-		post.body.WriteString(body)
+		for i, v := range values {
+			value := v[0]
 
-		publish := req.FormValue("doPublish")
-		if publish == "on" {
+			switch i {
+			case "author":
+				post.author = value
+			case "doPublish":
+				if value == "on" {
+					publish = true
+				}
+			case "description":
+				post.description = value
+			case "published":
+				parsedTime, err := time.Parse(dateFormat, value)
+				if err != nil {
+					fmt.Printf("Couldn't parse time! %s\n", err.Error())
+					continue
+				}
+				post.published = &parsedTime
+			case "slug":
+				post.slug = value
+			case "title":
+				post.title = value
+			case "articleSrc":
+				post.body.Reset()
+				post.body.WriteString(value)
+			default:
+				log.Printf("edit post ignoring %s and %s.\n", i, value)
+			}
+		}
+
+		if publish {
 			err = post.Publish()
 			if err != nil {
 				log.Fatalf("Could not publish post: %s\n", err.Error())

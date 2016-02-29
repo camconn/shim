@@ -10,8 +10,57 @@
 	<body>
 		{{template "navbar"}}
 
-		<div id="content">
+		<div id="content" class="content">
 			<form action="{{- .URL -}}" method="post">
+				<noscript>
+					<div>
+						<style type="text/css">
+						/* Workaround for whenever the client doesn't have JS enabled */
+						#collapse {
+							display: inline !important;
+						}
+						#toggleButtonDiv {
+							display: none !important;
+						}
+						</style>
+					</div>
+				</noscript>
+				<script type="text/javascript">
+				function toggleCollapse() {
+					coll = document.getElementById("collapse");
+					if (coll === null) { return; }
+					dis = coll.style.display;
+					if (dis === "inline") {
+						coll.style.display = "none";
+						console.log("now hidden")
+					} else {
+						coll.style.display = "inline";
+						console.log("now visible")
+					}
+				}
+				</script>
+				<div id="toggleButtonDiv">
+					<p><a href="#" onclick="toggleCollapse()"><span class="toggle" onclick="">+</span>Click to show post properties.</a></p>
+					<br />
+				</div>
+				<div id="collapse">
+					{{- range $opt := $Post.Options -}}
+					<div class="columns">
+						<div class="column is-third">
+							<p><code>{{ $opt.Name | html -}}</code>: {{ $opt.Description | html -}}</p>
+						</div>
+						<div class="column">
+						{{- if eq $opt.Type "string" -}}
+							<input type="text" name="{{- $opt.Name | html -}}" value="{{- $opt.Value | html -}}">
+						{{- else -}}
+							Unknown object: <code>{{ $opt | html -}}</code>
+						{{- end -}}
+						</div>
+					</div>
+					{{- end -}}
+					<hr>
+				</div>
+				<script type="text/javascript">document.getElementById("collapse").style.display = "none";</script>
 				<input class="input" type="text" name="title" value="{{ $Post.Title }}">
 				<textarea class="textarea" name="articleSrc" style="min-height:320px">{{- printf "%s" $Post.GetBody | html -}}</textarea>
 				{{ if $Post.Draft }}

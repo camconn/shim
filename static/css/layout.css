@@ -33,3 +33,7 @@ form[action^="/config"] .columns {
 form[action^="/edit"] input, form[action^="/edit"] textarea {
 	margin-bottom: 1em;
 }
+
+form[action^="/edit"] input[type="text"] {
+	width: 100%;
+}
