@@ -238,7 +238,7 @@ func (p Post) Options() []configOption {
 		}
 
 		if name == "published" {
-			help.Value = p.Date().Format(dateFormat)
+			help.Value = p.WebDate()
 			help.Type = "string"
 			goto assign
 		}
@@ -379,4 +379,9 @@ func (p Post) GetBody() []byte {
 // RelPath - Get the relative path of this post to the /content/ directory
 func (p Post) RelPath() string {
 	return p.relpath
+}
+
+// WebDate - Get the date displayed in shim for this post
+func (p Post) WebDate() string {
+	return p.published.Format(dateFormat)
 }

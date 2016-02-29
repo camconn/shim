@@ -8,21 +8,22 @@
 	</head>
 	<body>
 		{{template "navbar"}}
-
 		<div id="content" class="content">
-			<h1>Delete Post: <u>{{ .Message }}</u></h1>
-			
-			<p>Are you sure you want to delete this post?</p>
-			<p><a href="/posts/">Please no!</a></p>
-			<p><a href="/posts/">Please no!</a></p>
-			<p><a href="/posts/">Please no!</a></p>
-			<p><a href="/posts/">Please no!</a></p>
-			<p><a href="/posts/">Please no!</a></p>
-			<p><a href="/posts/">Please no!</a></p>
-			<p><a href="{{- .URL -}}?confirm=yes">Yes, please! I really want it to be gone forever!</a></p>
-			<p><a href="/posts/">Please no!</a></p>
-			<p><a href="/posts/">Please no!</a></p>
-			<p><a href="/posts/">Please no!</a></p>
+			<h1>Delete Post: <i>"{{- .Post.Title -}}"</i></h1>
+			<div>
+				<p>Post path: <code>{{ .Post.RelPath }}</code></p>
+				<p>Author: <code>{{ .Post.Author }}</code></p>
+			</div>
+			<hr>
+			<p>Are you <i>really</i> want to delete this post?</p>
+			<div class="columns control">
+				<div class="column is-half">
+					<a href="/posts/" class="button is-primary">No! I didn't mean it!</a>
+				</div>
+				<div class="column is-half is-text-right">
+					<a href="{{- .URL -}}?confirm=yes" class="button is-danger">Yes! Get rid of it!</a>
+				</div>
+			</div>
 		</div>
 
 		{{template "footer"}}

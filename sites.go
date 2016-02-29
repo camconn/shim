@@ -176,7 +176,7 @@ func loadSite(dir, name string) *Site {
 	v.SetDefault("publishdir", "public")
 	v.SetDefault("builddrafts", false)
 	v.SetDefault("baseurl", "http://myblog.example.com/")
-	v.SetDefault("canonifyurls", true)
+	v.SetDefault("canonifyurls", false)
 	v.SetDefault("title", "My Hugo+Shim Site")
 	v.SetDefault("theme", "slim")
 

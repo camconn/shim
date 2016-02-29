@@ -63,7 +63,7 @@ func renderAnything(w http.ResponseWriter, tmpl string, i interface{}) {
 
 // Home - The home page -- Just redirect to login
 func Home(w http.ResponseWriter, req *http.Request) {
-	http.Redirect(w, req, "/login/", http.StatusMovedPermanently)
+	http.Redirect(w, req, "/admin/", http.StatusMovedPermanently)
 }
 
 // Admin - The admin page
@@ -317,6 +317,14 @@ func RemovePost(w http.ResponseWriter, req *http.Request) {
 		http.Error(w, "File not found :'(", 404)
 		return
 	}
+
+	contentDirPath := filepath.Join(mySite.Location(), mySite.ContentDir())
+	post, err := loadPost(fileLoc, contentDirPath)
+	if err != nil {
+		http.Error(w, err.Error(), 500)
+		return
+	}
+	wrapper.Post = post
 
 	pageConfirmQuery := req.URL.Query()
 	confirmation := pageConfirmQuery.Get("confirm")
