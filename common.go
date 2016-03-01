@@ -25,3 +25,19 @@ type configOption struct {
 	Type        string
 	IsParam     bool
 }
+
+// Algorithm for this function found from the following mailing list:
+// https://groups.google.com/forum/#!topic/golang-nuts/-pqkICuokio
+// Thanks to Paul Hankin!
+func removeDuplicates(slice *[]string) {
+	found := make(map[string]bool)
+	j := 0
+	for i, k := range *slice {
+		if !found[k] {
+			found[k] = true
+			(*slice)[j] = (*slice)[i]
+			j++
+		}
+	}
+	*slice = (*slice)[:j]
+}

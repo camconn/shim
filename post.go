@@ -63,6 +63,7 @@ func (p *Post) readTOMLMetadata(data io.Reader) {
 	v.ReadConfig(data)
 
 	p.handleFrontMatter(v)
+	fmt.Println("above new read")
 }
 
 func (p *Post) handleFrontMatter(v *viper.Viper) {
@@ -85,8 +86,6 @@ func (p *Post) handleFrontMatter(v *viper.Viper) {
 		p.published = &pTime
 	}
 
-	// Load taxonomies
-	p.taxonomies = make(map[string][]string)
 	for _, kind := range p.Site().Taxonomies().GetKinds() {
 		plural := kind.Plural()
 		terms := v.GetStringSlice(plural)
@@ -94,9 +93,13 @@ func (p *Post) handleFrontMatter(v *viper.Viper) {
 			continue
 		}
 
-		for _, t := range terms {
-			// for now, just add the term and don't care if it already exists.
-			_ = kind.AddTerm(t)
+		// If the main site already has taxonomies loaded, then don't bother
+		// trying to add more terms
+		if !p.Site().taxonomiesLoaded {
+			for _, t := range terms {
+				// for now, just add the term and don't care if it already exists.
+				_ = kind.AddTerm(t)
+			}
 		}
 
 		p.taxonomies[plural] = terms
@@ -115,6 +118,7 @@ func (s *Site) loadPost(postPath, contentDirPath string) (p *Post, err error) {
 	p = &Post{}
 	p.site = s
 	p.location, err = filepath.Abs(postPath)
+	p.taxonomies = make(map[string][]string)
 	check(err)
 
 	file, err := os.Open(postPath)
@@ -227,7 +231,9 @@ func (p *Post) updateMap() {
 	p.all["draft"] = p.Draft()
 	p.all["description"] = p.Description()
 
-	// TODO: Load everything else
+	for term, values := range p.taxonomies {
+		p.all[term] = values
+	}
 }
 
 // Options - Get the post options for this post, to modify things
@@ -240,15 +246,21 @@ func (p Post) Options() []configOption {
 		"published",
 	}
 
-	// TODO: Handle tags and categories
+	numFields := len(postFields)
 
-	numItems := len(postFields)
+	tax := p.taxonomies
+	for i, v := range p.taxonomies {
+		fmt.Printf("inside options with %s and %v\n", i, v)
+	}
+	numTaxonomies := len(tax)
+
+	numItems := numFields + numTaxonomies
 	items := make([]configOption, numItems)
 
 	stv := reflect.ValueOf(p)
 	stt := stv.Type()
 
-	for i := 0; i < numItems; i++ {
+	for i := 0; i < len(postFields); i++ {
 		help := configOption{}
 		help.IsParam = false
 
@@ -293,6 +305,17 @@ func (p Post) Options() []configOption {
 
 	assign:
 		items[i] = help
+	}
+
+	index := numFields
+	for term, values := range tax {
+		help := configOption{}
+		help.Name = term
+		help.Type = "taxonomy"
+		help.Value = strings.Join(values, ", ")
+
+		items[index] = help
+		index++
 	}
 
 	return items

@@ -24,6 +24,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 )
 
@@ -220,7 +221,20 @@ func EditPost(w http.ResponseWriter, req *http.Request) {
 				post.body.Reset()
 				post.body.WriteString(value)
 			default:
-				log.Printf("edit post ignoring %s and %s.\n", i, value)
+				if strings.Contains(i, "taxonomy.") {
+					parts := strings.SplitAfterN(i, ".", 2)
+					right := parts[1]
+					if len(right) == 0 {
+						// crap
+						continue
+					}
+
+					individualValues := strings.Split(value, ", ")
+					removeDuplicates(&individualValues)
+					post.taxonomies[right] = individualValues
+				} else {
+					log.Printf("edit post ignoring %s and %s.\n", i, value)
+				}
 			}
 		}
 

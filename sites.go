@@ -236,7 +236,7 @@ func (s *Site) loadConfig(name string) {
 		fmt.Printf("%s: %s\n", tName, tType.Plural())
 	}
 
-	s.loadTaxonomyTerms(true)
+	s.loadTaxonomyTerms()
 	s.taxonomiesLoaded = true
 
 	s.allSettings = v.AllSettings()
@@ -245,10 +245,12 @@ func (s *Site) loadConfig(name string) {
 }
 
 // From all posts, populate each taxonomy with terms
-func (s Site) loadTaxonomyTerms(reload bool) {
-	if s.Posts == nil || reload {
-		s.GetAllPosts()
+func (s *Site) loadTaxonomyTerms() {
+	// clear Terms
+	for _, k := range s.Taxonomies().GetKinds() {
+		k.Clear()
 	}
+	s.GetAllPosts()
 }
 
 // GetAllPosts - Find all posts in a folder

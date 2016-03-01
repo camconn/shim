@@ -80,6 +80,16 @@ type Taxonomy struct {
 	terms *list.List
 }
 
+// Clear - Clear all terms from this Taxonomy
+func (t Taxonomy) Clear() {
+	l := t.terms
+	front := l.Front()
+	if front != nil {
+		l.Init()
+	}
+	t.terms = list.New()
+}
+
 // Singular - Getter method for Taxonomy singular term
 func (t Taxonomy) Singular() string {
 	return t.singular
@@ -120,7 +130,6 @@ func (t Taxonomy) AddTerm(name string) error {
 		t.Terms().PushBack(term)
 	} else {
 		// Term already exists
-		return fmt.Errorf("Term already exists!")
 	}
 
 	return nil

@@ -52,14 +52,22 @@
 				<div id="collapse">
 					{{- range $opt := $.Config -}}
 					<div class="columns">
-						<div class="column is-third">
-							<p><code>{{- $opt.Name | html -}}</code>: {{ $opt.Description | html -}}</p>
-						</div>
+						{{- if gt (len $opt.Description) 0 -}}
+							<div class="column is-third">
+								<p><code>{{- $opt.Name | html -}}</code>: {{ $opt.Description | html -}}</p>
+							</div>
+						{{- else -}}
+							<div class="column is-quarter">
+								<p class="title">{{- $opt.Name | html -}}</p>
+							</div>
+						{{- end -}}
 						<div class="column">
 						{{- if eq $opt.Name "published" -}}
 							<input class="input" type="text" name="{{- $opt.Name | html -}}" value="{{- $opt.Value | html -}}" placeholder="25 Dec 2000 @ 23:59">
 						{{- else if eq $opt.Type "string" -}}
 							<input class="input" type="text" name="{{- $opt.Name | html -}}" value="{{- $opt.Value | html -}}">
+						{{- else if eq $opt.Type "taxonomy" -}}
+							<input class="input" type="text" name='{{- printf "taxonomy.%s" $opt.Name | html -}}' value="{{- $opt.Value | html -}}">
 						{{- else -}}
 							Unknown object: <code>{{ $opt | html -}}</code>
 						{{- end -}}
