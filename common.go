@@ -28,7 +28,7 @@ type configOption struct {
 	IsParam     bool
 }
 
-// Strip all spaces from each element in a slice
+// stripChars Trims the characters in `chars` from each element in a slice.
 func stripChars(slice *[]string, chars string) {
 	for i, v := range *slice {
 		(*slice)[i] = strings.Trim(v, chars)
