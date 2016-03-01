@@ -246,14 +246,21 @@ func (s *Site) loadConfig(name string) {
 
 // From all posts, populate each taxonomy with terms
 func (s *Site) loadTaxonomyTerms() {
-	// clear Terms
-	for _, k := range s.Taxonomies().GetKinds() {
-		k.Clear()
+	// clear existing terms if reloading
+	for _, kind := range s.Taxonomies() {
+		kind.Clear()
 	}
+	// Update taxonomy from each post
+	s.Posts = nil
 	s.GetAllPosts()
+	for _, p := range s.Posts {
+		p.site = s
+		p.updateTaxonomy()
+	}
 }
 
 // GetAllPosts - Find all posts in a folder
+// TODO: Don't reload posts if they haven't been modified since last load.
 func (s *Site) GetAllPosts() {
 	contentPath := filepath.Join(s.Location(), s.ContentDir())
 	fmt.Printf("Searching in %s\n", contentPath)

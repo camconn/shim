@@ -54,7 +54,34 @@ func setupConfig() {
 	}
 }
 
-func setupTestSite() {
+// findPrimarySite Finds the first site that is enabled, and returns it's name
+// as a string `name`. If there are no sites available, returns an error `err`.
+func findPrimarySite() (name string, err error) {
+	err = nil
+	sites := viper.GetStringSlice("sites.all")
+	for _, name = range sites {
+		enabledKey := fmt.Sprintf("sites.%s.enabled", name)
+		viper.SetDefault(enabledKey, false)
+
+		if viper.GetBool(enabledKey) {
+			fmt.Printf("%s is enabled!\n", name)
+			return
+		}
+	}
+
+	name = ""
+
+	if len(sites) == 0 {
+		err = fmt.Errorf("No sites are available.")
+		return
+	}
+
+	err = fmt.Errorf("No sites are enabled.")
+	return
+}
+
+// Set up the site with the name `name` in the sites directory.
+func setupSite(name string) {
 	here, err := os.Getwd()
 	checkReason(err, "Couldn't get current directory")
 
@@ -70,7 +97,7 @@ func setupTestSite() {
 	}
 
 	// check if site already exists
-	testLoc := path.Join(here, "sites/test")
+	testLoc := path.Join(here, "sites", name)
 	if _, dirError := os.Stat(testLoc); !os.IsNotExist(dirError) {
 		log.Println("site already exists. Let's get out")
 		return
@@ -80,11 +107,11 @@ func setupTestSite() {
 	hugoPath, err := exec.LookPath("hugo")
 	checkReason(err, "Couldn't find hugo. Make sure it's in your PATH")
 
-	cmd := exec.Command(hugoPath, "new", "site", path.Join(sitesLoc, "test"))
+	cmd := exec.Command(hugoPath, "new", "site", path.Join(sitesLoc, name))
 	cmd.Dir = sitesLoc
 	log.Printf("Creating new site in %s\n", cmd.Dir)
 	err = cmd.Run()
-	checkReason(err, "Error: couldn't create test site.")
+	checkReason(err, "Error: couldn't create site "+name)
 
-	log.Println("Done setting up test site.")
+	log.Println("Done setting up site.")
 }

@@ -96,8 +96,14 @@ func (p *Post) handleFrontMatter(v *viper.Viper) {
 		// trying to add more terms
 		if !p.Site().taxonomiesLoaded {
 			for _, t := range terms {
-				// for now, just add the term and don't care if it already exists.
-				_ = kind.AddTerm(t)
+				t = strings.TrimSpace(t)
+				if len(t) > 0 {
+					_, err := kind.GetTerm(t)
+					if err != nil {
+						_ = kind.AddTerm(t)
+					}
+
+				}
 			}
 		}
 
@@ -214,7 +220,11 @@ func (p *Post) SavePost() error {
 
 	// The post was modified, therefore our preview of the site is outdated
 	mySite.previewOutdated = true
+
+	go p.Site().loadTaxonomyTerms()
+
 	return nil
+
 }
 
 // update the hashmap associated with this post
@@ -230,6 +240,11 @@ func (p *Post) updateMap() {
 	p.all["draft"] = p.Draft()
 	p.all["description"] = p.Description()
 
+	p.updateTaxonomy()
+}
+
+// update this site's view of this post's taxonomy
+func (p *Post) updateTaxonomy() {
 	for term, values := range p.taxonomies {
 		p.all[term] = values
 
@@ -239,11 +254,13 @@ func (p *Post) updateMap() {
 		}
 
 		for _, v := range values {
-			_, err = kind.GetTerm(v)
-
-			// if term doesn't already exist, add it
-			if err != nil {
-				kind.AddTerm(v)
+			v = strings.TrimSpace(v)
+			if len(v) > 0 {
+				_, err = kind.GetTerm(v)
+				// if term doesn't already exist, add it
+				if err != nil {
+					kind.AddTerm(v)
+				}
 			}
 		}
 	}

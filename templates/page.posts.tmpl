@@ -10,9 +10,12 @@
 		{{template "navbar"}}
 
 		<div id="content" class="content">
-			<h1>All Posts</h1>
+			<h1>Site Posts</h1>
 			<hr>
-			{{ range $post := .Posts }}
+			{{- if eq (len .Posts) 0 -}}
+			<p>It looks like you do not have any posts! Would you like to <a href="/new/">write some</a>?</p>
+			{{- else -}}
+			{{- range $post := .Posts -}}
 			<nav class="navbar" style="margin-bottom: 0em;">
 				<div class="navbar-left">
 					<div class="navbar-item">
@@ -35,7 +38,8 @@
 				</h5>
 				<blockquote>{{- printf "%s" $post.GetBody | html -}}</blockquote>
 			</div>
-			{{ end }}
+			{{- end -}}
+			{{- end -}}
 		</div>
 
 		{{template "footer"}}

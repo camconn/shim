@@ -89,8 +89,10 @@ func main() {
 		log.Fatalf("Couldn't read config. Does 'config.toml' not exist?\nError: %s\n", err.Error())
 	}
 
-	// Make sure that *some* site exists
-	setupTestSite()
+	siteName, err := findPrimarySite()
+	checkReason(err, "Was not able to find primary site. Please check your `config.toml` file.")
+
+	setupSite(siteName)
 
 	// Setup assets and appropriate folders
 	assignAssets()
@@ -113,7 +115,7 @@ func main() {
 	fmt.Printf("Root directory is: %s\n", shimAssets.root)
 
 	// For now, have a fixed site to load
-	mySite = loadSite("test")
+	mySite = loadSite(siteName)
 	fmt.Printf("site: %s\n", mySite.String())
 
 	// Below this line are things exclusively for running the webapp
