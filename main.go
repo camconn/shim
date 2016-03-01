@@ -130,6 +130,7 @@ func main() {
 	mux.Handle("/delete/", withAuth.ThenFunc(RemovePost))
 	mux.Handle("/new/", withAuth.ThenFunc(NewPost))
 	mux.Handle("/admin/", withAuth.ThenFunc(Admin))
+	mux.Handle("/taxonomy/", withAuth.ThenFunc(ViewTaxonomies))
 
 	ph := new(previewHandler)
 
@@ -147,9 +148,7 @@ func main() {
 
 	// Get port from environment variable for compatibility with gin for easy reloads
 	portEnv := os.Getenv("PORT")
-	if len(portEnv) != 0 {
-		fmt.Printf("portenv: %s\n", portEnv)
-	} else {
+	if len(portEnv) == 0 {
 		portEnv = "8080"
 	}
 	fmt.Printf("portenv: %s\n", portEnv)

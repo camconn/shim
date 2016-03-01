@@ -11,7 +11,6 @@
 
 		<div id="content" class="content">
 			<h1 class="title">Manage your site</h1>
-			<p>Someone please write something here.</p>
 			{{- if eq .Action "build" -}}
 				{{- if .Success -}}
 				<div class="notification is-success">
@@ -24,30 +23,32 @@
 				{{- end -}}
 			{{- end -}}
 
-			<form action="/admin/" method="post">
-				<button class="button" type="submit" value="1" name="doBuild">Build site with Hugo</button>
-			</form>
-			<hr> <!-- TODO: Use <section> tags, but right now they cause the background to go weird -->
-			<h1 class="title">Taxonomies</h1>
+			<div class="box">
+				<form action="/admin/" method="post">
+					<p>Quick Options</p>
+					<button class="button is-success is-outlined" type="submit" value="1" name="doBuild">Build and Deploy</button>
+					<a href="/preview/"><button type="button" class="button is-primary">Preview Site</button></a>
+				</form>
+			</div>
+			<hr>
+			<!-- TODO: Use <section> tags, but right now they cause the background to go weird -->
+			<h1 class="title">Taxonomies <span class="subtitle"><a href="/taxonomy/">edit</a></span></h1> &nbsp;
+			<!-- TODO: Implement page counts for taxonomies -->
 			<table class="table is-striped">
 				<thead>
 					<tr>
 						<th>Taxonomy</th>
-						<th>Terms</th>
-						<th>Number</th>
+						<th>Number of Terms</th>
+						<!-- <th>Pages</th> -->
 					</tr>
 				</thead>
 				<tbody>
 			{{- range $name, $kind := .Site.Taxonomies -}}
 			<div>
 				<tr>
-					<td>{{ $name | html -}}</td>
-					<td>
-				{{- range $term := $kind.TermNames -}}
-					{{- printf "%s, " $term | html -}}</p>
-				{{- end -}}
-					</td>
+					<td>{{ $name | html -}} &nbsp; (also: <i>{{- $kind.Singular | html -}}</i>)</td>
 					<td>{{ $kind.NumTerms | html }}</td>
+					<!-- <td>TBD</td> -->
 			</div>
 			{{- end -}}
 			</table>

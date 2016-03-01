@@ -44,6 +44,22 @@ type WebWrapper struct {
 	Failed  bool
 }
 
+// FailMessage Set the `Failed` field to true, and set a WebWrapper's `Message`
+// field, while also making the `Success` field false.
+func (w *WebWrapper) FailMessage(message string) {
+	w.Success = false
+	w.Failed = true
+	w.Message = message
+}
+
+// SuccessMessage Set the `Success` field to true, and set a WebWrapper's `Message`
+// field, while also making the `Failed` field false.
+func (w *WebWrapper) SuccessMessage(message string) {
+	w.Success = true
+	w.Failed = false
+	w.Message = message
+}
+
 const (
 	fiveMegabytes = (int64)(5 * 1024 * 1024)
 )
@@ -101,6 +117,103 @@ func Admin(w http.ResponseWriter, req *http.Request) {
 	}
 
 	renderAnything(w, "adminPage", status)
+}
+
+// ViewTaxonomies Taxonomy management page
+func ViewTaxonomies(w http.ResponseWriter, req *http.Request) {
+	wrapper := new(WebWrapper)
+	wrapper.Site = mySite
+
+	if req.Method == "POST" {
+		err := req.ParseForm()
+		if err != nil {
+			wrapper.FailMessage("Failed to update taxonomies")
+			goto renderTaxonomy
+		}
+
+		name := req.Form.Get("kindName")
+		newKind := req.Form.Get("newKind")
+		delKind := req.Form.Get("deleteKind")
+		fmt.Printf("Name: %s\nnewKind: %s\ndelKind: %s\n", name, newKind, delKind)
+
+		if len(newKind) != 0 && len(delKind) != 0 {
+			wrapper.FailMessage("Umm. Your browser messed that request up. Sorry!")
+			goto renderTaxonomy
+		}
+
+		if len(newKind) > 0 {
+			wrapper.Action = "add"
+
+			// Split into two names
+			namePair := strings.SplitAfterN(name, ",", 2)
+			stripChars(&namePair, ", ")
+			removeDuplicates(&namePair)
+
+			for i, p := range namePair {
+				fmt.Printf("%d, %s\n", i, p)
+			}
+
+			if len(namePair) != 2 {
+				wrapper.FailMessage("You need to enter a new name pair for this Taxonomy.")
+				goto renderTaxonomy
+			}
+
+			plural := namePair[1]
+			_, err := wrapper.Site.Taxonomies().GetTaxonomy(plural)
+			if err == nil {
+				wrapper.FailMessage("Failed to create taxonomy because it already exists!")
+				goto renderTaxonomy
+			}
+
+			fmt.Printf("Creating new taxonomy: (%s, %s)\n", namePair[0], namePair[1])
+			wrapper.Site.Taxonomies().NewTaxonomy(namePair[0], namePair[1])
+			// check the taxonomy was added
+			_, err = wrapper.Site.Taxonomies().GetTaxonomy(namePair[1])
+			if err != nil {
+				wrapper.FailMessage("Failed to create taxonomy.")
+				goto renderTaxonomy
+			}
+
+			err = wrapper.Site.SaveConfig()
+			if err != nil {
+				wrapper.FailMessage("Able to create taxonomy, but couldn't save it. Please try saving again.")
+			} else {
+				wrapper.SuccessMessage("Taxonomy created.")
+			}
+		} else if len(delKind) > 0 {
+			wrapper.Action = "delete"
+			if len(name) <= 0 {
+				wrapper.FailMessage("Unable to determine which taxonomy to delete.")
+				goto renderTaxonomy
+			}
+
+			// check if the taxonomy actually exists
+			_, err = wrapper.Site.Taxonomies().GetTaxonomy(name)
+			if err != nil {
+				wrapper.FailMessage(fmt.Sprintf(
+					"The taxonomy you want to delete (%s) doesn't exist!",
+					name))
+				goto renderTaxonomy
+			}
+
+			delete(wrapper.Site.Taxonomies(), name)
+
+			err = wrapper.Site.SaveConfig()
+			if err != nil {
+				wrapper.FailMessage("Was able to add taxonomy, but couldn't update site configuration." +
+					"Please try saving again.")
+				goto renderTaxonomy
+			}
+			wrapper.SuccessMessage("Successfully added Taxonomy.")
+
+		} else {
+			log.Println("WTF Happened here?")
+			wrapper.FailMessage("Unable to determine what taxonomy action to perform.")
+		}
+	}
+
+renderTaxonomy:
+	renderAnything(w, "taxonomyPage", wrapper)
 }
 
 // Login - The login page
@@ -230,7 +343,7 @@ func EditPost(w http.ResponseWriter, req *http.Request) {
 					}
 
 					individualValues := strings.Split(value, ",")
-					stripSpaces(&individualValues)
+					stripChars(&individualValues, " ")
 					removeDuplicates(&individualValues)
 					post.taxonomies[right] = individualValues
 				} else {

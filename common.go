@@ -29,9 +29,9 @@ type configOption struct {
 }
 
 // Strip all spaces from each element in a slice
-func stripSpaces(slice *[]string) {
+func stripChars(slice *[]string, chars string) {
 	for i, v := range *slice {
-		(*slice)[i] = strings.Trim(v, " ")
+		(*slice)[i] = strings.Trim(v, chars)
 	}
 }
 

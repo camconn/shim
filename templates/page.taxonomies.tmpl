@@ -1,0 +1,81 @@
+{{define "taxonomyPage"}}
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8">
+		<title>SHIM | Site Configuration</title>
+		{{template "stylesheets"}}
+	</head>
+	<body>
+		{{template "navbar"}}
+
+		<div id="content" class="content">
+			<h1>Manage Taxonomies</h1>
+
+			{{- if .Failed -}}
+			<div class="notification is-danger">{{- .Message | html -}}</div>
+			{{- else if .Success -}}
+			<div class="notification is-success">Changes saved successfully!</div>
+			{{- end -}}
+
+			<p>Taxonomies are how Hugo can put things in similar groups (such as categories or tags).</p>
+			<hr>
+
+			<p>Use the form below to create or remove taxonomy types.</p>
+			{{- $site := .Site -}}
+
+			{{- $tax := .Site.Taxonomies -}}
+			{{- range $kinds := $tax.GetKinds -}}
+				<form action="/taxonomy/" method="post">
+					<input class="input" name="kindName" type="hidden" value="{{ $kinds.Plural | html }}" />
+					<input name="deleteKind" type="hidden" value="true"/>
+					<div class="box">
+						<div class="columns">
+							<div class="column is-quarter">
+								<p><span class="title">{{- $kinds.Plural | html -}}</span> ({{ $kinds.NumTerms }})</p>
+							</div>
+							<div class="column">
+								<p>
+								{{- range $name := $kinds.TermNames -}}
+									<span class="tag is-info is-outlined">{{ $name | html }} </span>
+								{{- end -}}
+								</p>
+							</div>
+							<div class="column">
+								<input class="button is-danger" type="submit" value="Delete">
+							</div>
+						</div>
+					</div>
+				</form>
+			{{- end -}}
+			<hr>
+			<form action="/taxonomy/" method="post">
+				<div class="box">
+					<div class="columns">
+						<div class="column is-quarter">
+							<p class="title">New Taxonomy</p>
+						</div>
+						<div class="column">
+							<input class="input" name="kindName" type="text" placeholder="blog, blogs" />
+							<input name="newKind" type="hidden" value="true"/>
+						</div>
+						<div class="column">
+							<input class="button is-primary" type="submit" value="Save">
+						</div>
+					</div>
+					<p class="content">
+						To create new taxonomy, simply use the format <code>first, second</code>, where <code>first</code> is the
+						singular tense of the taxonomy name, then a comma <code>,</code> and where <code>second</code> is the plural
+						of the taxonomy name.
+					</p>
+				</div>
+				<br />
+				<p>For example, you could type <code>dog, dogs</code> to create a Taxonomy for dog-related pages.</p>
+				<p>Spaces at the beginning and end of <code>first</code> and <code>second</code> are automatically trimmed.</p>
+			</form>
+		</div>
+
+		{{template "footer"}}
+	</body>
+</html>
+{{end}}

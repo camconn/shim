@@ -63,7 +63,6 @@ func (p *Post) readTOMLMetadata(data io.Reader) {
 	v.ReadConfig(data)
 
 	p.handleFrontMatter(v)
-	fmt.Println("above new read")
 }
 
 func (p *Post) handleFrontMatter(v *viper.Viper) {
