@@ -16,7 +16,9 @@
 
 package main
 
-// import ()
+import (
+	"strings"
+)
 
 type configOption struct {
 	Name        string
@@ -24,6 +26,13 @@ type configOption struct {
 	Value       interface{}
 	Type        string
 	IsParam     bool
+}
+
+// Strip all spaces from each element in a slice
+func stripSpaces(slice *[]string) {
+	for i, v := range *slice {
+		(*slice)[i] = strings.Trim(v, " ")
+	}
 }
 
 // Algorithm for this function found from the following mailing list:

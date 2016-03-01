@@ -248,10 +248,7 @@ func (p Post) Options() []configOption {
 
 	numFields := len(postFields)
 
-	tax := p.taxonomies
-	for i, v := range p.taxonomies {
-		fmt.Printf("inside options with %s and %v\n", i, v)
-	}
+	tax := p.Site().Taxonomies()
 	numTaxonomies := len(tax)
 
 	numItems := numFields + numTaxonomies
@@ -308,11 +305,15 @@ func (p Post) Options() []configOption {
 	}
 
 	index := numFields
-	for term, values := range tax {
+	for term := range tax {
 		help := configOption{}
 		help.Name = term
 		help.Type = "taxonomy"
-		help.Value = strings.Join(values, ", ")
+		if values, ok := p.taxonomies[term]; ok {
+			help.Value = strings.Join(values, ", ")
+		} else {
+			help.Value = ""
+		}
 
 		items[index] = help
 		index++

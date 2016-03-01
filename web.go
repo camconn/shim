@@ -229,7 +229,8 @@ func EditPost(w http.ResponseWriter, req *http.Request) {
 						continue
 					}
 
-					individualValues := strings.Split(value, ", ")
+					individualValues := strings.Split(value, ",")
+					stripSpaces(&individualValues)
 					removeDuplicates(&individualValues)
 					post.taxonomies[right] = individualValues
 				} else {
