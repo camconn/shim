@@ -59,6 +59,9 @@ type Site struct {
 	// of this Site struct, as they *overwrite* this hashmap!
 	allSettings map[string]interface{}
 
+	taxonomies       TaxonomyKinds
+	taxonomiesLoaded bool
+
 	previewOutdated bool
 }
 
@@ -167,7 +170,7 @@ func (s Site) BasicConfig() []configOption {
 }
 
 // Reload - Reload this site from configuration
-func (s *Site) Reload() {
+func (s Site) Reload() {
 	s.loadConfig(s.ShortName())
 }
 
@@ -219,9 +222,33 @@ func (s *Site) loadConfig(name string) {
 	s.subtitle = v.GetString("params.subtitle")
 	s.author = v.GetString("params.author")
 
+	// Taxonomies
+	tax := make(TaxonomyKinds)
+	taxonomies := v.GetStringMapString("taxonomies")
+	if taxonomies == nil {
+	} else {
+		for singular, plural := range taxonomies {
+			tax.NewTaxonomy(singular, plural)
+		}
+	}
+	s.taxonomies = tax
+	for tName, tType := range s.taxonomies {
+		fmt.Printf("%s: %s\n", tName, tType.Plural())
+	}
+
+	s.loadTaxonomyTerms(true)
+	s.taxonomiesLoaded = true
+
 	s.allSettings = v.AllSettings()
 
 	s.previewOutdated = true
+}
+
+// From all posts, populate each taxonomy with terms
+func (s Site) loadTaxonomyTerms(reload bool) {
+	if s.Posts == nil || reload {
+		s.GetAllPosts()
+	}
 }
 
 // GetAllPosts - Find all posts in a folder
@@ -254,7 +281,7 @@ func (s *Site) GetAllPosts() {
 		nameValue := elem.Value
 		fileName, ok := nameValue.(string)
 		if ok {
-			allPosts[i], err = loadPost(fileName, contentPath)
+			allPosts[i], err = s.loadPost(fileName, contentPath)
 			if err != nil {
 				log.Fatalf("failed to load post %s!\n", fileName)
 			}
@@ -415,6 +442,13 @@ func (s *Site) updateMap() {
 	} else {
 		log.Fatal("Could not find \"params\" map inside of configuration map.")
 	}
+
+	// Go ahead and write all taxonomy names to the hashmap
+	taxonomies := make(map[string]string)
+	for _, kind := range s.taxonomies.GetKinds() {
+		taxonomies[kind.Singular()] = kind.Plural()
+	}
+	s.allSettings["taxonomies"] = taxonomies
 }
 
 /* These are just accessors */
@@ -482,4 +516,9 @@ func (s Site) ShortName() string {
 // Location - This site's location on disk
 func (s Site) Location() string {
 	return s.location
+}
+
+// Taxonomies - This site's taxonomies
+func (s Site) Taxonomies() TaxonomyKinds {
+	return s.taxonomies
 }

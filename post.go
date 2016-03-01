@@ -50,6 +50,8 @@ type Post struct {
 
 	site *Site // TODO: Is this really needed?
 
+	taxonomies map[string][]string
+
 	body *bytes.Buffer
 	all  map[string]interface{}
 }
@@ -83,13 +85,35 @@ func (p *Post) handleFrontMatter(v *viper.Viper) {
 		p.published = &pTime
 	}
 
+	// Load taxonomies
+	p.taxonomies = make(map[string][]string)
+	for _, kind := range p.Site().Taxonomies().GetKinds() {
+		plural := kind.Plural()
+		terms := v.GetStringSlice(plural)
+		if len(terms) == 0 {
+			continue
+		}
+
+		for _, t := range terms {
+			// for now, just add the term and don't care if it already exists.
+			_ = kind.AddTerm(t)
+		}
+
+		p.taxonomies[plural] = terms
+	}
+
 	p.all = v.AllSettings()
 }
 
+// Temporary shim
+func loadPost(postPath, contentDirPath string) (*Post, error) {
+	return mySite.loadPost(postPath, contentDirPath)
+}
+
 // contentDirPath is used to find the relative path of the post
-func loadPost(postPath, contentDirPath string) (p *Post, err error) {
+func (s *Site) loadPost(postPath, contentDirPath string) (p *Post, err error) {
 	p = &Post{}
-	p.site = mySite // TODO: Support multiple sites
+	p.site = s
 	p.location, err = filepath.Abs(postPath)
 	check(err)
 
@@ -360,4 +384,9 @@ func (p Post) PreviewPath() string {
 	}
 
 	return filepath.Join(p.RelPath(), "..", p.Slug()) + "/"
+}
+
+// Site - This post's site
+func (p Post) Site() *Site {
+	return p.site
 }

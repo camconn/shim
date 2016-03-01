@@ -72,6 +72,7 @@ func Admin(w http.ResponseWriter, req *http.Request) {
 	status.Action = ""
 	status.Message = ""
 	status.Success = false
+	status.Site = mySite
 
 	if req.Method == "POST" {
 		err := req.ParseForm()

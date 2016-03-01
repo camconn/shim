@@ -27,7 +27,7 @@
 						<p><code><b>{{ $opt.Name | html -}}</b></code>: {{ $opt.Description | html -}}</p>
 						{{- if $opt.IsParam }}Applies to entire site{{- end -}}
 					</div>
-					<div class="column">
+					<div class="column is-9">
 					{{- if eq $opt.Type "string" -}}
 						<input class="input" type="text" name="{{ $opt.Name | html }}" value="{{ $opt.Value | html }}">
 					{{- else if eq $opt.Type "bool" -}}

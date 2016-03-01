@@ -10,7 +10,7 @@
 		{{template "navbar"}}
 
 		<div id="content" class="content">
-			<h1>Manage your site</h1>
+			<h1 class="title">Manage your site</h1>
 			<p>Someone please write something here.</p>
 			{{- if eq .Action "build" -}}
 				{{- if .Success -}}
@@ -27,6 +27,30 @@
 			<form action="/admin/" method="post">
 				<button class="button" type="submit" value="1" name="doBuild">Build site with Hugo</button>
 			</form>
+			<hr> <!-- TODO: Use <section> tags, but right now they cause the background to go weird -->
+			<h1 class="title">Taxonomies</h1>
+			<table class="table is-striped">
+				<thead>
+					<tr>
+						<th>Taxonomy</th>
+						<th>Terms</th>
+						<th>Number</th>
+					</tr>
+				</thead>
+				<tbody>
+			{{- range $name, $kind := .Site.Taxonomies -}}
+			<div>
+				<tr>
+					<td>{{ $name | html -}}</td>
+					<td>
+				{{- range $term := $kind.TermNames -}}
+					{{- printf "%s, " $term | html -}}</p>
+				{{- end -}}
+					</td>
+					<td>{{ $kind.NumTerms | html }}</td>
+			</div>
+			{{- end -}}
+			</table>
 		</div>
 
 		{{template "footer"}}
