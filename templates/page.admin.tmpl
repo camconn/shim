@@ -11,27 +11,25 @@
 
 		<div id="content" class="content">
 			<h1 class="title">Manage your site</h1>
-			{{- if eq .Action "build" -}}
-				{{- if .Success -}}
-				<div class="notification is-success">
-					Build success!
-				</div>
-				{{- else -}}
-				<div class="notification is-danger">
-					Oh no! Build failed. Reason: {{- .Message -}}
-				</div>
-				{{- end -}}
+			{{- if .Success -}}
+			<div class="notification is-success">
+				<p>{{ .Message }}</p>
+			</div>
+			{{- else if .Failed -}}
+			<div class="notification is-danger">
+				<p>{{ .Message }}</p>
+			</div>
 			{{- end -}}
 
 			<div class="box">
 				<form action="/admin/" method="post">
 					<p>Quick Options</p>
 					<button class="button is-success is-outlined" type="submit" value="1" name="doBuild">Build and Deploy</button>
+					<button class="button is-info is-outlined" type="submit" value="1" name="doReload">Reload Site</button>
 					<a href="/preview/"><button type="button" class="button is-primary">Preview Site</button></a>
 				</form>
 			</div>
 			<hr>
-			<!-- TODO: Use <section> tags, but right now they cause the background to go weird -->
 			<h1 class="title">Taxonomies <span class="subtitle"><a href="/taxonomy/">edit</a></span></h1> &nbsp;
 			<!-- TODO: Implement page counts for taxonomies -->
 			<table class="table is-striped">

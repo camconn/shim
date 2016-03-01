@@ -106,12 +106,14 @@ func (t Taxonomy) NumTerms() int {
 }
 
 // GetTerm - lol
-func (t *Taxonomy) GetTerm(name string) (*Term, error) {
+func (t Taxonomy) GetTerm(name string) (*Term, error) {
 	for elem := t.terms.Front(); elem != nil; elem = elem.Next() {
-		term, ok := elem.Value.(*Term)
+		value := (*elem).Value
+		term, ok := value.(Term)
+
 		if ok {
 			if term.Name() == name {
-				return term, nil
+				return &term, nil
 			}
 		}
 	}
@@ -127,7 +129,7 @@ func (t Taxonomy) AddTerm(name string) error {
 	if err != nil {
 		term := Term{}
 		term.name = name
-		t.Terms().PushBack(term)
+		t.terms.PushBack(term)
 	} else {
 		// Term already exists
 	}

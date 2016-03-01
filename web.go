@@ -100,20 +100,25 @@ func Admin(w http.ResponseWriter, req *http.Request) {
 
 		req.ParseForm()
 
-		doBuild := req.FormValue("doBuild")
-		if doBuild == "1" {
+		doBuild := strings.Trim(req.FormValue("doBuild"), " ")
+		doReload := strings.Trim(req.FormValue("doReload"), " ")
+		if len(doBuild) >= 1 {
 			status.Action = "build"
+		} else if len(doReload) >= 1 {
+			status.Action = "reload"
 		}
 	}
 
 	if status.Action == "build" {
 		err := mySite.BuildPublic()
 		if err != nil {
-			status.Success = false
-			status.Message = err.Error()
+			status.FailMessage("Build failed. Reason: " + err.Error())
 		} else {
-			status.Success = true
+			status.SuccessMessage("Build completed!")
 		}
+	} else if status.Action == "reload" {
+		status.Site.Reload()
+		status.SuccessMessage("Site reloaded.")
 	}
 
 	renderAnything(w, "adminPage", status)
@@ -134,7 +139,6 @@ func ViewTaxonomies(w http.ResponseWriter, req *http.Request) {
 		name := req.Form.Get("kindName")
 		newKind := req.Form.Get("newKind")
 		delKind := req.Form.Get("deleteKind")
-		fmt.Printf("Name: %s\nnewKind: %s\ndelKind: %s\n", name, newKind, delKind)
 
 		if len(newKind) != 0 && len(delKind) != 0 {
 			wrapper.FailMessage("Umm. Your browser messed that request up. Sorry!")

@@ -232,6 +232,20 @@ func (p *Post) updateMap() {
 
 	for term, values := range p.taxonomies {
 		p.all[term] = values
+
+		kind, err := p.Site().Taxonomies().GetTaxonomy(term)
+		if err != nil {
+			log.Fatal("Tried to add a value to a taxonomy term that doesn't exist.")
+		}
+
+		for _, v := range values {
+			_, err = kind.GetTerm(v)
+
+			// if term doesn't already exist, add it
+			if err != nil {
+				kind.AddTerm(v)
+			}
+		}
 	}
 }
 
