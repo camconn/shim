@@ -21,7 +21,7 @@
 			<p>Click <a href="/config/advanced/">here</a> for advanced settings.</p>
 
 			<form action="/config/" method="post">
-				{{- range $opt := .Config -}}
+				{{- range $opt := .Site.BasicConfig -}}
 				<div class="columns">
 					<div class="column is-third">
 						<p><code><b>{{ $opt.Name | html -}}</b></code>: {{ $opt.Description | html -}}</p>

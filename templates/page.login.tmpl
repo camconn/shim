@@ -10,10 +10,10 @@
 		{{template "navbar"}}
 		<div id="content" class="content">
 			<h1>Authentication required</h1>
-			{{- if .Failed -}}
-			<p class="notification is-danger">Invalid Username/Password. Please try again.</p>
-			{{- else if gt (len .Message) 0 -}}
+			{{- if eq .Action "warn" -}}
 			<p class="notification is-warning">You need to log in before doing that. Please log in.</p>
+			{{- else if .Failed -}}
+			<p class="notification is-danger">{{ .Message }}</p>
 			{{- end -}}
 			<div class="container">
 				<form action='{{- .URL -}}' method="post">

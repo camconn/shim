@@ -50,7 +50,7 @@
 					<br />
 				</div>
 				<div id="collapse">
-					{{- range $opt := $.Config -}}
+					{{- range $opt := $Post.Options -}}
 					<div class="columns">
 						{{- if gt (len $opt.Description) 0 -}}
 							<div class="column is-third">

@@ -34,10 +34,8 @@ type WebWrapper struct {
 	Action  string
 	Site    *Site
 	Post    *Post
-	Status  bool
-	Config  []configOption
 	Text    *bytes.Buffer
-	Choices []string
+	Choices []string // TODO: Remove this and use a ConfigOption instead
 	URL     string
 	// Even though these things are opposite, they imply different things
 	Success bool
@@ -58,6 +56,16 @@ func (w *WebWrapper) SuccessMessage(message string) {
 	w.Success = true
 	w.Failed = false
 	w.Message = message
+}
+
+// NewWrapper Creates a new WebWrapper struct appropriate to the context of the
+// user, taking into account the current site as well as the URL
+func NewWrapper(req *http.Request) *WebWrapper {
+	w := new(WebWrapper)
+	// TODO: Switch sites based on cookies and whatnot
+	w.Site = mySite
+	w.URL = req.URL.String()
+	return w
 }
 
 const (
@@ -85,11 +93,7 @@ func Home(w http.ResponseWriter, req *http.Request) {
 
 // Admin - The admin page
 func Admin(w http.ResponseWriter, req *http.Request) {
-	status := new(WebWrapper)
-	status.Action = ""
-	status.Message = ""
-	status.Success = false
-	status.Site = mySite
+	status := NewWrapper(req)
 
 	if req.Method == "POST" {
 		err := req.ParseForm()
@@ -110,7 +114,7 @@ func Admin(w http.ResponseWriter, req *http.Request) {
 	}
 
 	if status.Action == "build" {
-		err := mySite.BuildPublic()
+		err := status.Site.BuildPublic()
 		if err != nil {
 			status.FailMessage("Build failed. Reason: " + err.Error())
 		} else {
@@ -126,8 +130,7 @@ func Admin(w http.ResponseWriter, req *http.Request) {
 
 // ViewTaxonomies Taxonomy management page
 func ViewTaxonomies(w http.ResponseWriter, req *http.Request) {
-	wrapper := new(WebWrapper)
-	wrapper.Site = mySite
+	wrapper := NewWrapper(req)
 
 	if req.Method == "POST" {
 		err := req.ParseForm()
@@ -223,16 +226,14 @@ renderTaxonomy:
 // Login - The login page
 func Login(w http.ResponseWriter, req *http.Request) {
 	wrapper := new(WebWrapper)
-	wrapper.Success = false
 
 	q := req.URL.Query()
-	wrapper.URL = req.URL.String()
 	redirect := q.Get("redirect")
 	if len(redirect) > 0 {
 
 		warn := q.Get("warn")
 		if len(warn) > 0 {
-			wrapper.Message = "warn"
+			wrapper.Action = "warn"
 			q.Del("warn")
 			wrapper.URL = "/login/?" + q.Encode()
 		}
@@ -264,27 +265,23 @@ func Login(w http.ResponseWriter, req *http.Request) {
 			return
 		}
 
-		log.Println("No success logging in")
-		wrapper.Failed = true
-
-		renderAnything(w, "loginPage", &wrapper)
-
-	} else {
-		renderAnything(w, "loginPage", &wrapper)
+		wrapper.FailMessage("Incorrect username/password combination. Please try again.")
 	}
+
+	renderAnything(w, "loginPage", &wrapper)
 }
 
 // ViewPosts - View all posts
 func ViewPosts(w http.ResponseWriter, req *http.Request) {
-	mySite.GetAllPosts()
+	wrapper := NewWrapper(req)
+	wrapper.Site.GetAllPosts()
 
-	renderAnything(w, "postsPage", &mySite)
+	renderAnything(w, "postsPage", wrapper)
 }
 
 // EditPost - Edit a Post
 func EditPost(w http.ResponseWriter, req *http.Request) {
-	wrapper := new(WebWrapper)
-	wrapper.URL = req.URL.Path
+	wrapper := NewWrapper(req)
 	postPath := req.URL.Path[len("/edit/"):]
 
 	if len(postPath) == 0 {
@@ -292,7 +289,7 @@ func EditPost(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	contentDirPath := filepath.Join(mySite.Location(), mySite.ContentDir())
+	contentDirPath := filepath.Join(wrapper.Site.Location(), wrapper.Site.ContentDir())
 	postLoc := fmt.Sprintf("%s.md", filepath.Join(contentDirPath, postPath))
 	fmt.Printf("location: %s\n", postLoc)
 	post, err := loadPost(postLoc, contentDirPath)
@@ -386,17 +383,13 @@ func EditPost(w http.ResponseWriter, req *http.Request) {
 
 renderEditedPost:
 	wrapper.Post = post
-	wrapper.Config = post.Options()
 
 	renderAnything(w, "editPage", wrapper)
 }
 
 // NewPost - Create a new post
 func NewPost(w http.ResponseWriter, req *http.Request) {
-	wrapper := new(WebWrapper)
-	wrapper.Success = false
-	wrapper.Action = ""
-	wrapper.Message = ""
+	wrapper := NewWrapper(req)
 
 	if req.Method == "POST" {
 		req.ParseMultipartForm(fiveMegabytes)
@@ -405,7 +398,7 @@ func NewPost(w http.ResponseWriter, req *http.Request) {
 		if len(newFilename) > 0 {
 			wrapper.Action = "build"
 
-			contentDirPath := filepath.Join(mySite.Location(), mySite.ContentDir())
+			contentDirPath := filepath.Join(wrapper.Site.Location(), wrapper.Site.ContentDir())
 			testPostPath := filepath.Join(contentDirPath, "post", newFilename) + ".md"
 
 			if _, err := os.Stat(testPostPath); !os.IsNotExist(err) {
@@ -413,7 +406,7 @@ func NewPost(w http.ResponseWriter, req *http.Request) {
 				goto render
 			}
 
-			path, err := mySite.newPost(newFilename)
+			path, err := wrapper.Site.newPost(newFilename)
 			if err != nil {
 				wrapper.Message = "Could not edit post: " + err.Error()
 				goto render
@@ -453,21 +446,20 @@ render:
 
 // RemovePost - Remove a Post
 func RemovePost(w http.ResponseWriter, req *http.Request) {
-	wrapper := new(WebWrapper)
-	wrapper.URL = req.URL.String()
+	wrapper := NewWrapper(req)
 
 	relPath := req.URL.Path[len("/delete/"):]
 	if len(relPath) == 0 {
 		http.Error(w, "File not found :'(", 404)
 	}
 
-	fileLoc := filepath.Join(mySite.Location(), mySite.ContentDir(), relPath+".md")
+	fileLoc := filepath.Join(wrapper.Site.Location(), wrapper.Site.ContentDir(), relPath+".md")
 	if _, err := os.Stat(fileLoc); os.IsNotExist(err) {
 		http.Error(w, "File not found :'(", 404)
 		return
 	}
 
-	contentDirPath := filepath.Join(mySite.Location(), mySite.ContentDir())
+	contentDirPath := filepath.Join(wrapper.Site.Location(), wrapper.Site.ContentDir())
 	post, err := loadPost(fileLoc, contentDirPath)
 	if err != nil {
 		http.Error(w, err.Error(), 500)
@@ -493,11 +485,7 @@ func RemovePost(w http.ResponseWriter, req *http.Request) {
 // EditSite - Edit a site's basic configuration
 func EditSite(w http.ResponseWriter, req *http.Request) {
 	// TODO: Support multiple sites
-	wrapper := new(WebWrapper)
-	wrapper.Site = mySite
-	wrapper.Config = mySite.BasicConfig()
-	wrapper.Success = false
-	wrapper.Failed = false
+	wrapper := NewWrapper(req)
 
 	themesLoc := fmt.Sprintf("%s/%s", shimAssets.root, shimAssets.themes)
 	allThemes, err := GetThemes(themesLoc)
@@ -514,8 +502,8 @@ func EditSite(w http.ResponseWriter, req *http.Request) {
 		// get values
 		values := req.Form
 
-		mySite.builddrafts = false
-		mySite.canonifyurls = false
+		wrapper.Site.builddrafts = false
+		wrapper.Site.canonifyurls = false
 
 		for i, v := range values {
 			//fmt.Printf("i: %s; v: %s\n", i, v)
@@ -524,43 +512,41 @@ func EditSite(w http.ResponseWriter, req *http.Request) {
 
 			switch i {
 			case "title":
-				mySite.title = value
+				wrapper.Site.title = value
 			case "baseurl":
-				mySite.baseurl = value
+				wrapper.Site.baseurl = value
 			case "theme":
-				mySite.theme = value
+				wrapper.Site.theme = value
 			case "contentDir":
-				mySite.contentDir = value
+				wrapper.Site.contentDir = value
 			case "layoutDir":
-				mySite.layoutDir = value
+				wrapper.Site.layoutDir = value
 			case "publishDir":
-				mySite.publishDir = value
+				wrapper.Site.publishDir = value
 			case "builddrafts":
-				mySite.builddrafts = true
+				wrapper.Site.builddrafts = true
 			case "canonifyurls":
-				mySite.canonifyurls = true
+				wrapper.Site.canonifyurls = true
 
 				// Now for site-wide params
 			case "params.author":
-				mySite.author = value
+				wrapper.Site.author = value
 			case "params.subtitle":
-				mySite.subtitle = value
+				wrapper.Site.subtitle = value
 			default:
 				log.Printf("WTF IS %s and %s?\n", i, value)
 			}
 		}
 
-		wrapper.Config = mySite.BasicConfig()
-
 		// save site
-		err := mySite.SaveConfig()
+		err := wrapper.Site.SaveConfig()
 		if err != nil {
 			wrapper.Failed = true
 			wrapper.Message = fmt.Sprintf("Failed to save site: %s", err.Error())
 			goto renderBasicConfig
 		}
 
-		err = ChangeTheme(mySite, mySite.Theme())
+		err = ChangeTheme(wrapper.Site, wrapper.Site.Theme())
 		if err != nil {
 			wrapper.Failed = true
 			wrapper.Message = fmt.Sprintf("Failed to change theme: %s", err.Error())
@@ -575,13 +561,10 @@ renderBasicConfig:
 
 // AdvancedConfig - Edit a site's configuration (for power users)
 func AdvancedConfig(w http.ResponseWriter, req *http.Request) {
-	// TODO: Support multiple sites
-	wrapper := new(WebWrapper)
-	wrapper.Site = mySite
-	wrapper.Success = false
+	wrapper := NewWrapper(req)
 
 	wrapper.Text = bytes.NewBuffer([]byte{})
-	configLoc := filepath.Join(mySite.Location(), "config.toml")
+	configLoc := filepath.Join(wrapper.Site.Location(), "config.toml")
 	var file *os.File
 	var err error
 
