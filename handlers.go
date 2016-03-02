@@ -32,7 +32,7 @@ func loggingHandler(next http.Handler) http.Handler {
 	return http.HandlerFunc(fn)
 }
 
-// TODO: This is horribly broken. Fix it please.
+// BUG: This is horribly broken. Fix it please.
 func timeoutHandler(next http.Handler) http.Handler {
 	return http.Handler(http.TimeoutHandler(next, time.Duration(15*time.Second), "Sorry, but we took too long to handle your request. Sorry?"))
 }
@@ -43,7 +43,7 @@ type loginHandler struct {
 	userMan *userManager
 }
 
-// newLoginHandler - Returns a new LoginHandler, which requires logins
+// newLoginHandler Creates a new LoginHandler, which requires logins
 // from all visiting users or redirects them to /login/
 func newLoginHandler(um *userManager) *loginHandler {
 	return &loginHandler{
@@ -58,20 +58,16 @@ func (l *loginHandler) authHandler(h http.Handler) http.Handler {
 		session, err := l.userMan.GetSessionFromRequest(w, r)
 
 		if err == nil && session.IsLogged() {
-			// fmt.Printf("session: %##v\n", session)
-			// log.Println("User is properly logged in.")
 			h.ServeHTTP(w, r)
 			return
 		}
 
-		// fmt.Printf("session: %##v\n", session)
 		log.Println("Not logged in! Redirecting to login page.")
 		http.Redirect(w, r, "/login/?redirect="+template.URLQueryEscaper(r.URL.String()+"/")+"&warn=yes", http.StatusTemporaryRedirect)
 	})
 }
 
-type previewHandler struct {
-}
+type previewHandler struct{}
 
 func (p *previewHandler) previewHandler(h http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

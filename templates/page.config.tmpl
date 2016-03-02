@@ -21,40 +21,100 @@
 			<p>Click <a href="/config/advanced/">here</a> for advanced settings.</p>
 
 			<form action="/config/" method="post">
-				{{- range $opt := .Site.BasicConfig -}}
 				<div class="columns">
 					<div class="column is-third">
-						<p><code><b>{{ $opt.Name | html -}}</b></code>: {{ $opt.Description | html -}}</p>
-						{{- if $opt.IsParam }}Applies to entire site{{- end -}}
+						<p><code><b>title</b></code>: the site title</p>
 					</div>
-					<div class="column is-9">
-					{{- if eq $opt.Type "string" -}}
-						<input class="input" type="text" name="{{ $opt.Name | html }}" value="{{ $opt.Value | html }}">
-					{{- else if eq $opt.Type "bool" -}}
-						{{- if $opt.Value -}}
-							<label class="checkbox"> Enable? <input type="checkbox" name="{{ $opt.Name | html }}" checked></label>
+					<div class="column">
+						<input class="input" type="text" name="title" value="{{ $.Site.Title| html }}">
+					</div>
+				</div>
+
+				<div class="columns">
+					<div class="column is-third">
+						<p><code><b>baseurl</b></code>: the base URL for the site</p>
+					</div>
+					<div class="column">
+						<input class="input" type="text" name="baseurl" value="{{ $.Site.BaseURL | html }}">
+					</div>
+				</div>
+
+				<div class="columns">
+					<div class="column is-third">
+						<p><code><b>contentdir</b></code>: the site s content direcctory</p>
+					</div>
+					<div class="column">
+						<input class="input" type="text" name="contentDir" value="{{ $.Site.ContentDir | html }}">
+					</div>
+				</div>
+
+				<div class="columns">
+					<div class="column is-third">
+						<p><code><b>layoutdir</b></code>: the site s layouts directory</p>
+					</div>
+					<div class="column">
+						<input class="input" type="text" name="layoutDir" value="{{ $.Site.LayoutDir | html }}">
+					</div>
+				</div>
+
+				<div class="columns">
+					<div class="column is-third">
+						<p><code><b>publishdir</b></code>: what folder to publish the site to</p>
+					</div>
+					<div class="column">
+						<input class="input" type="text" name="publishDir" value="{{ $.Site.PublishDir | html }}">
+					</div>
+				</div>
+
+				<div class="columns">
+					<div class="column is-third">
+						<p><code><b>canonifyurls</b></code>: are urls canonical?</p>
+					</div>
+					<div class="column">
+						{{- if $.Site.Canonify -}}
+						<input class="input" type="checkbox" name="canonifyurls" checked />
 						{{- else -}}
-							<label class="checkbox"> Enable? <input type="checkbox" name="{{ $opt.Name | html }}"></label>
+						<input class="input" type="checkbox" name="canonifyurls" />
 						{{- end -}}
-					{{- else if eq $opt.Type "int" }}
-						<input class="input" type="number" name="{{ $opt.Name | html }}" value="{{ $opt.Value | html }}">
-					{{- else if eq $opt.Type "float" }}
-						<input class="input" type="number" name="{{ $opt.Name | html }}" value="{{ $opt.Value | html }}">
-					{{- else if eq $opt.Type "choice" -}}
+					</div>
+				</div>
+
+				<div class="columns">
+					<div class="column is-third">
+						<p><code><b>theme</b></code>: which Hugo theme to use for the site</p>
+					</div>
+					<div class="column">
 						<span class="select">
-							<select name="{{- $opt.Name | html -}}">
+							<select name="theme">
 								{{- range $themeName := $.Choices -}}
-								<option value=" {{- $themeName | html -}} ">{{- $themeName | html -}}</option>
+									<option value=" {{- $themeName | html -}} ">{{- $themeName | html -}}</option>
 								{{- end -}}
 							</select>
 						</span>
-					{{- else -}}
-						Unknown object: <code>{{ $opt | html }}</code>
-					{{- end -}}
 					</div>
 				</div>
-				{{- end -}}
-				<input class="button is-primary" type="submit" value="Save">
+
+				<div class="columns">
+					<div class="column is-third">
+						<p><code><b>author</b></code>: the default author for new posts</p>
+					</div>
+					<div class="column">
+						<input class="input" type="text" name="params.author" value="{{ $.Site.Author | html }}">
+					</div>
+				</div>
+
+				<div class="columns">
+					<div class="column is-third">
+						<p><code><b>subtitle</b></code>: the subtitle for the site</p>
+					</div>
+					<div class="column">
+						<input class="input" type="text" name="params.subtitle" value="{{ $.Site.Subtitle | html }}">
+					</div>
+				</div>
+
+				<input class="button is-primary is-text-right" type="submit" value="Save">
+
+				</div>
 			</form>
 		</div>
 

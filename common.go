@@ -20,14 +20,6 @@ import (
 	"strings"
 )
 
-type configOption struct {
-	Name        string
-	Description string
-	Value       interface{}
-	Type        string
-	IsParam     bool
-}
-
 // stripChars Trims the characters in `chars` from each element in a slice.
 func stripChars(slice *[]string, chars string) {
 	for i, v := range *slice {

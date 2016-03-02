@@ -27,7 +27,6 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
-	"reflect"
 	"strings"
 	"time"
 )
@@ -39,21 +38,20 @@ const (
 
 // Post - Represents a post along with all its metadata
 type Post struct {
-	location    string
-	relpath     string
-	title       string     `desc:"What the post is called"`
-	author      string     `desc:"The person who wrote this post (by default, you)."`
-	description string     `desc:"A short summary of this post. If none is provided, this will be automatically generated."`
-	slug        string     `desc:"The token to appear in the tail of the URL. If none is provided, the filename will be used."`
-	draft       bool       `desc:"Is this post a draft?"`
-	published   *time.Time `desc:"When the post was published"`
+	// These are never edited by us. They are effectively constants.
+	location string
+	relpath  string
+	site     *Site
 
-	site *Site // TODO: Is this really needed?
-
-	taxonomies map[string][]string
-
-	body *bytes.Buffer
-	all  map[string]interface{}
+	title       string
+	author      string
+	description string
+	slug        string
+	draft       bool
+	published   *time.Time
+	body        *bytes.Buffer
+	taxonomies  map[string][]string    // TODO: Is there a better storage format to use?
+	all         map[string]interface{} // All TOML data for this file
 }
 
 // Read the TOML metadata from a byte array and return a hashmap
@@ -266,87 +264,12 @@ func (p *Post) updateTaxonomy() {
 	}
 }
 
-// Options - Get the post options for this post, to modify things
-// such as publish time, the description, the author, the date, etc.
-func (p Post) Options() []configOption {
-	postFields := []string{
-		"author",
-		"description",
-		"slug",
-		"published",
-	}
-
-	numFields := len(postFields)
-
-	tax := p.Site().Taxonomies()
-	numTaxonomies := len(tax)
-
-	numItems := numFields + numTaxonomies
-	items := make([]configOption, numItems)
-
-	stv := reflect.ValueOf(p)
-	stt := stv.Type()
-
-	for i := 0; i < len(postFields); i++ {
-		help := configOption{}
-		help.IsParam = false
-
-		name := ""
-
-		name = postFields[i]
-		help.Name = name
-
-		field := stv.FieldByName(name)
-		strField, ok := stt.FieldByName(name)
-
-		if ok {
-			help.Description = strField.Tag.Get("desc")
-		} else {
-			help.Description = ""
-		}
-
-		if name == "published" {
-			help.Value = p.WebDate()
-			help.Type = "string"
-			goto assign
-		}
-
-		// decide which interface to use
-		switch field.Kind() {
-		case reflect.Bool:
-			help.Value = field.Bool()
-			help.Type = "bool"
-		case reflect.String:
-			help.Value = field.String()
-			help.Type = "string"
-		case reflect.Int:
-			help.Value = field.Int()
-			help.Type = "int"
-		case reflect.Float32:
-		case reflect.Float64:
-			help.Value = field.Float()
-			help.Type = "float"
-		default:
-			fmt.Printf("I don't know what reflect.Kind this is! %##v\n", field.Kind())
-		}
-
-	assign:
-		items[i] = help
-	}
-
-	index := numFields
-	for term := range tax {
-		help := configOption{}
-		help.Name = term
-		help.Type = "taxonomy"
-		if values, ok := p.taxonomies[term]; ok {
-			help.Value = strings.Join(values, ", ")
-		} else {
-			help.Value = ""
-		}
-
-		items[index] = help
-		index++
+// TaxonomyMap get a hashmap of the taxonomies of a post followed by the
+// a joined string of each taxonomy's applicable values
+func (p *Post) TaxonomyMap() map[string]string {
+	items := make(map[string]string)
+	for term, values := range p.taxonomies {
+		items[term] = strings.Join(values, ", ")
 	}
 
 	return items

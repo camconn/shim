@@ -50,27 +50,48 @@
 					<br />
 				</div>
 				<div id="collapse">
-					{{- range $opt := $Post.Options -}}
 					<div class="columns">
-						{{- if gt (len $opt.Description) 0 -}}
 							<div class="column is-third">
-								<p><code>{{- $opt.Name | html -}}</code>: {{ $opt.Description | html -}}</p>
+								<p><code>author</code>: the author for this post</p>
 							</div>
-						{{- else -}}
-							<div class="column is-quarter">
-								<p class="title">{{- $opt.Name | html -}}</p>
-							</div>
-						{{- end -}}
 						<div class="column">
-						{{- if eq $opt.Name "published" -}}
-							<input class="input" type="text" name="{{- $opt.Name | html -}}" value="{{- $opt.Value | html -}}" placeholder="25 Dec 2000 @ 23:59">
-						{{- else if eq $opt.Type "string" -}}
-							<input class="input" type="text" name="{{- $opt.Name | html -}}" value="{{- $opt.Value | html -}}">
-						{{- else if eq $opt.Type "taxonomy" -}}
-							<input class="input" type="text" name='{{- printf "taxonomy.%s" $opt.Name | html -}}' value="{{- $opt.Value | html -}}">
-						{{- else -}}
-							Unknown object: <code>{{ $opt | html -}}</code>
-						{{- end -}}
+							<input class="input" type="text" name="author" value="{{- $Post.Author -}}">
+						</div>
+					</div>
+
+					<div class="columns">
+							<div class="column is-third">
+								<p><code>description</code>: a short summary of the post &mdash; if none is provided, it will automatically be generated</p>
+							</div>
+						<div class="column">
+							<input class="input" type="text" name="description" value="{{- $Post.Description -}}">
+						</div>
+					</div>
+
+					<div class="columns">
+							<div class="column is-third">
+								<p><code>slug</code>: the token to appear in the tail of the url &mdash; if none is provided, the filename will be used</p>
+							</div>
+						<div class="column">
+							<input class="input" type="text" name="slug" value="{{- $Post.Slug -}}">
+						</div>
+					</div>
+
+					<div class="columns">
+							<div class="column is-third">
+								<p><code>published</code>: when this post was published</p>
+							</div>
+						<div class="column">
+							<input class="input" type="text" name="published" value="{{- $Post.WebDate | html -}}" placeholder="25 Dec 2000 @ 23:59">
+						</div>
+					</div>
+					{{- range $name, $joined := $Post.TaxonomyMap -}}
+					<div class="columns">
+						<div class="column is-quarter">
+							<p class="title">{{- $name | html -}}</p>
+						</div>
+						<div class="column">
+							<input class="input" type="text" name='{{- printf "taxonomy.%s" $name | html -}}' value="{{- $joined | html -}}">
 						</div>
 					</div>
 					{{- end -}}

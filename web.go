@@ -35,7 +35,7 @@ type WebWrapper struct {
 	Site    *Site
 	Post    *Post
 	Text    *bytes.Buffer
-	Choices []string // TODO: Remove this and use a ConfigOption instead
+	Choices []string
 	URL     string
 	// Even though these things are opposite, they imply different things
 	Success bool

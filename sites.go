@@ -26,12 +26,9 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
-	"reflect"
 	"sort"
 	"strings"
 )
-
-var blankBytes = []byte{0}
 
 // SitePosts - An array of pointers to all of this site's posts
 type SitePosts []*Post
@@ -40,19 +37,19 @@ type SitePosts []*Post
 type Site struct {
 	location  string
 	shortName string
-	title     string `desc:"the site's title"`
-	subtitle  string `desc:"the site's subtitle"`
-	baseurl   string `desc:"the baseurl of the site"`
-	author    string `desc:"the default author for new posts"`
-	theme     string `desc:"which theme to use for this site"`
+	title     string
+	subtitle  string
+	baseurl   string
+	author    string
+	theme     string
 
 	// The following directories are relative
-	contentDir string `desc:"the content directory"`
-	layoutDir  string `desc:"the layouts directory"`
-	publishDir string `desc:"the publish directory"`
+	contentDir string
+	layoutDir  string
+	publishDir string
 
-	builddrafts  bool `desc:"are drafts enabled?"`
-	canonifyurls bool `desc:"are urls canonical?"`
+	builddrafts  bool
+	canonifyurls bool
 	Posts        SitePosts
 
 	// Don't prefer to modify this map directly! Instead, prefer to modify the fields
@@ -84,89 +81,6 @@ func (s SitePosts) Less(i, j int) bool {
 	timeA := postA.Date().Add(0)
 	timeB := postB.Date().Add(0)
 	return !timeA.Before(timeB)
-}
-
-// BasicConfig - Print out basic information about this site
-func (s Site) BasicConfig() []configOption {
-
-	// site-level configuration settings
-	siteFields := []string{
-		"title",
-		"baseurl",
-		"contentDir",
-		"layoutDir",
-		"publishDir",
-		"builddrafts",
-		"canonifyurls",
-		"theme",
-	}
-
-	// global configuration settings accessible as `params.NAME`
-	paramFields := []string{
-		"author",
-		"subtitle",
-	}
-
-	numItems := len(siteFields) + len(paramFields)
-	items := make([]configOption, numItems)
-
-	stv := reflect.ValueOf(s)
-	stt := stv.Type()
-
-	for i := 0; i < numItems; i++ {
-		help := configOption{}
-		help.IsParam = false
-
-		name := ""
-
-		if i >= len(siteFields) {
-			help.IsParam = true
-			name = paramFields[i-len(siteFields)]
-			help.Name = fmt.Sprintf("params.%s", name)
-			help.Type = "param"
-		} else {
-			name = siteFields[i]
-			help.Name = name
-		}
-
-		field := stv.FieldByName(name)
-		strField, ok := stt.FieldByName(name)
-
-		if ok {
-			// TODO: Is this bad?
-			help.Description = strField.Tag.Get("desc")
-		} else {
-			help.Description = ""
-		}
-
-		// decide which interface to use
-		switch field.Kind() {
-		case reflect.Bool:
-			help.Value = field.Bool()
-			help.Type = "bool"
-		case reflect.String:
-			help.Value = field.String()
-			help.Type = "string"
-		case reflect.Int:
-			help.Value = field.Int()
-			help.Type = "int"
-		case reflect.Float32:
-		case reflect.Float64:
-			help.Value = field.Float()
-			help.Type = "float"
-		default:
-			fmt.Printf("I don't know what reflect.Kind this is! %##v\n", field.Kind())
-		}
-
-		// This is so we use a <select> field to chose the theme
-		if name == "theme" {
-			help.Type = "choice"
-		}
-
-		items[i] = help
-	}
-
-	return items
 }
 
 // Reload - Reload this site from configuration
@@ -423,20 +337,21 @@ func (s *Site) updateMap() {
 		s.allSettings = make(map[string]interface{})
 	}
 
+	// Even though TOML is case-sensitive, viper, the library Hugo uses, is not.
+	// Therefore, everything is lowercase here to prevent accidental duplication.
 	s.allSettings["title"] = s.Title()
 	s.allSettings["baseurl"] = s.BaseURL()
 	s.allSettings["contentdir"] = s.ContentDir()
 	s.allSettings["layoutdir"] = s.LayoutDir()
 	s.allSettings["publishdir"] = s.PublishDir()
+	s.allSettings["staticdir"] = "static"
 	s.allSettings["builddrafts"] = s.BuildDrafts()
 	s.allSettings["canonifyurls"] = s.Canonify()
 	s.allSettings["theme"] = s.Theme()
-	s.allSettings["metaDataFormat"] = "toml"
-	s.allSettings["noTimes"] = false
-	s.allSettings["paginate"] = 10
-	s.allSettings["paginatePath"] = "page"
-	s.allSettings["staticdir"] = "static"
+	s.allSettings["metadataformat"] = "toml"
 	s.allSettings["notimes"] = false
+	s.allSettings["paginate"] = 10
+	s.allSettings["paginatepath"] = "page"
 
 	paramsKey, ok := s.allSettings["params"]
 	if ok {
