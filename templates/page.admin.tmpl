@@ -11,15 +11,7 @@
 
 		<div id="content" class="content">
 			<h1 class="title">Manage your site</h1>
-			{{- if .Success -}}
-			<div class="notification is-success">
-				<p>{{ .Message }}</p>
-			</div>
-			{{- else if .Failed -}}
-			<div class="notification is-danger">
-				<p>{{ .Message }}</p>
-			</div>
-			{{- end -}}
+			{{- template "messages" -}}
 
 			<div class="box">
 				<form action="/admin/" method="post">

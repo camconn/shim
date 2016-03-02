@@ -12,11 +12,7 @@
 
 		<div id="content" class="content">
 			<h1>Edit Post</h1>
-			{{- if .Failed -}}
-			<div class="notification is-danger">
-				{{- .Message | html -}}
-			</div>
-			{{- end -}}
+			{{- template "messages" -}}
 			<form action="{{- .URL -}}" method="post" class="container is-fluid">
 				<noscript>
 					<div>

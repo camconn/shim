@@ -11,13 +11,7 @@
 
 		<div id="content" class="content">
 			<h1>Basic Site Configuration</h1>
-
-			{{- if .Failed -}}
-			<div class="notification is-danger">{{- .Message | html -}}</div>
-			{{- else if .Success -}}
-			<div class="notification is-success">Changes saved successfully!</div>
-			{{- end -}}
-
+			{{- template "messages" -}}
 			<p>Click <a href="/config/advanced/">here</a> for advanced settings.</p>
 
 			<form action="/config/" method="post">

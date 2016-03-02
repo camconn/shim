@@ -1,0 +1,12 @@
+{{- define "messages" -}}
+    {{/* Simple subtemplate to handle messages */}}
+	{{- if .Failed -}}
+		<div class="notification is-danger">
+			<p>{{- .Message | html -}}</p>
+		</div>
+	{{- else if .Success -}}
+		<div class="notification is-success">
+			<p>{{- .Message | html -}}</p>
+		</div>
+	{{- end -}}
+{{- end -}}

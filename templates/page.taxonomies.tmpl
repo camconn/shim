@@ -11,16 +11,9 @@
 
 		<div id="content" class="content">
 			<h1>Manage Taxonomies</h1>
-
-			{{- if .Failed -}}
-			<div class="notification is-danger">{{- .Message | html -}}</div>
-			{{- else if .Success -}}
-			<div class="notification is-success">Changes saved successfully!</div>
-			{{- end -}}
-
+			{{- template "messages" -}}
 			<p>Taxonomies are how Hugo can put things in similar groups (such as categories or tags).</p>
 			<hr>
-
 			<p>Use the form below to create or remove taxonomy types.</p>
 			{{- $site := .Site -}}
 

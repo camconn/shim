@@ -11,14 +11,8 @@
 
 		<div id="content" class="content">
 			<h1>Advanced Site Configuration</h1>
-			{{- if .Failed -}}
-			<div class="notification is-danger">{{- .Message -}}</div>
-			{{- else if .Success -}}
-			<div class="notification is-success">Changes saved successfully!</div>
-			{{- end -}}
-
+			{{- template "messages" -}}
 			<p>Click <a href="/config/">here</a> for basic settings.</p>
-
 			<form action="/config/advanced/" method="post">
 				<textarea class="textarea monospace" spellcheck="false" name="configSrc" style="min-height:40em">{{- printf "%s" .Text | html -}}</textarea>
 				<br/>
