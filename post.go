@@ -66,8 +66,8 @@ func (p *Post) readTOMLMetadata(data io.Reader) {
 func (p *Post) handleFrontMatter(v *viper.Viper) {
 	p.title = v.GetString("title")
 	p.author = v.GetString("author")
-	if len(p.author) == 0 {
-		p.author = mySite.Author()
+	if len(p.Author()) == 0 {
+		p.author = p.Site().Author()
 	}
 	p.description = v.GetString("description")
 	p.slug = v.GetString("slug")
@@ -86,26 +86,9 @@ func (p *Post) handleFrontMatter(v *viper.Viper) {
 	for _, kind := range p.Site().Taxonomies().GetKinds() {
 		plural := kind.Plural()
 		terms := v.GetStringSlice(plural)
-		if len(terms) == 0 {
-			continue
+		if len(terms) != 0 {
+			p.taxonomies[plural] = terms
 		}
-
-		// If the main site already has taxonomies loaded, then don't bother
-		// trying to add more terms
-		if !p.Site().taxonomiesLoaded {
-			for _, t := range terms {
-				t = strings.TrimSpace(t)
-				if len(t) > 0 {
-					_, err := kind.GetTerm(t)
-					if err != nil {
-						_ = kind.AddTerm(t)
-					}
-
-				}
-			}
-		}
-
-		p.taxonomies[plural] = terms
 	}
 
 	p.all = v.AllSettings()
@@ -216,11 +199,20 @@ func (p *Post) SavePost() error {
 		return err
 	}
 
-	// The post was modified, therefore our preview of the site is outdated
-	mySite.previewOutdated = true
+	// Go ahead and rebuild the site
+	go func() {
+		err = nil
+		if p.Draft() {
+			err = p.Site().BuildPreview()
+		} else {
+			err = p.Site().BuildPublic()
+		}
+		if err != nil {
+			log.Printf("Failed to run build in background: %s\n", err.Error())
+		}
+	}()
 
 	go p.Site().loadTaxonomyTerms()
-
 	return nil
 
 }
@@ -243,8 +235,8 @@ func (p *Post) updateMap() {
 
 // update this site's view of this post's taxonomy
 func (p *Post) updateTaxonomy() {
-	for term, values := range p.taxonomies {
-		p.all[term] = values
+	for term, values := range (*p).taxonomies {
+		(*p).all[term] = values
 
 		kind, err := p.Site().Taxonomies().GetTaxonomy(term)
 		if err != nil {
@@ -268,7 +260,9 @@ func (p *Post) updateTaxonomy() {
 // a joined string of each taxonomy's applicable values
 func (p *Post) TaxonomyMap() map[string]string {
 	items := make(map[string]string)
-	for term, values := range p.taxonomies {
+	for _, kind := range p.Site().Taxonomies().GetKinds() {
+		term := kind.Plural()
+		values := (*p).taxonomies[term]
 		items[term] = strings.Join(values, ", ")
 	}
 

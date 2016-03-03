@@ -10,6 +10,7 @@
 		{{template "navbar"}}
 		<div id="content" class="content">
 			<h1>Delete Post: <i>"{{- .Post.Title -}}"</i></h1>
+			{{- template "messages" $ -}}
 			<div>
 				<p>Post path: <code>{{ .Post.RelPath }}</code></p>
 				<p>Author: <code>{{ .Post.Author }}</code></p>

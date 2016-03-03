@@ -63,24 +63,6 @@ func (l *loginHandler) authHandler(h http.Handler) http.Handler {
 		}
 
 		log.Println("Not logged in! Redirecting to login page.")
-		http.Redirect(w, r, "/login/?redirect="+template.URLQueryEscaper(r.URL.String()+"/")+"&warn=yes", http.StatusTemporaryRedirect)
-	})
-}
-
-type previewHandler struct{}
-
-func (p *previewHandler) previewHandler(h http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		// TODO: Support multiple sites
-		// TODO: Support building with and without drafts
-		if mySite.previewOutdated {
-			log.Println("Building another preview.")
-			err := mySite.BuildPreview()
-			if err != nil {
-				http.Error(w, "There was an error generating your preview: "+err.Error(), 500)
-			}
-		}
-		h.ServeHTTP(w, r)
-
+		http.Redirect(w, r, "/login/?redirect="+template.URLQueryEscaper(r.URL.String()+"/")+"&warn=yes", http.StatusSeeOther)
 	})
 }

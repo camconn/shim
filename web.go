@@ -35,27 +35,11 @@ type WebWrapper struct {
 	Site    *Site
 	Post    *Post
 	Text    *bytes.Buffer
-	Choices []string
+	Choices []string // TODO: Remove this and use a ConfigOption instead
 	URL     string
 	// Even though these things are opposite, they imply different things
 	Success bool
 	Failed  bool
-}
-
-// FailMessage Set the `Failed` field to true, and set a WebWrapper's `Message`
-// field, while also making the `Success` field false.
-func (w *WebWrapper) FailMessage(message string) {
-	w.Success = false
-	w.Failed = true
-	w.Message = message
-}
-
-// SuccessMessage Set the `Success` field to true, and set a WebWrapper's `Message`
-// field, while also making the `Failed` field false.
-func (w *WebWrapper) SuccessMessage(message string) {
-	w.Success = true
-	w.Failed = false
-	w.Message = message
 }
 
 // NewWrapper Creates a new WebWrapper struct appropriate to the context of the
@@ -116,13 +100,16 @@ func Admin(w http.ResponseWriter, req *http.Request) {
 	if status.Action == "build" {
 		err := status.Site.BuildPublic()
 		if err != nil {
-			status.FailMessage("Build failed. Reason: " + err.Error())
+			status.Message = "Build failed. Reason: " + err.Error()
+			status.Failed = true
 		} else {
-			status.SuccessMessage("Build completed!")
+			status.Message = "Build completed!"
+			status.Success = true
 		}
 	} else if status.Action == "reload" {
 		status.Site.Reload()
-		status.SuccessMessage("Site reloaded.")
+		status.Message = "Site reloaded."
+		status.Success = true
 	}
 
 	renderAnything(w, "adminPage", status)
@@ -135,7 +122,8 @@ func ViewTaxonomies(w http.ResponseWriter, req *http.Request) {
 	if req.Method == "POST" {
 		err := req.ParseForm()
 		if err != nil {
-			wrapper.FailMessage("Failed to update taxonomies")
+			wrapper.Message = "Failed to update taxonomies"
+			wrapper.Failed = true
 			goto renderTaxonomy
 		}
 
@@ -144,7 +132,8 @@ func ViewTaxonomies(w http.ResponseWriter, req *http.Request) {
 		delKind := req.Form.Get("deleteKind")
 
 		if len(newKind) != 0 && len(delKind) != 0 {
-			wrapper.FailMessage("Umm. Your browser messed that request up. Sorry!")
+			wrapper.Message = "Umm. Your browser messed that request up. Sorry!"
+			wrapper.Failed = true
 			goto renderTaxonomy
 		}
 
@@ -161,14 +150,16 @@ func ViewTaxonomies(w http.ResponseWriter, req *http.Request) {
 			}
 
 			if len(namePair) != 2 {
-				wrapper.FailMessage("You need to enter a new name pair for this Taxonomy.")
+				wrapper.Failed = true
+				wrapper.Message = "You need to enter a new name pair for this Taxonomy."
 				goto renderTaxonomy
 			}
 
 			plural := namePair[1]
 			_, err := wrapper.Site.Taxonomies().GetTaxonomy(plural)
 			if err == nil {
-				wrapper.FailMessage("Failed to create taxonomy because it already exists!")
+				wrapper.Failed = true
+				wrapper.Message = "Failed to create taxonomy because it already exists!"
 				goto renderTaxonomy
 			}
 
@@ -177,29 +168,34 @@ func ViewTaxonomies(w http.ResponseWriter, req *http.Request) {
 			// check the taxonomy was added
 			_, err = wrapper.Site.Taxonomies().GetTaxonomy(namePair[1])
 			if err != nil {
-				wrapper.FailMessage("Failed to create taxonomy.")
+				wrapper.Failed = true
+				wrapper.Message = "Failed to create taxonomy."
 				goto renderTaxonomy
 			}
 
 			err = wrapper.Site.SaveConfig()
 			if err != nil {
-				wrapper.FailMessage("Able to create taxonomy, but couldn't save it. Please try saving again.")
+				wrapper.Failed = true
+				wrapper.Message = "Able to create taxonomy, but couldn't save it. Please try saving again."
 			} else {
-				wrapper.SuccessMessage("Taxonomy created.")
+				wrapper.Success = true
+				wrapper.Message = "Taxonomy created."
 			}
 		} else if len(delKind) > 0 {
 			wrapper.Action = "delete"
 			if len(name) <= 0 {
-				wrapper.FailMessage("Unable to determine which taxonomy to delete.")
+				wrapper.Failed = true
+				wrapper.Message = "Unable to determine which taxonomy to delete."
 				goto renderTaxonomy
 			}
 
 			// check if the taxonomy actually exists
 			_, err = wrapper.Site.Taxonomies().GetTaxonomy(name)
 			if err != nil {
-				wrapper.FailMessage(fmt.Sprintf(
+				wrapper.Failed = true
+				wrapper.Message = fmt.Sprintf(
 					"The taxonomy you want to delete (%s) doesn't exist!",
-					name))
+					name)
 				goto renderTaxonomy
 			}
 
@@ -207,15 +203,17 @@ func ViewTaxonomies(w http.ResponseWriter, req *http.Request) {
 
 			err = wrapper.Site.SaveConfig()
 			if err != nil {
-				wrapper.FailMessage("Was able to add taxonomy, but couldn't update site configuration." +
-					"Please try saving again.")
+				wrapper.Failed = true
+				wrapper.Message = "Was able to add taxonomy, but couldn't update site configuration." +
+					"Please try saving again."
 				goto renderTaxonomy
 			}
-			wrapper.SuccessMessage("Successfully added Taxonomy.")
-
+			wrapper.Success = true
+			wrapper.Message = "Successfully removed Taxonomy."
 		} else {
 			log.Println("WTF Happened here?")
-			wrapper.FailMessage("Unable to determine what taxonomy action to perform.")
+			wrapper.Failed = true
+			wrapper.Message = "Unable to determine what taxonomy action to perform."
 		}
 	}
 
@@ -236,6 +234,7 @@ func Login(w http.ResponseWriter, req *http.Request) {
 			wrapper.Action = "warn"
 			q.Del("warn")
 			wrapper.URL = "/login/?" + q.Encode()
+			wrapper.Message = "Please login in."
 		}
 	}
 
@@ -265,7 +264,8 @@ func Login(w http.ResponseWriter, req *http.Request) {
 			return
 		}
 
-		wrapper.FailMessage("Incorrect username/password combination. Please try again.")
+		wrapper.Failed = true
+		wrapper.Message = "Incorrect username/password combination. Please try again."
 	}
 
 	renderAnything(w, "loginPage", &wrapper)
@@ -373,12 +373,14 @@ func EditPost(w http.ResponseWriter, req *http.Request) {
 				log.Printf("Could not publish post: %s\n", err.Error())
 				wrapper.Failed = true
 				wrapper.Message = "Could not publish post: " + err.Error()
+				goto renderEditedPost
 			}
 		} else {
 			post.draft = true
 		}
 
 		wrapper.Success = true
+		wrapper.Message = "Post saved."
 	}
 
 renderEditedPost:
@@ -402,18 +404,21 @@ func NewPost(w http.ResponseWriter, req *http.Request) {
 			testPostPath := filepath.Join(contentDirPath, "post", newFilename) + ".md"
 
 			if _, err := os.Stat(testPostPath); !os.IsNotExist(err) {
+				wrapper.Failed = true
 				wrapper.Message = "Post already exists!"
 				goto render
 			}
 
 			path, err := wrapper.Site.newPost(newFilename)
 			if err != nil {
+				wrapper.Failed = true
 				wrapper.Message = "Could not edit post: " + err.Error()
 				goto render
 			}
 
 			post, err := loadPost(path, contentDirPath)
 			if err != nil {
+				wrapper.Failed = true
 				wrapper.Message = "Could not edit post: " + err.Error()
 				goto render
 			}
@@ -421,19 +426,22 @@ func NewPost(w http.ResponseWriter, req *http.Request) {
 			post.draft = true
 			err = post.SavePost()
 			if err != nil {
+				wrapper.Failed = true
 				wrapper.Message = "Could not save post: " + err.Error()
 				goto render
 			}
 
 			if err != nil {
+				wrapper.Failed = true
 				wrapper.Message = "Could not save post: " + err.Error()
 				goto render
 			} else {
 				editLoc := fmt.Sprintf("/edit/%s", post.RelPath())
 				log.Printf("redirecting to %s\n", editLoc)
-				http.Redirect(w, req, editLoc, http.StatusTemporaryRedirect)
+				http.Redirect(w, req, editLoc, http.StatusSeeOther)
 			}
 		} else {
+			wrapper.Failed = true
 			wrapper.Message = "you need to specify a name!"
 		}
 	}
@@ -451,6 +459,7 @@ func RemovePost(w http.ResponseWriter, req *http.Request) {
 	relPath := req.URL.Path[len("/delete/"):]
 	if len(relPath) == 0 {
 		http.Error(w, "File not found :'(", 404)
+		return
 	}
 
 	fileLoc := filepath.Join(wrapper.Site.Location(), wrapper.Site.ContentDir(), relPath+".md")
@@ -474,9 +483,11 @@ func RemovePost(w http.ResponseWriter, req *http.Request) {
 		log.Printf("Deleting %s\n", relPath)
 		err := os.Remove(fileLoc)
 		if err != nil {
-			http.Error(w, "Couldn't delete file: "+err.Error(), 500)
+			wrapper.Failed = true
+			wrapper.Message = "Couldn't delete file: " + err.Error()
+		} else {
+			http.Redirect(w, req, "/posts/", http.StatusSeeOther)
 		}
-		http.Redirect(w, req, "/posts/", http.StatusTemporaryRedirect)
 	}
 
 	renderAnything(w, "deletePage", wrapper)
@@ -553,6 +564,7 @@ func EditSite(w http.ResponseWriter, req *http.Request) {
 			goto renderBasicConfig
 		}
 
+		wrapper.Message = "Site configuration has been updated."
 		wrapper.Success = true
 	}
 renderBasicConfig:
@@ -596,6 +608,7 @@ func AdvancedConfig(w http.ResponseWriter, req *http.Request) {
 
 		wrapper.Site.Reload()
 		wrapper.Success = true
+		wrapper.Message = "Successfully saved and reloaded configuration."
 	}
 
 	wrapper.Text = bytes.NewBuffer([]byte{})

@@ -8,11 +8,9 @@
 	</head>
 	<body>
 		{{template "navbar"}}
-
 		<div id="content" class="content">
 			<h1 class="title">Manage your site</h1>
-			{{- template "messages" -}}
-
+			{{- template "messages" $ -}}
 			<div class="box">
 				<form action="/admin/" method="post">
 					<p>Quick Options</p>

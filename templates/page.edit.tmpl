@@ -6,13 +6,13 @@
 		<title>SHIM | Editor</title>
 		{{template "stylesheets"}}
 	</head>
-	{{- $Post := .Post -}}
 	<body>
 		{{template "navbar"}}
 
 		<div id="content" class="content">
 			<h1>Edit Post</h1>
-			{{- template "messages" -}}
+			{{- template "messages" $ -}}
+			{{- $Post := .Post -}}
 			<form action="{{- .URL -}}" method="post" class="container is-fluid">
 				<noscript>
 					<div>

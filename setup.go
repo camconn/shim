@@ -21,12 +21,23 @@ import (
 	"github.com/spf13/viper"
 	"io"
 	"log"
+	"net/url"
 	"os"
 	"os/exec"
 	"path"
 )
 
-// Simple utility to copy files
+// Location of assets on disk for Shim
+type assets struct {
+	root      string
+	sites     string
+	templates string
+	static    string
+	themes    string
+	url       *url.URL
+}
+
+// Copy a file at `src` to `dest`. Panic if there are any errors.
 func copyFile(src, dst string) {
 	in, err := os.Open(src)
 	checkReason(err, "Could not open source file")
@@ -114,4 +125,29 @@ func setupSite(name string) {
 	checkReason(err, "Error: couldn't create site "+name)
 
 	log.Println("Done setting up site.")
+}
+
+func assignAssets() {
+	shimAssets = new(assets)
+
+	root, err := os.Getwd()
+	checkReason(err, "Couldn't find current working directory.")
+
+	viper.SetDefault("sitesDir", "sites")
+	viper.SetDefault("templatesDir", "templates")
+	viper.SetDefault("staticDir", "static")
+	viper.SetDefault("themeDir", "themes")
+	viper.SetDefault("baseurl", "http://127.0.0.1:8080/")
+
+	shimAssets.root = root
+	shimAssets.sites = viper.GetString("sitesDir")
+	shimAssets.templates = viper.GetString("templatesDir")
+	shimAssets.static = viper.GetString("staticDir")
+	shimAssets.themes = viper.GetString("themeDir")
+
+	baseurl := viper.GetString("baseurl")
+	shimAssets.url, err = url.Parse(baseurl)
+	if err != nil {
+		log.Fatal("Invalid URL for \"baseurl\"!")
+	}
 }

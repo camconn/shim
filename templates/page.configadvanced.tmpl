@@ -11,7 +11,7 @@
 
 		<div id="content" class="content">
 			<h1>Advanced Site Configuration</h1>
-			{{- template "messages" -}}
+			{{- template "messages" $ -}}
 			<p>Click <a href="/config/">here</a> for basic settings.</p>
 			<form action="/config/advanced/" method="post">
 				<textarea class="textarea monospace" spellcheck="false" name="configSrc" style="min-height:40em">{{- printf "%s" .Text | html -}}</textarea>
