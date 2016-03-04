@@ -59,7 +59,7 @@ func (w *WebWrapper) FailedMessage(message string) {
 func NewWrapper(req *http.Request) *WebWrapper {
 	w := new(WebWrapper)
 	// TODO: Switch sites based on cookies and whatnot
-	w.Site = mySite
+	w.Site = allSites[0]
 	w.URL = req.URL.String()
 	return w
 }
@@ -285,7 +285,7 @@ func EditPost(w http.ResponseWriter, req *http.Request) {
 	contentDirPath := filepath.Join(wrapper.Site.Location(), wrapper.Site.ContentDir())
 	postLoc := fmt.Sprintf("%s.md", filepath.Join(contentDirPath, postPath))
 	fmt.Printf("location: %s\n", postLoc)
-	post, err := loadPost(postLoc, contentDirPath)
+	post, err := wrapper.Site.loadPost(postLoc, contentDirPath)
 	if err != nil {
 		http.Error(w, err.Error(), 500)
 		return
@@ -402,7 +402,7 @@ func NewPost(w http.ResponseWriter, req *http.Request) {
 				goto render
 			}
 
-			post, err := loadPost(path, contentDirPath)
+			post, err := wrapper.Site.loadPost(path, contentDirPath)
 			if err != nil {
 				wrapper.FailedMessage("Could not edit post: " + err.Error())
 				goto render
@@ -451,7 +451,7 @@ func RemovePost(w http.ResponseWriter, req *http.Request) {
 	}
 
 	contentDirPath := filepath.Join(wrapper.Site.Location(), wrapper.Site.ContentDir())
-	post, err := loadPost(fileLoc, contentDirPath)
+	post, err := wrapper.Site.loadPost(fileLoc, contentDirPath)
 	if err != nil {
 		http.Error(w, err.Error(), 500)
 		return

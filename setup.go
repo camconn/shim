@@ -67,28 +67,37 @@ func setupConfig() {
 
 // findPrimarySite Finds the first site that is enabled, and returns it's name
 // as a string `name`. If there are no sites available, returns an error `err`.
-func findPrimarySite() (name string, err error) {
+func findSites() (names []string, err error) {
+	names = []string{}
 	err = nil
-	sites := viper.GetStringSlice("sites.all")
-	for _, name = range sites {
+	// sites := viper.GetStringMapSlice("sites")
+	sites := viper.GetStringMapStringSlice("sites")
+	for name := range sites {
 		enabledKey := fmt.Sprintf("sites.%s.enabled", name)
 		viper.SetDefault(enabledKey, false)
 
 		if viper.GetBool(enabledKey) {
 			fmt.Printf("%s is enabled!\n", name)
-			return
+			names = append(names, name)
+		} else {
+			fmt.Printf("%s is disabled!\n", name)
 		}
 	}
 
-	name = ""
-
-	if len(sites) == 0 {
+	if len(names) == 0 {
 		err = fmt.Errorf("No sites are available.")
 		return
 	}
 
-	err = fmt.Errorf("No sites are enabled.")
 	return
+}
+
+// setupSites sets up each site in the slice `names`
+func setupSites(names []string) {
+	for _, name := range names {
+		setupSite(name)
+	}
+
 }
 
 // Set up the site with the name `name` in the sites directory.
@@ -125,6 +134,19 @@ func setupSite(name string) {
 	checkReason(err, "Error: couldn't create site "+name)
 
 	log.Println("Done setting up site.")
+}
+
+func loadAllSites(names []string) []*Site {
+	sites := []*Site{}
+
+	for _, name := range names {
+		s := loadSite(name)
+		sites = append(sites, &s)
+	}
+
+	fmt.Printf("Sites: %##v\n", sites)
+
+	return sites
 }
 
 func assignAssets() {

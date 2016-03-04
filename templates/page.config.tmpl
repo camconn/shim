@@ -81,7 +81,11 @@
 						<span class="select">
 							<select name="theme">
 								{{- range $themeName := $.Choices -}}
-									<option value=" {{- $themeName | html -}} ">{{- $themeName | html -}}</option>
+									{{- if eq $themeName $.Site.Theme -}}
+										<option value="{{- $themeName | html -}}" selected>{{- $themeName | html -}}</option>
+									{{- else -}}
+										<option value="{{- $themeName | html -}}">{{- $themeName | html -}}</option>
+									{{- end -}}
 								{{- end -}}
 							</select>
 						</span>

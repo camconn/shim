@@ -27,6 +27,7 @@ import (
 	"time"
 )
 
+var allSites []*Site
 var mySite *Site
 var shimAssets *assets
 var um *userManager
@@ -35,6 +36,7 @@ var um *userManager
 func check(err error) {
 	checkReason(err, "An error occurred: ")
 }
+
 func checkReason(err error, reason string) {
 	if err != nil {
 		log.Fatalf("%s\nDebug: %s\n", reason, err.Error())
@@ -52,11 +54,6 @@ func main() {
 	if err != nil {
 		log.Fatalf("Couldn't read config. Does 'config.toml' not exist?\nError: %s\n", err.Error())
 	}
-
-	siteName, err := findPrimarySite()
-	checkReason(err, "Was not able to find primary site. Please check your `config.toml` file.")
-
-	setupSite(siteName)
 
 	// Setup assets and appropriate folders
 	assignAssets()
@@ -78,9 +75,14 @@ func main() {
 
 	fmt.Printf("Root directory is: %s\n", shimAssets.root)
 
-	// For now, have a fixed site to load
-	mySite = loadSite(siteName)
-	fmt.Printf("site: %s\n", mySite.String())
+	// Lot sites and whatnot
+	siteNames, err := findSites()
+	checkReason(err, "Was not able to find primary site. Please check your `config.toml` file.")
+	setupSites(siteNames)
+	allSites = loadAllSites(siteNames)
+	mySite = allSites[0]
+	fmt.Printf("all sites: %##v\n", allSites)
+	fmt.Printf("primary site: %s\n", mySite.String())
 
 	// Below this line are things exclusively for running the webapp
 	mux := http.NewServeMux()

@@ -94,11 +94,6 @@ func (p *Post) handleFrontMatter(v *viper.Viper) {
 	p.all = v.AllSettings()
 }
 
-// Temporary shim
-func loadPost(postPath, contentDirPath string) (*Post, error) {
-	return mySite.loadPost(postPath, contentDirPath)
-}
-
 // contentDirPath is used to find the relative path of the post
 func (s *Site) loadPost(postPath, contentDirPath string) (p *Post, err error) {
 	p = &Post{}

@@ -89,9 +89,9 @@ func (s Site) Reload() {
 	s.loadConfig(s.ShortName())
 }
 
-func loadSite(name string) *Site {
-	s := &Site{}
-	s.loadConfig(name)
+func loadSite(name string) Site {
+	s := Site{}
+	(&s).loadConfig(name)
 	s.buildLock.lock = &sync.Mutex{}
 	return s
 }
