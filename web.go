@@ -42,6 +42,18 @@ type WebWrapper struct {
 	Failed  bool
 }
 
+// SuccessMessage Modify WebWrapper to show a success message.
+func (w *WebWrapper) SuccessMessage(message string) {
+	w.Message = message
+	w.Success = true
+}
+
+// FailedMessage Modify WebWrapper to show a failure message.
+func (w *WebWrapper) FailedMessage(message string) {
+	w.Message = message
+	w.Failed = true
+}
+
 // NewWrapper Creates a new WebWrapper struct appropriate to the context of the
 // user, taking into account the current site as well as the URL
 func NewWrapper(req *http.Request) *WebWrapper {
@@ -82,34 +94,31 @@ func Admin(w http.ResponseWriter, req *http.Request) {
 	if req.Method == "POST" {
 		err := req.ParseForm()
 		if err != nil {
-			http.Error(w, "Couldn't parse form!", 500)
-			return
-		}
+			status.FailedMessage("Couldn't parse form!")
+		} else {
 
-		req.ParseForm()
+			req.ParseForm()
 
-		doBuild := strings.Trim(req.FormValue("doBuild"), " ")
-		doReload := strings.Trim(req.FormValue("doReload"), " ")
-		if len(doBuild) >= 1 {
-			status.Action = "build"
-		} else if len(doReload) >= 1 {
-			status.Action = "reload"
+			doBuild := strings.Trim(req.FormValue("doBuild"), " ")
+			doReload := strings.Trim(req.FormValue("doReload"), " ")
+			if len(doBuild) >= 1 {
+				status.Action = "build"
+			} else if len(doReload) >= 1 {
+				status.Action = "reload"
+			}
 		}
 	}
 
 	if status.Action == "build" {
 		err := status.Site.BuildPublic()
 		if err != nil {
-			status.Message = "Build failed. Reason: " + err.Error()
-			status.Failed = true
+			status.FailedMessage("Build failed. Reason: " + err.Error())
 		} else {
-			status.Message = "Build completed!"
-			status.Success = true
+			status.SuccessMessage("Build completed!")
 		}
 	} else if status.Action == "reload" {
 		status.Site.Reload()
-		status.Message = "Site reloaded."
-		status.Success = true
+		status.SuccessMessage("Site reloaded.")
 	}
 
 	renderAnything(w, "adminPage", status)
@@ -122,8 +131,7 @@ func ViewTaxonomies(w http.ResponseWriter, req *http.Request) {
 	if req.Method == "POST" {
 		err := req.ParseForm()
 		if err != nil {
-			wrapper.Message = "Failed to update taxonomies"
-			wrapper.Failed = true
+			wrapper.FailedMessage("Failed to update taxonomies")
 			goto renderTaxonomy
 		}
 
@@ -132,8 +140,7 @@ func ViewTaxonomies(w http.ResponseWriter, req *http.Request) {
 		delKind := req.Form.Get("deleteKind")
 
 		if len(newKind) != 0 && len(delKind) != 0 {
-			wrapper.Message = "Umm. Your browser messed that request up. Sorry!"
-			wrapper.Failed = true
+			wrapper.FailedMessage("Umm. Your browser messed that request up. Sorry!")
 			goto renderTaxonomy
 		}
 
@@ -145,21 +152,15 @@ func ViewTaxonomies(w http.ResponseWriter, req *http.Request) {
 			stripChars(&namePair, ", ")
 			removeDuplicates(&namePair)
 
-			for i, p := range namePair {
-				fmt.Printf("%d, %s\n", i, p)
-			}
-
 			if len(namePair) != 2 {
-				wrapper.Failed = true
-				wrapper.Message = "You need to enter a new name pair for this Taxonomy."
+				wrapper.FailedMessage("You need to enter a new name pair for this Taxonomy.")
 				goto renderTaxonomy
 			}
 
 			plural := namePair[1]
 			_, err := wrapper.Site.Taxonomies().GetTaxonomy(plural)
 			if err == nil {
-				wrapper.Failed = true
-				wrapper.Message = "Failed to create taxonomy because it already exists!"
+				wrapper.FailedMessage("Failed to create taxonomy because it already exists!")
 				goto renderTaxonomy
 			}
 
@@ -168,34 +169,29 @@ func ViewTaxonomies(w http.ResponseWriter, req *http.Request) {
 			// check the taxonomy was added
 			_, err = wrapper.Site.Taxonomies().GetTaxonomy(namePair[1])
 			if err != nil {
-				wrapper.Failed = true
-				wrapper.Message = "Failed to create taxonomy."
+				wrapper.FailedMessage("Failed to create taxonomy.")
 				goto renderTaxonomy
 			}
 
 			err = wrapper.Site.SaveConfig()
 			if err != nil {
-				wrapper.Failed = true
-				wrapper.Message = "Able to create taxonomy, but couldn't save it. Please try saving again."
+				wrapper.FailedMessage("Able to create taxonomy, but couldn't save it. Please try saving again.")
 			} else {
-				wrapper.Success = true
-				wrapper.Message = "Taxonomy created."
+				wrapper.SuccessMessage("Taxonomy created.")
 			}
 		} else if len(delKind) > 0 {
 			wrapper.Action = "delete"
 			if len(name) <= 0 {
-				wrapper.Failed = true
-				wrapper.Message = "Unable to determine which taxonomy to delete."
+				wrapper.FailedMessage("Unable to determine which taxonomy to delete.")
 				goto renderTaxonomy
 			}
 
 			// check if the taxonomy actually exists
 			_, err = wrapper.Site.Taxonomies().GetTaxonomy(name)
 			if err != nil {
-				wrapper.Failed = true
-				wrapper.Message = fmt.Sprintf(
+				wrapper.FailedMessage(fmt.Sprintf(
 					"The taxonomy you want to delete (%s) doesn't exist!",
-					name)
+					name))
 				goto renderTaxonomy
 			}
 
@@ -203,17 +199,14 @@ func ViewTaxonomies(w http.ResponseWriter, req *http.Request) {
 
 			err = wrapper.Site.SaveConfig()
 			if err != nil {
-				wrapper.Failed = true
-				wrapper.Message = "Was able to add taxonomy, but couldn't update site configuration." +
-					"Please try saving again."
+				wrapper.FailedMessage("Was able to remove taxonomy, but couldn't update site configuration." +
+					"Please try saving again.")
 				goto renderTaxonomy
 			}
-			wrapper.Success = true
-			wrapper.Message = "Successfully removed Taxonomy."
+			wrapper.SuccessMessage("Successfully removed Taxonomy.")
 		} else {
 			log.Println("WTF Happened here?")
-			wrapper.Failed = true
-			wrapper.Message = "Unable to determine what taxonomy action to perform."
+			wrapper.FailedMessage("Unable to determine what taxonomy action to perform.")
 		}
 	}
 
@@ -241,7 +234,8 @@ func Login(w http.ResponseWriter, req *http.Request) {
 	if req.Method == "POST" {
 		err := req.ParseForm()
 		if err != nil {
-			http.Error(w, "Couldn't parse form!", 500)
+			wrapper.FailedMessage("Couldn't parse form!")
+			renderAnything(w, "loginPage", &wrapper)
 			return
 		}
 
@@ -264,8 +258,7 @@ func Login(w http.ResponseWriter, req *http.Request) {
 			return
 		}
 
-		wrapper.Failed = true
-		wrapper.Message = "Incorrect username/password combination. Please try again."
+		wrapper.FailedMessage("Incorrect username/password combination. Please try again.")
 	}
 
 	renderAnything(w, "loginPage", &wrapper)
@@ -320,10 +313,8 @@ func EditPost(w http.ResponseWriter, req *http.Request) {
 				// is saved it's time published is set to when it was last modified.
 				parsedTime, err := time.Parse(dateFormat, value)
 				if err != nil {
-					fmt.Printf("Couldn't parse time! %s\n", err.Error())
-					wrapper.Failed = true
-					wrapper.Message = "Could not parse publishing time! " +
-						"Please use a valid format, date, and time for time published."
+					wrapper.FailedMessage("Could not parse publishing time! " +
+						"Please use a valid format, date, and time for time published.")
 					continue
 				}
 				post.published = &parsedTime
@@ -356,8 +347,7 @@ func EditPost(w http.ResponseWriter, req *http.Request) {
 		err = post.SavePost()
 		if err != nil {
 			log.Printf("Error while saving post: %s\n", err.Error())
-			wrapper.Failed = true
-			wrapper.Message = "Could not save post to disk. Error: " + err.Error()
+			wrapper.FailedMessage("Could not save post to disk. Error: " + err.Error())
 			goto renderEditedPost
 		} else if wrapper.Failed {
 			// We try and save whatever data we do have if something failed before
@@ -371,16 +361,14 @@ func EditPost(w http.ResponseWriter, req *http.Request) {
 			err = post.Publish()
 			if err != nil {
 				log.Printf("Could not publish post: %s\n", err.Error())
-				wrapper.Failed = true
-				wrapper.Message = "Could not publish post: " + err.Error()
+				wrapper.FailedMessage("Could not publish post: " + err.Error())
 				goto renderEditedPost
 			}
 		} else {
 			post.draft = true
 		}
 
-		wrapper.Success = true
-		wrapper.Message = "Post saved."
+		wrapper.SuccessMessage("Post saved.")
 	}
 
 renderEditedPost:
@@ -404,49 +392,43 @@ func NewPost(w http.ResponseWriter, req *http.Request) {
 			testPostPath := filepath.Join(contentDirPath, "post", newFilename) + ".md"
 
 			if _, err := os.Stat(testPostPath); !os.IsNotExist(err) {
-				wrapper.Failed = true
-				wrapper.Message = "Post already exists!"
+				wrapper.FailedMessage("Post already exists!")
 				goto render
 			}
 
 			path, err := wrapper.Site.newPost(newFilename)
 			if err != nil {
-				wrapper.Failed = true
-				wrapper.Message = "Could not edit post: " + err.Error()
+				wrapper.FailedMessage("Could not edit post: " + err.Error())
 				goto render
 			}
 
 			post, err := loadPost(path, contentDirPath)
 			if err != nil {
-				wrapper.Failed = true
-				wrapper.Message = "Could not edit post: " + err.Error()
+				wrapper.FailedMessage("Could not edit post: " + err.Error())
 				goto render
 			}
 
 			post.draft = true
 			err = post.SavePost()
 			if err != nil {
-				wrapper.Failed = true
-				wrapper.Message = "Could not save post: " + err.Error()
+				wrapper.FailedMessage("Could not save post: " + err.Error())
 				goto render
 			}
 
 			if err != nil {
-				wrapper.Failed = true
-				wrapper.Message = "Could not save post: " + err.Error()
+				wrapper.FailedMessage("Could not save post: " + err.Error())
 				goto render
 			} else {
 				editLoc := fmt.Sprintf("/edit/%s", post.RelPath())
 				log.Printf("redirecting to %s\n", editLoc)
 				http.Redirect(w, req, editLoc, http.StatusSeeOther)
+				return
 			}
 		} else {
-			wrapper.Failed = true
-			wrapper.Message = "you need to specify a name!"
+			wrapper.FailedMessage("you need to specify a name!")
 		}
 	}
 
-	// This is a failure point. Everything below this has to be safe.
 render:
 	renderAnything(w, "newPostPage", wrapper)
 
@@ -483,8 +465,7 @@ func RemovePost(w http.ResponseWriter, req *http.Request) {
 		log.Printf("Deleting %s\n", relPath)
 		err := os.Remove(fileLoc)
 		if err != nil {
-			wrapper.Failed = true
-			wrapper.Message = "Couldn't delete file: " + err.Error()
+			wrapper.FailedMessage("Couldn't delete file: " + err.Error())
 		} else {
 			http.Redirect(w, req, "/posts/", http.StatusSeeOther)
 		}
@@ -501,8 +482,7 @@ func EditSite(w http.ResponseWriter, req *http.Request) {
 	themesLoc := fmt.Sprintf("%s/%s", shimAssets.root, shimAssets.themes)
 	allThemes, err := GetThemes(themesLoc)
 	if err != nil {
-		wrapper.Failed = true
-		wrapper.Message = fmt.Sprintf("Failed to load themes: %s", err.Error())
+		wrapper.FailedMessage(fmt.Sprintf("Failed to load themes: %s", err.Error()))
 		goto renderBasicConfig
 	}
 	wrapper.Choices = allThemes
@@ -552,20 +532,17 @@ func EditSite(w http.ResponseWriter, req *http.Request) {
 		// save site
 		err := wrapper.Site.SaveConfig()
 		if err != nil {
-			wrapper.Failed = true
-			wrapper.Message = fmt.Sprintf("Failed to save site: %s", err.Error())
+			wrapper.FailedMessage(fmt.Sprintf("Failed to save site: %s", err.Error()))
 			goto renderBasicConfig
 		}
 
 		err = ChangeTheme(wrapper.Site, wrapper.Site.Theme())
 		if err != nil {
-			wrapper.Failed = true
-			wrapper.Message = fmt.Sprintf("Failed to change theme: %s", err.Error())
+			wrapper.FailedMessage(fmt.Sprintf("Failed to change theme: %s", err.Error()))
 			goto renderBasicConfig
 		}
 
-		wrapper.Message = "Site configuration has been updated."
-		wrapper.Success = true
+		wrapper.SuccessMessage("Site configuration has been updated.")
 	}
 renderBasicConfig:
 	renderAnything(w, "siteConfig", wrapper)
@@ -590,9 +567,8 @@ func AdvancedConfig(w http.ResponseWriter, req *http.Request) {
 		mode := os.O_WRONLY | os.O_CREATE | os.O_TRUNC
 		file, err := os.OpenFile(configLoc, mode, 0666)
 		if err != nil {
-			wrapper.Message = fmt.Sprintf(
-				"Settings could not be saved because an error occurred: %s", err.Error())
-			wrapper.Failed = true
+			wrapper.FailedMessage(fmt.Sprintf(
+				"Settings could not be saved because an error occurred: %s", err.Error()))
 			goto renderAdvancedConfig
 		}
 		defer file.Close()
@@ -600,32 +576,28 @@ func AdvancedConfig(w http.ResponseWriter, req *http.Request) {
 		// save site
 		file.WriteString(configSrc)
 		if err != nil {
-			wrapper.Message = fmt.Sprintf("Your settings may be corrupted -- "+
-				"Settings could not be saved because an error occurred: %s", err.Error())
-			wrapper.Failed = true
+			wrapper.FailedMessage(fmt.Sprintf("Your settings may be corrupted -- "+
+				"Settings could not be saved because an error occurred: %s", err.Error()))
 			goto renderAdvancedConfig
 		}
 
 		wrapper.Site.Reload()
-		wrapper.Success = true
-		wrapper.Message = "Successfully saved and reloaded configuration."
+		wrapper.SuccessMessage("Successfully saved and reloaded configuration.")
 	}
 
 	wrapper.Text = bytes.NewBuffer([]byte{})
 	file, err = os.Open(configLoc)
 	defer file.Close()
 	if err != nil {
-		wrapper.Message = fmt.Sprintf(
-			"Config could not be read because an error occurred: %s", err.Error())
-		wrapper.Failed = true
+		wrapper.FailedMessage(fmt.Sprintf(
+			"Config could not be read because an error occurred: %s", err.Error()))
 		goto renderAdvancedConfig
 	}
 
 	_, err = wrapper.Text.ReadFrom(file)
 	if err != nil {
-		wrapper.Message = fmt.Sprintf(
-			"Config could not be read because an error occurred: %s", err.Error())
-		wrapper.Failed = true
+		wrapper.FailedMessage(fmt.Sprintf(
+			"Config could not be read because an error occurred: %s", err.Error()))
 		goto renderAdvancedConfig
 	}
 
