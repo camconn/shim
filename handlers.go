@@ -17,7 +17,7 @@
 package main
 
 import (
-	"html/template"
+	"github.com/niemal/uman"
 	"log"
 	"net/http"
 	"time"
@@ -40,12 +40,12 @@ func timeoutHandler(next http.Handler) http.Handler {
 // Middleware for requiring login on certain pages.
 type loginHandler struct {
 	handler http.Handler
-	userMan *userManager
+	userMan *uman.UserManager
 }
 
 // newLoginHandler Creates a new LoginHandler, which requires logins
 // from all visiting users or redirects them to /login/
-func newLoginHandler(um *userManager) *loginHandler {
+func newLoginHandler(um *uman.UserManager) *loginHandler {
 	return &loginHandler{
 		userMan: um,
 	}
@@ -55,14 +55,14 @@ func newLoginHandler(um *userManager) *loginHandler {
 // protected Shim pages.
 func (l *loginHandler) authHandler(h http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		session, err := l.userMan.GetSessionFromRequest(w, r)
+		session := l.userMan.GetHTTPSession(w, r)
 
-		if err == nil && session.IsLogged() {
+		if session.IsLogged() {
 			h.ServeHTTP(w, r)
 			return
 		}
 
 		log.Println("Not logged in! Redirecting to login page.")
-		http.Redirect(w, r, "/login/?redirect="+template.URLQueryEscaper(r.URL.String()+"/")+"&warn=yes", http.StatusSeeOther)
+		http.Redirect(w, r, "/login/?redirect="+r.URL.EscapedPath()+"&warn=yes", http.StatusSeeOther)
 	})
 }

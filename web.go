@@ -229,6 +229,8 @@ func Login(w http.ResponseWriter, req *http.Request) {
 			wrapper.URL = "/login/?" + q.Encode()
 			wrapper.Message = "Please login in."
 		}
+	} else {
+		redirect = "/admin/" // By default, redirect to /admin/
 	}
 
 	if req.Method == "POST" {
@@ -242,19 +244,14 @@ func Login(w http.ResponseWriter, req *http.Request) {
 		username := req.FormValue("username")
 		password := req.FormValue("password")
 
-		cookie, success := um.LoginCookie(username, password, w, req)
-		if success {
-			fmt.Printf("Cookie: %s\n", cookie.String())
-			http.SetCookie(w, cookie)
+		session := um.GetHTTPSession(w, req)
+		if success := um.Login(username, password, session); success {
+			session.User = username
+			session.SetLifespan(3600 * 24 * 24)
+			session.SetHTTPCookie(w)
 
-			if len(redirect) > 0 {
-				log.Println("Redirecting to " + redirect)
-				http.Redirect(w, req, redirect, http.StatusSeeOther)
-				return
-			}
-
-			log.Println("Redirecting to /admin/.")
-			http.Redirect(w, req, "/admin/", http.StatusSeeOther)
+			log.Println("Redirecting to " + redirect)
+			http.Redirect(w, req, redirect, http.StatusSeeOther)
 			return
 		}
 

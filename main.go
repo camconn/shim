@@ -19,18 +19,18 @@ package main
 import (
 	"fmt"
 	"github.com/justinas/alice"
+	"github.com/niemal/uman"
 	"github.com/spf13/viper"
 	"log"
 	"net/http"
 	"os"
 	"path/filepath"
-	"time"
 )
 
 var allSites []*Site
 var mySite *Site
 var shimAssets *assets
-var um *userManager
+var um *uman.UserManager
 
 // Pretty methods to check errors
 func check(err error) {
@@ -58,20 +58,9 @@ func main() {
 	// Setup assets and appropriate folders
 	assignAssets()
 
-	um = umInit(filepath.Join(shimAssets.root, "users.db"))
+	um = uman.New(filepath.Join(shimAssets.root, "users.db"))
+	um.CheckDelay = 60
 	um.Register("root", "hunter2") // Super secure initial password
-
-	// Scrub expired sessions every minute
-	exitChan := make(chan bool)
-	go func(exitCh chan bool, userMan *userManager) {
-		timer := time.Tick(time.Minute)
-		select {
-		case <-exitCh:
-			return
-		case <-timer:
-			userMan.CheckSessions()
-		}
-	}(exitChan, um)
 
 	fmt.Printf("Root directory is: %s\n", shimAssets.root)
 
