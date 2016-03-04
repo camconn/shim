@@ -247,7 +247,7 @@ func Login(w http.ResponseWriter, req *http.Request) {
 		session := um.GetHTTPSession(w, req)
 		if success := um.Login(username, password, session); success {
 			session.User = username
-			session.SetLifespan(3600 * 24 * 24)
+			session.SetLifespan(3600 * 24 * 7) // 1 Week (in seconds)
 			session.SetHTTPCookie(w)
 
 			log.Println("Redirecting to " + redirect)
