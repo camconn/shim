@@ -50,6 +50,7 @@ type Post struct {
 	draft       bool
 	published   *time.Time
 	body        *bytes.Buffer
+	aliases     []string
 	taxonomies  map[string][]string    // TODO: Is there a better storage format to use?
 	all         map[string]interface{} // All TOML data for this file
 }
@@ -72,6 +73,9 @@ func (p *Post) handleFrontMatter(v *viper.Viper) {
 	p.description = v.GetString("description")
 	p.slug = v.GetString("slug")
 	p.draft = v.GetBool("draft")
+
+	v.SetDefault("aliases", []string{})
+	p.aliases = v.GetStringSlice("aliases")
 
 	// Handle time parsing and error checking
 	publishString := v.GetString("date")
@@ -224,6 +228,7 @@ func (p *Post) updateMap() {
 	p.all["date"] = p.Date()
 	p.all["draft"] = p.Draft()
 	p.all["description"] = p.Description()
+	p.all["aliases"] = p.aliases[:]
 
 	p.updateTaxonomy()
 }
@@ -355,4 +360,9 @@ func (p Post) PreviewPath() string {
 // Site - This post's site
 func (p Post) Site() *Site {
 	return p.site
+}
+
+// WebAliases - Access this post's aliases in a format for the web
+func (p Post) WebAliases() string {
+	return strings.Join(p.aliases, ", ")
 }

@@ -81,6 +81,16 @@
 							<input class="input" type="text" name="published" value="{{- $Post.WebDate | html -}}" placeholder="25 Dec 2000 @ 23:59">
 						</div>
 					</div>
+
+					<div class="columns">
+							<div class="column is-third">
+								<p><code>aliases</code>: a comma-separated list of absolute URIs for this post which will redirect to this post</p>
+							</div>
+						<div class="column">
+							<input class="input" type="text" name="aliases" value="{{- $Post.WebAliases | html -}}" placeholder="/my-cool-post/, /2010/04/28/my-cool-post/">
+						</div>
+					</div>
+
 					{{- range $name, $joined := $Post.TaxonomyMap -}}
 					<div class="columns">
 						<div class="column is-quarter">

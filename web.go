@@ -363,6 +363,11 @@ func EditPost(w http.ResponseWriter, req *http.Request) {
 			case "articleSrc":
 				post.body.Reset()
 				post.body.WriteString(value)
+			case "aliases":
+				individualValues := strings.Split(value, ",")
+				stripChars(&individualValues, " ")
+				removeDuplicates(&individualValues)
+				post.aliases = individualValues
 			default:
 				if strings.Contains(i, "taxonomy.") {
 					parts := strings.SplitAfterN(i, ".", 2)
