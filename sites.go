@@ -238,8 +238,8 @@ func (s Site) BuildPreview() (err error) {
 	wasCanonical := s.Canonify()
 	if wasCanonical {
 		s.canonifyurls = false
-		shimURL := shimAssets.url.Path
-		s.baseurl = filepath.Join(strings.TrimRight(shimURL, "/"), "/preview/", siteURL.Path)
+		shimURL := shimAssets.url.String()
+		s.baseurl = strings.TrimRight(shimURL, "/") + "/preview/" + strings.TrimRight(siteURL.RequestURI(), " /")
 	} else {
 		s.baseurl = strings.TrimRight(origPath, "/") + "/preview/"
 	}

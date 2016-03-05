@@ -1,0 +1,58 @@
+{{define "filesPage"}}
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8">
+		<title>SHIM | View Files</title>
+		{{template "stylesheets"}}
+	</head>
+	<body>
+		{{template "navbar"}}
+
+		<div id="content" class="content">
+			<h1>File Manager</h1>
+			{{ template "messages" $ -}}
+			<hr>
+			{{- if eq $.Action "embed" -}}
+			<div class="box">
+				<p>Here is your embedding code. Copy and paste it into your post source:</p>
+				<input class="input" type="text" value="{{- $.Message | html -}}" form="none">
+			</div>
+			<hr>
+			{{- end -}}
+			<div class="box">
+				<p>Upload a new file</p>
+				<form action="/staticfiles/" enctype="multipart/form-data" method="post">
+					<div class="columns">
+						<div class="column">
+							<input type="file" accept="*" formenctype="multipart/form-data" name="uploadFile">
+						</div>
+						<div class="column is-2 is-text-right">
+							<button class="button is-success" type="submit">Upload File</button>
+						</div>
+					</div>
+				</form>
+			</div>
+			{{- $files := $.Site.StaticFiles -}}
+
+			<hr>
+			{{- if eq (len $files) 0 -}}
+				<p>It looks like you do not have any files. Try uploading some!</p>
+			{{- else -}}
+				{{- range $filename := $files -}}
+				<div class="box">
+					<form action="/staticfiles/" method="post">
+						<input type="hidden" name="removeFile" value="{{- $filename | html -}}">
+						<p>Filename: {{ $filename | html }}</p>
+						<a href="/staticfiles/?embed={{- $filename -}}"><button type="button" class="button is-primary">Copy Embed Code</button></a>
+						<button class="button is-danger" type="submit">Delete File</button>
+					</form>
+				</div>
+				{{- end -}}
+			{{- end -}}
+		</div>
+
+		{{template "footer"}}
+	</body>
+</html>
+{{end}}

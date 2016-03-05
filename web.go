@@ -310,6 +310,57 @@ func ViewPosts(w http.ResponseWriter, req *http.Request) {
 	renderAnything(w, "postsPage", wrapper)
 }
 
+// ViewFiles - View all files uploaded to this site
+func ViewFiles(w http.ResponseWriter, req *http.Request) {
+	wrapper := NewWrapper(w, req)
+
+	if req.Method == "POST" {
+		req.ParseMultipartForm(fiveMegabytes)
+
+		removeFile := req.Form.Get("removeFile")
+
+		form := req.MultipartForm
+
+		if form != nil {
+			for name, value := range form.File {
+				fmt.Printf("form field: %s\n", name)
+				for _, v := range value {
+					fmt.Printf("filename: %s\n", v.Filename)
+					file, err := v.Open()
+					defer file.Close()
+					err = wrapper.Site.AddStaticFile(v.Filename, file)
+					if err != nil {
+						wrapper.FailedMessage("Failed to upload file: " + err.Error())
+						break
+					}
+					wrapper.SuccessMessage("File uploaded.")
+				}
+			}
+		}
+
+		if len(removeFile) > 0 {
+			err := wrapper.Site.RemoveStaticFile(removeFile)
+			if err != nil {
+				wrapper.FailedMessage("Unable to remove file. Error: " + err.Error())
+			} else {
+				wrapper.SuccessMessage("Removed file successfully.")
+			}
+		}
+	} else {
+		q := req.URL.Query()
+		embedFile := q.Get("embed")
+		fmt.Printf("embed file: %s\n", embedFile)
+
+		if len(embedFile) > 0 {
+			wrapper.Action = "embed"
+			embed := wrapper.Site.GetEmbedCode(embedFile)
+			wrapper.Message = embed
+		}
+	}
+
+	renderAnything(w, "filesPage", wrapper)
+}
+
 // EditPost - Edit a Post
 func EditPost(w http.ResponseWriter, req *http.Request) {
 	wrapper := NewWrapper(w, req)

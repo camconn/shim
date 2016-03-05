@@ -228,7 +228,11 @@ func (p *Post) updateMap() {
 	p.all["date"] = p.Date()
 	p.all["draft"] = p.Draft()
 	p.all["description"] = p.Description()
-	p.all["aliases"] = p.aliases[:]
+
+	numAliases := len(p.aliases)
+	if numAliases > 1 || numAliases == 1 && len(p.aliases[0]) != 0 {
+		p.all["aliases"] = p.aliases[:]
+	}
 
 	p.updateTaxonomy()
 }

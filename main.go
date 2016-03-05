@@ -82,6 +82,7 @@ func main() {
 	mux.Handle("/config/", withAuth.ThenFunc(EditSite))
 	mux.Handle("/config/advanced/", withAuth.ThenFunc(AdvancedConfig))
 	mux.Handle("/posts/", withAuth.ThenFunc(ViewPosts))
+	mux.Handle("/staticfiles/", withAuth.ThenFunc(ViewFiles))
 	mux.Handle("/edit/", withAuth.ThenFunc(EditPost))
 	mux.Handle("/delete/", withAuth.ThenFunc(RemovePost))
 	mux.Handle("/new/", withAuth.ThenFunc(NewPost))
@@ -90,6 +91,8 @@ func main() {
 
 	previewer := http.HandlerFunc(loginH.dynamicPreviewHandler)
 	mux.Handle("/preview/", withAuth.Append(previewStripPrefix).Then(previewer))
+	// workaround hack to serve preview static files correctly (e.g. images)
+	mux.Handle("/files/", withAuth.Then(previewer))
 
 	noAuth := alice.New(loggingHandler)
 	staticFilesRoot := filepath.Join(shimAssets.root, shimAssets.static)
