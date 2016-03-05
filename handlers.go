@@ -20,6 +20,7 @@ import (
 	"github.com/niemal/uman"
 	"log"
 	"net/http"
+	"path/filepath"
 	"time"
 )
 
@@ -65,4 +66,50 @@ func (l *loginHandler) authHandler(h http.Handler) http.Handler {
 		log.Println("Not logged in! Redirecting to login page.")
 		http.Redirect(w, r, "/login/?redirect="+r.URL.EscapedPath()+"&warn=yes", http.StatusSeeOther)
 	})
+}
+
+// previewStripPrefix is combined with dynamicPreviewHandler
+func previewStripPrefix(h http.Handler) http.Handler {
+	return http.StripPrefix("/preview/", h)
+}
+
+func (l *loginHandler) dynamicPreviewHandler(w http.ResponseWriter, r *http.Request) {
+	session := l.userMan.GetHTTPSession(w, r)
+
+	if session.IsLogged() {
+		site := findUserSite(session.User)
+		if site != nil {
+			filename := "index.html"
+			if len(r.URL.RequestURI()) > 0 {
+				filename = r.URL.RequestURI()
+			}
+
+			location := http.Dir(filepath.Join(site.Location(), "preview"))
+			file, err := location.Open(filename)
+			if err != nil {
+				// 404
+				log.Printf("Couldn't find %s\n", location)
+				return
+			}
+			defer file.Close()
+
+			info, err := file.Stat()
+			check(err)
+
+			if info.IsDir() {
+				file.Close()
+				file, _ = location.Open(filepath.Join(filename, "index.html"))
+				info, err = file.Stat()
+				defer file.Close()
+			}
+
+			// detect if folder, then serve index.html
+			log.Printf("serving from %s\n", location)
+			http.ServeContent(w, r, info.Name(), info.ModTime(), file)
+			return
+		}
+	}
+
+	log.Println("not logged in!")
+
 }

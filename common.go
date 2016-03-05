@@ -20,6 +20,27 @@ import (
 	"strings"
 )
 
+// Hashmap of which users are on which sites.
+var userSites map[string]string
+
+// Find which site a user is currently viewing. If the user isn't found in
+// userSites, then just return the default site.
+func findUserSite(username string) *Site {
+	if sitename, ok := userSites[username]; ok {
+		// find site by that name then return it
+		for _, s := range allSites {
+			if s.ShortName() == sitename {
+				return s
+			}
+		}
+		return allSites[0]
+	}
+
+	defaultSite := allSites[0]
+	userSites[username] = defaultSite.ShortName()
+	return defaultSite
+}
+
 // stripChars Trims the characters in `chars` from each element in a slice.
 func stripChars(slice *[]string, chars string) {
 	for i, v := range *slice {

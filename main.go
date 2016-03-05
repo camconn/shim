@@ -28,7 +28,6 @@ import (
 )
 
 var allSites []*Site
-var mySite *Site
 var shimAssets *assets
 var um *uman.UserManager
 
@@ -57,6 +56,7 @@ func main() {
 
 	// Setup assets and appropriate folders
 	assignAssets()
+	userSites = make(map[string]string)
 
 	um = uman.New(filepath.Join(shimAssets.root, "users.db"))
 	um.CheckDelay = 60
@@ -69,14 +69,13 @@ func main() {
 	checkReason(err, "Was not able to find primary site. Please check your `config.toml` file.")
 	setupSites(siteNames)
 	allSites = loadAllSites(siteNames)
-	mySite = allSites[0]
 	fmt.Printf("all sites: %##v\n", allSites)
-	fmt.Printf("primary site: %s\n", mySite.String())
 
 	// Below this line are things exclusively for running the webapp
 	mux := http.NewServeMux()
 
-	loginRequirer := newLoginHandler(um).authHandler
+	loginH := newLoginHandler(um)
+	loginRequirer := loginH.authHandler
 	withAuth := alice.New(loggingHandler, loginRequirer)
 
 	mux.Handle("/", withAuth.ThenFunc(Home))
@@ -89,10 +88,8 @@ func main() {
 	mux.Handle("/admin/", withAuth.ThenFunc(Admin))
 	mux.Handle("/taxonomy/", withAuth.ThenFunc(ViewTaxonomies))
 
-	withPreview := alice.New(loggingHandler, loginRequirer)
-	previewSiteRoot := filepath.Join(mySite.Location(), "preview")
-	previewSiteHandler := http.StripPrefix("/preview/", http.FileServer(http.Dir(previewSiteRoot)))
-	mux.Handle("/preview/", withPreview.Then(previewSiteHandler))
+	previewer := http.HandlerFunc(loginH.dynamicPreviewHandler)
+	mux.Handle("/preview/", withAuth.Append(previewStripPrefix).Then(previewer))
 
 	noAuth := alice.New(loggingHandler)
 	staticFilesRoot := filepath.Join(shimAssets.root, shimAssets.static)
@@ -108,7 +105,6 @@ func main() {
 	}
 	fmt.Printf("portenv: %s\n", portEnv)
 
-	fmt.Printf("baseurl: %s\n", mySite.BaseURL())
 	mServ := http.Server{}
 	addr := fmt.Sprintf(":%s", portEnv)
 	mServ.Addr = fmt.Sprintf(addr)

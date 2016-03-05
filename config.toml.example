@@ -1,3 +1,5 @@
+# This is the configuration file for Shim.
+# It should be located in the same folder as your Shim executable (for now).
 
 # Assets #######################################################################
 # The following are relative to the directory which shim is started in. 
@@ -23,16 +25,20 @@ baseurl = "http://127.0.0.1:8080/"
 
 
 [sites]
-    all = ["mysite", "test"]
-
-    # So, this site is in ./sites/test/
+    # This site is in ./sites/test/
     [sites.test]
+        # Folder for this site.
         dir = "test"
-        public = true
+        # Is this site enabled?
         enabled = true
 
-    # So this site is in ./sites/mysite/
+    # This site is in ./sites/mysite/
     [sites.mysite]
         dir = "mysite"
-        public = true
-        enabled = false
+        enabled = true
+
+    # Add your own using the following format:
+    # For example: to add a site called "coolblog"
+    #[sites.coolblog]
+    #    dir = "coolblog"
+    #    enabled = true

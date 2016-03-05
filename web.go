@@ -28,15 +28,20 @@ import (
 	"time"
 )
 
+const (
+	fiveMegabytes = (int64)(5 * 1024 * 1024)
+)
+
 // WebWrapper - Struct for passing values to the web
 type WebWrapper struct {
-	Message string
-	Action  string
-	Site    *Site
-	Post    *Post
-	Text    *bytes.Buffer
-	Choices []string // TODO: Remove this and use a ConfigOption instead
-	URL     string
+	Message  string
+	Action   string
+	Site     *Site
+	AllSites []*Site
+	Post     *Post
+	Text     *bytes.Buffer
+	Choices  []string
+	URL      string
 	// Even though these things are opposite, they imply different things
 	Success bool
 	Failed  bool
@@ -56,17 +61,21 @@ func (w *WebWrapper) FailedMessage(message string) {
 
 // NewWrapper Creates a new WebWrapper struct appropriate to the context of the
 // user, taking into account the current site as well as the URL
-func NewWrapper(req *http.Request) *WebWrapper {
-	w := new(WebWrapper)
-	// TODO: Switch sites based on cookies and whatnot
-	w.Site = allSites[0]
-	w.URL = req.URL.String()
-	return w
-}
+func NewWrapper(w http.ResponseWriter, req *http.Request) *WebWrapper {
+	wr := new(WebWrapper)
 
-const (
-	fiveMegabytes = (int64)(5 * 1024 * 1024)
-)
+	wr.URL = req.URL.String()
+
+	session := um.GetHTTPSession(w, req)
+	if session != nil && session.IsLogged() {
+		site := findUserSite(session.User)
+		wr.Site = site
+	} else {
+		wr.Site = allSites[0]
+	}
+
+	return wr
+}
 
 // TODO: Just do it?
 // var t = template.Must(template.ParseGlob("templates/*"))
@@ -89,7 +98,8 @@ func Home(w http.ResponseWriter, req *http.Request) {
 
 // Admin - The admin page
 func Admin(w http.ResponseWriter, req *http.Request) {
-	status := NewWrapper(req)
+	status := NewWrapper(w, req)
+	status.AllSites = allSites
 
 	if req.Method == "POST" {
 		err := req.ParseForm()
@@ -100,17 +110,28 @@ func Admin(w http.ResponseWriter, req *http.Request) {
 			req.ParseForm()
 
 			doBuild := strings.Trim(req.FormValue("doBuild"), " ")
+			doPreview := strings.Trim(req.FormValue("doPreview"), " ")
 			doReload := strings.Trim(req.FormValue("doReload"), " ")
+			switchSite := strings.Trim(req.FormValue("switchSite"), " ")
 			if len(doBuild) >= 1 {
 				status.Action = "build"
 			} else if len(doReload) >= 1 {
 				status.Action = "reload"
+			} else if len(doPreview) >= 1 {
+				status.Action = "preview"
+			} else if len(switchSite) >= 1 {
+				status.Action = "switch"
 			}
 		}
 	}
 
-	if status.Action == "build" {
-		err := status.Site.BuildPublic()
+	if status.Action == "build" || status.Action == "preview" {
+		var err error
+		if status.Action == "build" {
+			err = status.Site.BuildPublic()
+		} else {
+			err = status.Site.BuildPreview()
+		}
 		if err != nil {
 			status.FailedMessage("Build failed. Reason: " + err.Error())
 		} else {
@@ -119,6 +140,26 @@ func Admin(w http.ResponseWriter, req *http.Request) {
 	} else if status.Action == "reload" {
 		status.Site.Reload()
 		status.SuccessMessage("Site reloaded.")
+	} else if status.Action == "switch" {
+		newSite := strings.TrimSpace(req.FormValue("newSite"))
+		if newSite == status.Site.ShortName() {
+			status.FailedMessage("You're already using that site!")
+		} else {
+			session := um.GetHTTPSession(w, req)
+			for _, s := range allSites {
+				if s.ShortName() == newSite {
+					uName := session.User
+					delete(userSites, uName)
+					userSites[uName] = newSite
+					status.Site.Reload()
+					status.Site = s
+					// Go ahead and build a preview in the background
+					go status.Site.BuildPreview()
+					status.SuccessMessage("Switched to site.")
+					break
+				}
+			}
+		}
 	}
 
 	renderAnything(w, "adminPage", status)
@@ -126,7 +167,7 @@ func Admin(w http.ResponseWriter, req *http.Request) {
 
 // ViewTaxonomies Taxonomy management page
 func ViewTaxonomies(w http.ResponseWriter, req *http.Request) {
-	wrapper := NewWrapper(req)
+	wrapper := NewWrapper(w, req)
 
 	if req.Method == "POST" {
 		err := req.ParseForm()
@@ -263,7 +304,7 @@ func Login(w http.ResponseWriter, req *http.Request) {
 
 // ViewPosts - View all posts
 func ViewPosts(w http.ResponseWriter, req *http.Request) {
-	wrapper := NewWrapper(req)
+	wrapper := NewWrapper(w, req)
 	wrapper.Site.GetAllPosts()
 
 	renderAnything(w, "postsPage", wrapper)
@@ -271,7 +312,7 @@ func ViewPosts(w http.ResponseWriter, req *http.Request) {
 
 // EditPost - Edit a Post
 func EditPost(w http.ResponseWriter, req *http.Request) {
-	wrapper := NewWrapper(req)
+	wrapper := NewWrapper(w, req)
 	postPath := req.URL.Path[len("/edit/"):]
 
 	if len(postPath) == 0 {
@@ -376,7 +417,7 @@ renderEditedPost:
 
 // NewPost - Create a new post
 func NewPost(w http.ResponseWriter, req *http.Request) {
-	wrapper := NewWrapper(req)
+	wrapper := NewWrapper(w, req)
 
 	if req.Method == "POST" {
 		req.ParseMultipartForm(fiveMegabytes)
@@ -433,7 +474,7 @@ render:
 
 // RemovePost - Remove a Post
 func RemovePost(w http.ResponseWriter, req *http.Request) {
-	wrapper := NewWrapper(req)
+	wrapper := NewWrapper(w, req)
 
 	relPath := req.URL.Path[len("/delete/"):]
 	if len(relPath) == 0 {
@@ -474,7 +515,7 @@ func RemovePost(w http.ResponseWriter, req *http.Request) {
 // EditSite - Edit a site's basic configuration
 func EditSite(w http.ResponseWriter, req *http.Request) {
 	// TODO: Support multiple sites
-	wrapper := NewWrapper(req)
+	wrapper := NewWrapper(w, req)
 
 	themesLoc := fmt.Sprintf("%s/%s", shimAssets.root, shimAssets.themes)
 	allThemes, err := GetThemes(themesLoc)
@@ -547,7 +588,7 @@ renderBasicConfig:
 
 // AdvancedConfig - Edit a site's configuration (for power users)
 func AdvancedConfig(w http.ResponseWriter, req *http.Request) {
-	wrapper := NewWrapper(req)
+	wrapper := NewWrapper(w, req)
 
 	wrapper.Text = bytes.NewBuffer([]byte{})
 	configLoc := filepath.Join(wrapper.Site.Location(), "config.toml")
