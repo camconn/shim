@@ -418,7 +418,11 @@ func EditPost(w http.ResponseWriter, req *http.Request) {
 				individualValues := strings.Split(value, ",")
 				stripChars(&individualValues, " ")
 				removeDuplicates(&individualValues)
-				post.aliases = individualValues
+				if len(individualValues) == 0 && len(individualValues[0]) < 1 {
+					// ignore taxonomy list with spaces only
+				} else {
+					post.aliases = individualValues
+				}
 			default:
 				if strings.Contains(i, "taxonomy.") {
 					parts := strings.SplitAfterN(i, ".", 2)

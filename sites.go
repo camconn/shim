@@ -22,7 +22,6 @@ import (
 	"github.com/BurntSushi/toml"
 	"github.com/spf13/viper"
 	"log"
-	"net/url"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -147,6 +146,12 @@ func (s *Site) loadConfig(name string) {
 		}
 	}
 
+	// Get all default site-wide parameters
+	paramsMap := v.GetStringMapString("params")
+	for key, value := range paramsMap {
+		v.SetDefault("params."+key, value)
+	}
+
 	s.loadTaxonomyTerms()
 
 	s.allSettings = v.AllSettings()
@@ -227,10 +232,14 @@ func (s *Site) BuildPublic() (err error) {
 func (s Site) BuildPreview() (err error) {
 	// Set baseurl to /preview/ to help view
 	origPath := s.BaseURL()[:]
-	siteURL, err := url.Parse(s.BaseURL())
-	if err != nil {
-		return
-	}
+	/*
+		siteURL, err := url.Parse(s.BaseURL())
+		if err != nil {
+			return
+		}
+	*/
+
+	shimURL := shimAssets.url.String()
 
 	// NOTE: The way that we are publishing these sites means that all of the URLs
 	// **CANNOT** be canonical. So what's happening here is that we're temporarily
@@ -238,10 +247,9 @@ func (s Site) BuildPreview() (err error) {
 	wasCanonical := s.Canonify()
 	if wasCanonical {
 		s.canonifyurls = false
-		shimURL := shimAssets.url.String()
-		s.baseurl = strings.TrimRight(shimURL, "/") + "/preview/" + strings.TrimRight(siteURL.RequestURI(), " /")
+		s.baseurl = strings.TrimRight(shimURL, "/") + "/preview/" // + strings.TrimRight(siteURL.RequestURI(), " /")
 	} else {
-		s.baseurl = strings.TrimRight(origPath, "/") + "/preview/"
+		s.baseurl = strings.TrimRight(shimURL, "/") + "/preview/"
 	}
 	log.Printf("Temporarily %s\n", s.BaseURL())
 	// s.baseurl = origPath + "/preview/"

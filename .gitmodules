@@ -1,3 +1,6 @@
 [submodule "themes/slim"]
 	path = themes/slim
 	url = https://github.com/inexist3nce/hugo-theme-slim
+[submodule "casper-origin"]
+	path = themes/casper
+	url = https://github.com/vjeantet/hugo-theme-casper

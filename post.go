@@ -75,7 +75,13 @@ func (p *Post) handleFrontMatter(v *viper.Viper) {
 	p.draft = v.GetBool("draft")
 
 	v.SetDefault("aliases", []string{})
-	p.aliases = v.GetStringSlice("aliases")
+	aliases := v.GetStringSlice("aliases")
+	stripChars(&aliases, " ")
+	removeDuplicates(&aliases)
+	// Make sure we don't get any alias lists with only blank spaces
+	if (len(aliases) > 1) || (len(aliases) == 1 && len(aliases[0]) > 0) {
+		p.aliases = aliases
+	}
 
 	// Handle time parsing and error checking
 	publishString := v.GetString("date")
@@ -227,7 +233,9 @@ func (p *Post) updateMap() {
 	p.all["slug"] = p.Slug()
 	p.all["date"] = p.Date()
 	p.all["draft"] = p.Draft()
-	p.all["description"] = p.Description()
+	if len(p.description) > 0 {
+		p.all["description"] = p.Description()
+	}
 
 	numAliases := len(p.aliases)
 	if numAliases > 1 || numAliases == 1 && len(p.aliases[0]) != 0 {
@@ -240,6 +248,12 @@ func (p *Post) updateMap() {
 // update this site's view of this post's taxonomy
 func (p *Post) updateTaxonomy() {
 	for term, values := range (*p).taxonomies {
+
+		// don't worry about tags which don't have anything
+		if len(values) == 1 && len(values[0]) == 0 {
+			continue
+		}
+
 		(*p).all[term] = values
 
 		kind, err := p.Site().Taxonomies().GetTaxonomy(term)
@@ -323,9 +337,24 @@ func (p Post) Draft() bool {
 	return p.draft
 }
 
+// ActualDescription - Get a short description of this post as a raw string,
+// without calculating it on the fly
+func (p Post) ActualDescription() string {
+	return p.description
+}
+
 // Description - A short description of this post.
 func (p Post) Description() string {
-	return p.description
+	if len(p.description) != 0 {
+		return p.description
+	}
+
+	// TODO: Do this correctly
+	if p.body.Len() > 160 {
+		return fmt.Sprintf("%s ...", p.body.String()[:160])
+	}
+
+	return p.body.String()
 }
 
 func (p *Post) String() string {
