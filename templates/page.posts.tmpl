@@ -20,21 +20,18 @@
 				<nav class="navbar" style="margin-bottom: 0em;">
 					<div class="navbar-left">
 						<div class="navbar-item">
-							<h4>
-								{{- $post.Title | html -}}
-								{{- if $post.Draft -}}<i> (draft) </i>{{- end -}}
-							</h4>
+							<h3>{{- $post.Title | html -}}</h3>
 						</div>
 					</div>
 					<div class="navbar-right">
 						{{- if $post.Draft -}}
-							<div class="navbar-item">
-								<h4><span class="tag is-warning">Draft</span></h4>
-							</div>
+						<div class="navbar-item">
+							<h4><span class="tag is-warning">Draft</span></h4>
+						</div>
 						{{- else -}}
-							<div class="navbar-item">
-								<h4><span class="tag is-success">Published</span></h4>
-							</div>
+						<div class="navbar-item">
+							<h4><span class="tag is-success">Published</span></h4>
+						</div>
 						{{- end -}}
 						<div class="navbar-item">
 							<h4><a class="tag is-primary" href="/edit/{{ $post.RelPath }}">Edit</a></h4>
@@ -44,13 +41,13 @@
 						</div>
 					</div>
 				</nav>
-				<h5 class="subtitle">
+				<p class="subtitle">
 					{{- if $post.Draft -}}
 						Written by <b>{{ $post.Author | html }}</b> &mdash; {{ $post.WebDate | html }}
 					{{- else -}}
 						Published by <b>{{ $post.Author | html }}</b> &mdash; {{ $post.WebDate | html }}
 					{{- end -}}
-				</h5>
+				</p>
 				<blockquote>{{- $post.Description | html -}}</blockquote>
 			</div>
 			{{- end -}}

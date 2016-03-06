@@ -37,3 +37,7 @@ form[action^="/edit"] input, form[action^="/edit"] textarea {
 form[action^="/edit"] input[type="text"] {
 	width: 100%;
 }
+
+div.box {
+	margin-bottom: 1em;
+}
