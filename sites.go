@@ -146,11 +146,14 @@ func (s *Site) loadConfig(name string) {
 		}
 	}
 
-	// Get all default site-wide parameters
-	paramsMap := v.GetStringMapString("params")
+	// We're doing this another time to save any values that may be already in
+	// the params.WHATEVER namespace from being lost.
+	paramsMap := v.GetStringMap("params")
+	allCopiedParams := make(map[string]interface{})
 	for key, value := range paramsMap {
-		v.SetDefault("params."+key, value)
+		allCopiedParams[key] = value
 	}
+	v.SetDefault("params", allCopiedParams)
 
 	s.loadTaxonomyTerms()
 
