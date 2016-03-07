@@ -109,7 +109,7 @@ func renderAnything(w http.ResponseWriter, tmpl string, i interface{}) {
 
 // Home - The home page -- Just redirect to login
 func Home(w http.ResponseWriter, req *http.Request) {
-	http.Redirect(w, req, "/admin/", http.StatusMovedPermanently)
+	http.Redirect(w, req, shimAssets.baseurl+"/admin/", http.StatusMovedPermanently)
 }
 
 // Admin - The admin page
@@ -335,11 +335,11 @@ func Login(w http.ResponseWriter, req *http.Request) {
 		if len(warn) > 0 {
 			wrapper.Action = "warn"
 			q.Del("warn")
-			wrapper.URL = "/login/?" + q.Encode()
+			wrapper.URL = shimAssets.baseurl + "/login/?" + q.Encode()
 			wrapper.Message = "Please login in."
 		}
 	} else {
-		redirect = "/admin/" // By default, redirect to /admin/
+		redirect = shimAssets.baseurl + "/admin/" // By default, redirect to /admin/
 	}
 
 	if req.Method == "POST" {
@@ -434,10 +434,10 @@ func EditPost(w http.ResponseWriter, req *http.Request) {
 	wrapper := NewWrapper(w, req)
 
 	// postID is the base64 post ID of a post.
-	postID := req.URL.Path[len(wrapper.Base+"/edit/"):]
+	postID := req.URL.Path[len("/edit/"):]
 
 	if len(postID) == 0 {
-		http.Redirect(w, req, "/posts/", http.StatusTemporaryRedirect)
+		http.Redirect(w, req, shimAssets.baseurl+"/posts/", http.StatusTemporaryRedirect)
 		return
 	}
 
@@ -596,7 +596,7 @@ func NewPost(w http.ResponseWriter, req *http.Request) {
 				wrapper.FailedMessage("Could not save post: " + err.Error())
 				goto render
 			} else {
-				editLoc := fmt.Sprintf("/edit/%s", post.PostID())
+				editLoc := fmt.Sprintf("%s/edit/%s", shimAssets.baseurl, post.PostID())
 				log.Printf("redirecting to %s\n", editLoc)
 				http.Redirect(w, req, editLoc, http.StatusSeeOther)
 				return
@@ -615,10 +615,10 @@ render:
 func RemovePost(w http.ResponseWriter, req *http.Request) {
 	wrapper := NewWrapper(w, req)
 
-	postID := req.URL.Path[len(wrapper.Base+"/delete/"):]
+	postID := req.URL.Path[len("/delete/"):]
 
 	if len(postID) == 0 {
-		http.Redirect(w, req, "/posts/", http.StatusTemporaryRedirect)
+		http.Redirect(w, req, shimAssets.baseurl+"/posts/", http.StatusTemporaryRedirect)
 		return
 	}
 
@@ -659,7 +659,7 @@ func RemovePost(w http.ResponseWriter, req *http.Request) {
 		if err != nil {
 			wrapper.FailedMessage("Couldn't delete file: " + err.Error())
 		} else {
-			http.Redirect(w, req, "/posts/", http.StatusSeeOther)
+			http.Redirect(w, req, shimAssets.baseurl+"/posts/", http.StatusSeeOther)
 		}
 	}
 

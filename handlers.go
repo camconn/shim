@@ -17,6 +17,7 @@
 package main
 
 import (
+	"fmt"
 	"github.com/niemal/uman"
 	"log"
 	"net/http"
@@ -64,14 +65,11 @@ func (l *loginHandler) authHandler(h http.Handler) http.Handler {
 			return
 		}
 
-		log.Println("Not logged in! Redirecting to login page.")
-		http.Redirect(w, r, "/login/?redirect="+url.QueryEscape(r.URL.String())+"&warn=yes", http.StatusSeeOther)
+		redirectTarget := fmt.Sprintf("%s/login/?redirect=%s%s&warn=yes",
+			shimAssets.baseurl, shimAssets.baseurl, url.QueryEscape(r.URL.String()))
+		log.Printf("Not logged in! Redirecting to %s\n", redirectTarget)
+		http.Redirect(w, r, redirectTarget, http.StatusSeeOther)
 	})
-}
-
-// previewStripPrefix is combined with dynamicPreviewHandler
-func previewStripPrefix(h http.Handler) http.Handler {
-	return http.StripPrefix("/preview/", h)
 }
 
 func (l *loginHandler) dynamicPreviewHandler(w http.ResponseWriter, r *http.Request) {

@@ -96,7 +96,7 @@ func main() {
 	mux.Handle("/taxonomy/", withAuth.ThenFunc(ViewTaxonomies))
 
 	previewer := http.HandlerFunc(loginH.dynamicPreviewHandler)
-	mux.Handle("/preview/", withAuth.Append(previewStripPrefix).Then(previewer))
+	mux.Handle("/preview/", http.StripPrefix("/preview", withAuth.Then(previewer)))
 	// workaround hack to serve preview static files correctly (e.g. images)
 	mux.Handle("/files/", withAuth.Then(previewer))
 
@@ -117,7 +117,7 @@ func main() {
 	mServ := http.Server{}
 	addr := fmt.Sprintf(":%s", portEnv)
 	mServ.Addr = fmt.Sprintf(addr)
-	mServ.Handler = mux
+	mServ.Handler = http.StripPrefix(shimAssets.baseurl, mux)
 	err = mServ.ListenAndServe()
 	if err != nil {
 		log.Fatalf("Error serving: %s\n", err.Error())
