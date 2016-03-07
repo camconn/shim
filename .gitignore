@@ -4,3 +4,7 @@ shim*
 gin-bin
 config.toml
 users.db
+
+themes/
+!themes/casper/
+!themes/slim/
