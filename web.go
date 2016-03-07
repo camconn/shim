@@ -18,6 +18,7 @@ package main
 
 import (
 	"bytes"
+	"encoding/base64"
 	"fmt"
 	"github.com/niemal/uman"
 	"html/template"
@@ -429,12 +430,23 @@ func ViewFiles(w http.ResponseWriter, req *http.Request) {
 // EditPost - Edit a Post
 func EditPost(w http.ResponseWriter, req *http.Request) {
 	wrapper := NewWrapper(w, req)
-	postPath := req.URL.Path[len("/edit/"):]
 
-	if len(postPath) == 0 {
+	// postID is the base64 post ID of a post.
+	postID := req.URL.Path[len("/edit/"):]
+
+	if len(postID) == 0 {
 		http.Redirect(w, req, "/posts/", http.StatusTemporaryRedirect)
 		return
 	}
+
+	postPathBytes, err := base64.StdEncoding.DecodeString(postID)
+	if err != nil {
+		http.Error(w, "Sorry, but the post ID you are trying to edit is invalid.",
+			http.StatusNotFound)
+		return
+	}
+
+	postPath := string(postPathBytes)
 
 	contentDirPath := filepath.Join(wrapper.Site.Location(), wrapper.Site.ContentDir())
 	postLoc := fmt.Sprintf("%s.md", filepath.Join(contentDirPath, postPath))
@@ -582,7 +594,7 @@ func NewPost(w http.ResponseWriter, req *http.Request) {
 				wrapper.FailedMessage("Could not save post: " + err.Error())
 				goto render
 			} else {
-				editLoc := fmt.Sprintf("/edit/%s", post.RelPath())
+				editLoc := fmt.Sprintf("/edit/%s", post.PostID())
 				log.Printf("redirecting to %s\n", editLoc)
 				http.Redirect(w, req, editLoc, http.StatusSeeOther)
 				return
@@ -601,7 +613,22 @@ render:
 func RemovePost(w http.ResponseWriter, req *http.Request) {
 	wrapper := NewWrapper(w, req)
 
-	relPath := req.URL.Path[len("/delete/"):]
+	postID := req.URL.Path[len("/delete/"):]
+
+	if len(postID) == 0 {
+		http.Redirect(w, req, "/posts/", http.StatusTemporaryRedirect)
+		return
+	}
+
+	postPathBytes, err := base64.StdEncoding.DecodeString(postID)
+	if err != nil {
+		http.Error(w, "Sorry, but the post ID you are trying to edit is invalid.",
+			http.StatusNotFound)
+		return
+	}
+
+	relPath := string(postPathBytes)
+
 	if len(relPath) == 0 {
 		http.Error(w, "File not found :'(", 404)
 		return

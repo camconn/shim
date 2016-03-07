@@ -19,6 +19,7 @@ package main
 import (
 	"bufio"
 	"bytes"
+	"encoding/base64"
 	"fmt"
 	"github.com/BurntSushi/toml"
 	"github.com/spf13/viper"
@@ -372,6 +373,17 @@ func (p Post) GetBody() []byte {
 // RelPath - Get the relative path of this post to the /content/ directory
 func (p Post) RelPath() string {
 	return p.relpath
+}
+
+// PostID is the base64 of the relative path for this post.
+//
+// See also: Post.RelPath
+func (p *Post) PostID() string {
+	relPathStr := p.RelPath()
+
+	b64Path := base64.StdEncoding.EncodeToString([]byte(relPathStr))
+
+	return b64Path
 }
 
 // WebDate - Get the date displayed in shim for this post
