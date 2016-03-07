@@ -30,6 +30,10 @@ that shim can actually do its job.
 $ go get github.com/spf13/hugo
 $ git clone https://github.com/camconn/shim
 $ cd shim
+$ go get -v github.com/BurntSushi/toml \
+            github.com/justinas/alice \
+            github.com/niemal/uman \
+            github.com/spf13/viper
 $ git submodule init
 $ go build
 $ ./shim

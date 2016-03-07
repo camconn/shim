@@ -20,6 +20,7 @@ import (
 	"github.com/niemal/uman"
 	"log"
 	"net/http"
+	"net/url"
 	"path/filepath"
 	"time"
 )
@@ -64,7 +65,7 @@ func (l *loginHandler) authHandler(h http.Handler) http.Handler {
 		}
 
 		log.Println("Not logged in! Redirecting to login page.")
-		http.Redirect(w, r, "/login/?redirect="+r.URL.EscapedPath()+"&warn=yes", http.StatusSeeOther)
+		http.Redirect(w, r, "/login/?redirect="+url.QueryEscape(r.URL.String())+"&warn=yes", http.StatusSeeOther)
 	})
 }
 

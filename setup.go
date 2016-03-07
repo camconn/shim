@@ -65,6 +65,24 @@ func setupConfig() {
 	}
 }
 
+// firstRun displays first run messages to the user, then returns whether
+// or not this is the first run of shim. If this is the first time running shim,
+// return true, otherwise, return false.
+func firstRun() bool {
+	if _, err := os.Stat("users.db"); os.IsNotExist(err) {
+		fmt.Println()
+		fmt.Println("Hello there. Welcome to shim!")
+		fmt.Println("The default username and password are:")
+		fmt.Println("  username: root")
+		fmt.Println("  password: hunter2")
+		fmt.Println()
+		fmt.Println("Please login, then change these settings.")
+		fmt.Println()
+		return true
+	}
+	return false
+}
+
 // findPrimarySite Finds the first site that is enabled, and returns it's name
 // as a string `name`. If there are no sites available, returns an error `err`.
 func findSites() (names []string, err error) {

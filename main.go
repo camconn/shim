@@ -60,7 +60,10 @@ func main() {
 
 	um = uman.New(filepath.Join(shimAssets.root, "users.db"))
 	um.CheckDelay = 60
-	um.Register("root", "hunter2") // Super secure initial password
+
+	if firstRun() { // Setup initial username and password so admins can run shim.
+		um.Register("root", "hunter2")
+	}
 
 	fmt.Printf("Root directory is: %s\n", shimAssets.root)
 
@@ -87,6 +90,7 @@ func main() {
 	mux.Handle("/delete/", withAuth.ThenFunc(RemovePost))
 	mux.Handle("/new/", withAuth.ThenFunc(NewPost))
 	mux.Handle("/admin/", withAuth.ThenFunc(Admin))
+	mux.Handle("/user/", withAuth.ThenFunc(Users))
 	mux.Handle("/taxonomy/", withAuth.ThenFunc(ViewTaxonomies))
 
 	previewer := http.HandlerFunc(loginH.dynamicPreviewHandler)

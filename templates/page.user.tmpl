@@ -1,0 +1,62 @@
+{{define "userPage"}}
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8">
+		<title>SHIM | Users</title>
+		{{template "stylesheets"}}
+	</head>
+	<body>
+		{{- template "navbar" -}}
+		<div id="content" class="content">
+			<h1 class="title">Manage Users</h1>
+			{{- template "messages" $ -}}
+			<p>You are currently logged in as <code>{{ $.Session.User | html }}</code>.</p>
+			<hr>
+			<div class="box">
+				<form action="/user/" method="post">
+					<h3>Change Password</h3>
+					<input name="accountAction" type="hidden" value="changepass">
+					<p class="control">
+						<label class="label">Old Password:</label>
+						<input class="input" name="oldPass" type="password">
+					</p>
+					<p class="control">
+						<label class="label">New Password:</label>
+						<input class="input" name="newPass" type="password">
+					</p>
+					<p class="control">
+						<label class="label">New Password (Confirm):</label>
+						<input class="input" name="newPassConfirm" type="password">
+					</p>
+					<input class="button is-primary" type="submit" value="Change password">
+				</form>
+			</div>
+			<hr>
+			<div class="box">
+				<h3>All Users</h3>
+				<table class="table is-striped">
+					<thead>
+						<tr>
+							<th>User</th>
+							<th><!-- Actions --></th>
+						</tr>
+					</thead>
+					<tbody>
+					{{- range $user, $bytes := .Anything.Users -}}
+					<tr>
+						<td>{{ $user | html -}}</td>
+						<td class="is-text-right">
+							<a href=""><button class="button is-success">These</button></a>
+							<a href=""><button class="button is-info">Do</button></a> <!-- Edit Button -->
+							<a href=""><button class="button is-danger">Nothing</button></a> <!-- Delete Button -->
+						</td>
+					</tr>
+					{{- end -}}
+				</table>
+			</div>
+		</div>
+		{{template "footer"}}
+	</body>
+</html>
+{{end}}

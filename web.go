@@ -19,6 +19,7 @@ package main
 import (
 	"bytes"
 	"fmt"
+	"github.com/niemal/uman"
 	"html/template"
 	"log"
 	"net/http"
@@ -32,19 +33,31 @@ const (
 	fiveMegabytes = (int64)(5 * 1024 * 1024)
 )
 
-// WebWrapper - Struct for passing values to the web
+// WebWrapper is a Struct for passing values to the web templates that Shim uses.
+// This has a set of globally used values, as well as information about what
+// happened for a page.
+//
+// There are fields which the developer may always consider to be non-nil, and
+// there are values which must be assigned that are by default nil.
 type WebWrapper struct {
-	Message  string
-	Action   string
-	Site     *Site
+	// These values are always populated and non-nil no matter what whenever
+	// calling `NewWrapper`
 	AllSites []*Site
-	Post     *Post
-	Text     *bytes.Buffer
-	Choices  []string
+	Site     *Site
 	URL      string
+	Action   string
+	Message  string
+
 	// Even though these things are opposite, they imply different things
 	Success bool
 	Failed  bool
+
+	// These fields are route and page specific.
+	Session  *uman.Session // Not populated by default
+	Choices  []string      // Not populated by default
+	Post     *Post         // Not populated by default
+	Text     *bytes.Buffer // Not populated by default
+	Anything interface{}   // Not populated by default
 }
 
 // SuccessMessage Modify WebWrapper to show a success message.
@@ -163,6 +176,58 @@ func Admin(w http.ResponseWriter, req *http.Request) {
 	}
 
 	renderAnything(w, "adminPage", status)
+}
+
+// Users - User Management Page
+func Users(w http.ResponseWriter, req *http.Request) {
+	wrapper := NewWrapper(w, req)
+	wrapper.Anything = um
+	session := um.GetHTTPSession(w, req)
+	wrapper.Session = session
+
+	if req.Method == "POST" {
+		err := req.ParseForm()
+		if err != nil {
+			wrapper.FailedMessage("Unable to parse your submission: " + err.Error())
+		}
+
+		accountAction := req.Form.Get("accountAction")
+
+		fmt.Printf("accountAction: %s\n", accountAction)
+
+		if accountAction == "changepass" {
+			wrapper.Action = "changepass"
+			oldPass := req.Form.Get("oldPass")
+			newPass := req.Form.Get("newPass")
+			newPassConfirm := req.Form.Get("newPassConfirm")
+
+			if newPass == newPassConfirm {
+				newPassLen := len(newPass)
+				if newPassLen < 6 {
+					wrapper.FailedMessage("Sorry, but your password needs to be at " +
+						"least 6 characters long.")
+				} else if newPassLen > 128 {
+					wrapper.FailedMessage("128 bytes of password out to be enough for " +
+						"everybody... Please use a password that's ≤ 128 characters.")
+				} else if oldPass == newPass {
+					wrapper.FailedMessage("Your old and new passwords cannot match!")
+				} else {
+					changed := um.ChangePass(session.User, oldPass, newPass)
+					if changed {
+						wrapper.SuccessMessage("Password successfully changed!")
+					} else {
+						wrapper.FailedMessage("Your current password was " +
+							"incorrect. Please try again.")
+					}
+				}
+			} else {
+				wrapper.FailedMessage("Sorry, but your new password and its " +
+					"confirmation don't match! Please try again.")
+			}
+		}
+	}
+
+	renderAnything(w, "userPage", wrapper)
 }
 
 // ViewTaxonomies Taxonomy management page
