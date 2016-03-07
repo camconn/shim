@@ -4,16 +4,16 @@
 	<head>
 		<meta charset="utf-8">
 		<title>SHIM | Site Configuration</title>
-		{{template "stylesheets"}}
+		{{ template "stylesheets" $ }}
 	</head>
 	<body>
-		{{template "navbar"}}
+		{{ template "navbar" $ }}
 
 		<div id="content" class="content">
 			<h1>Advanced Site Configuration</h1>
 			{{- template "messages" $ -}}
-			<p>Click <a href="/config/">here</a> for basic settings.</p>
-			<form action="/config/advanced/" method="post">
+			<p>Click <a href="{{ $.Base }}/config/">here</a> for basic settings.</p>
+			<form action="{{ $.Base }}/config/advanced/" method="post">
 				<textarea class="textarea monospace" spellcheck="false" name="configSrc" style="min-height:40em">{{- printf "%s" .Text | html -}}</textarea>
 				<br/>
 				<input class="button is-primary" type="submit" value="Save">

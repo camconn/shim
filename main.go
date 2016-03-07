@@ -58,6 +58,8 @@ func main() {
 	assignAssets()
 	userSites = make(map[string]string)
 
+	fmt.Printf("base path: %s\n", shimAssets.url.Path)
+
 	um = uman.New(filepath.Join(shimAssets.root, "users.db"))
 	um.CheckDelay = 60
 

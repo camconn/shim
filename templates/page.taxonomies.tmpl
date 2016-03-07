@@ -4,10 +4,10 @@
 	<head>
 		<meta charset="utf-8">
 		<title>SHIM | Site Configuration</title>
-		{{template "stylesheets"}}
+		{{ template "stylesheets" $ }}
 	</head>
 	<body>
-		{{template "navbar"}}
+		{{ template "navbar" $ }}
 
 		<div id="content" class="content">
 			<h1>Manage Taxonomies</h1>
@@ -19,7 +19,7 @@
 
 			{{- $tax := .Site.Taxonomies -}}
 			{{- range $kinds := $tax.GetKinds -}}
-				<form action="/taxonomy/" method="post">
+				<form action="{{ $.Base }}/taxonomy/" method="post">
 					<input class="input" name="kindName" type="hidden" value="{{ $kinds.Plural | html }}" />
 					<input name="deleteKind" type="hidden" value="true"/>
 					<div class="box">
@@ -42,7 +42,7 @@
 				</form>
 			{{- end -}}
 			<hr>
-			<form action="/taxonomy/" method="post">
+			<form action="{{ $.Base }}/taxonomy/" method="post">
 				<div class="box">
 					<div class="columns">
 						<div class="column is-quarter">

@@ -4,16 +4,16 @@
 	<head>
 		<meta charset="utf-8">
 		<title>SHIM | New Post</title>
-		{{template "stylesheets"}}
+		{{ template "stylesheets" $ }}
 	</head>
 	<body>
-		{{template "navbar"}}
+		{{ template "navbar" $ }}
 
 		<div id="content" class="content">
 			<h1>Create New Post</h1>
 			{{- template "messages" $ -}}
 			<p>Please fill out the form below:</p>
-			<form action="/new/" method="post">
+			<form action="{{ $.Base }}/new/" method="post">
 				<p class="control">
 					New Post Slug:
 					<input class="input" type="text" name="title" placeholder="my-post">

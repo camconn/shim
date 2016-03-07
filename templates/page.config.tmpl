@@ -4,17 +4,17 @@
 	<head>
 		<meta charset="utf-8">
 		<title>SHIM | Site Configuration</title>
-		{{template "stylesheets"}}
+		{{ template "stylesheets" $ }}
 	</head>
 	<body>
-		{{template "navbar"}}
+		{{ template "navbar" $ }}
 
 		<div id="content" class="content">
 			<h1>Basic Site Configuration</h1>
 			{{- template "messages" $ -}}
-			<p>Click <a href="/config/advanced/">here</a> for advanced settings.</p>
+			<p>Click <a href="{{ $.Base }}/config/advanced/">here</a> for advanced settings.</p>
 
-			<form action="/config/" method="post">
+			<form action="{{ $.Base }}/config/" method="post">
 				<div class="columns">
 					<div class="column is-third">
 						<p><code><b>title</b></code>: the site title</p>

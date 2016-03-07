@@ -4,10 +4,10 @@
 	<head>
 		<meta charset="utf-8">
 		<title>SHIM | Login</title>
-		{{template "stylesheets"}}
+		{{ template "stylesheets" $ }}
 	</head>
 	<body>
-		{{template "navbar"}}
+		{{ template "navbar" $ }}
 		<div id="content" class="content">
 			<h1>Authentication required</h1>
 			{{- template "messages" $ -}}

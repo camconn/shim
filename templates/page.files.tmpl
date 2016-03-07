@@ -4,10 +4,10 @@
 	<head>
 		<meta charset="utf-8">
 		<title>SHIM | View Files</title>
-		{{template "stylesheets"}}
+		{{ template "stylesheets" $ }}
 	</head>
 	<body>
-		{{template "navbar"}}
+		{{ template "navbar" $ }}
 
 		<div id="content" class="content">
 			<h1>File Manager</h1>
@@ -22,7 +22,7 @@
 			{{- end -}}
 			<div class="box">
 				<p>Upload a new file</p>
-				<form action="/staticfiles/" enctype="multipart/form-data" method="post">
+				<form action="{{ $.Base }}/staticfiles/" enctype="multipart/form-data" method="post">
 					<div class="columns">
 						<div class="column">
 							<input type="file" accept="*" formenctype="multipart/form-data" name="uploadFile">
@@ -41,10 +41,10 @@
 			{{- else -}}
 				{{- range $filename := $files -}}
 				<div class="box">
-					<form action="/staticfiles/" method="post">
+					<form action="{{ $.Base }}/staticfiles/" method="post">
 						<input type="hidden" name="removeFile" value="{{- $filename | html -}}">
 						<p>Filename: {{ $filename | html }}</p>
-						<a href="/staticfiles/?embed={{- $filename -}}"><button type="button" class="button is-primary">Copy Embed Code</button></a>
+						<a href="{{ $.Base }}/staticfiles/?embed={{- $filename -}}"><button type="button" class="button is-primary">Copy Embed Code</button></a>
 						<button class="button is-danger" type="submit">Delete File</button>
 					</form>
 				</div>

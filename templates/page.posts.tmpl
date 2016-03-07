@@ -4,16 +4,16 @@
 	<head>
 		<meta charset="utf-8">
 		<title>SHIM | View Posts</title>
-		{{template "stylesheets"}}
+		{{ template "stylesheets" $ }}
 	</head>
 	<body>
-		{{template "navbar"}}
+		{{ template "navbar" $ }}
 
 		<div id="content" class="content">
 			<h1>Site Posts</h1>
 			<hr>
 			{{- if eq (len .Site.Posts) 0 -}}
-			<p>It looks like you do not have any posts! Would you like to <a href="/new/">write some</a>?</p>
+			<p>It looks like you do not have any posts! Would you like to <a href="{{ $.Base }}/new/">write some</a>?</p>
 			{{- else -}}
 			{{- range $post := .Site.Posts -}}
 			<div class="box">
@@ -34,10 +34,10 @@
 						</div>
 						{{- end -}}
 						<div class="navbar-item">
-							<h4><a class="tag is-primary" href="/edit/{{ $post.PostID }}">Edit</a></h4>
+							<h4><a class="tag is-primary" href="{{ $.Base }}/edit/{{ $post.PostID }}">Edit</a></h4>
 						</div>
 						<div class="navbar-item">
-							<h4><a class="tag is-danger" href="/delete/{{ $post.PostID }}">Delete</a></h4>
+							<h4><a class="tag is-danger" href="{{ $.Base }}/delete/{{ $post.PostID }}">Delete</a></h4>
 						</div>
 					</div>
 				</nav>

@@ -45,6 +45,7 @@ type WebWrapper struct {
 	// calling `NewWrapper`
 	AllSites []*Site
 	Site     *Site
+	Base     string // The base path Shim is served from. No trailing slash.
 	URL      string
 	Action   string
 	Message  string
@@ -79,6 +80,7 @@ func NewWrapper(w http.ResponseWriter, req *http.Request) *WebWrapper {
 	wr := new(WebWrapper)
 
 	wr.URL = req.URL.String()
+	wr.Base = shimAssets.url.String()
 
 	session := um.GetHTTPSession(w, req)
 	if session != nil && session.IsLogged() {
@@ -432,7 +434,7 @@ func EditPost(w http.ResponseWriter, req *http.Request) {
 	wrapper := NewWrapper(w, req)
 
 	// postID is the base64 post ID of a post.
-	postID := req.URL.Path[len("/edit/"):]
+	postID := req.URL.Path[len(wrapper.Base+"/edit/"):]
 
 	if len(postID) == 0 {
 		http.Redirect(w, req, "/posts/", http.StatusTemporaryRedirect)
@@ -613,7 +615,7 @@ render:
 func RemovePost(w http.ResponseWriter, req *http.Request) {
 	wrapper := NewWrapper(w, req)
 
-	postID := req.URL.Path[len("/delete/"):]
+	postID := req.URL.Path[len(wrapper.Base+"/delete/"):]
 
 	if len(postID) == 0 {
 		http.Redirect(w, req, "/posts/", http.StatusTemporaryRedirect)

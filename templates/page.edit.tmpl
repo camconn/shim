@@ -4,10 +4,10 @@
 	<head>
 		<meta charset="utf-8">
 		<title>SHIM | Editor</title>
-		{{template "stylesheets"}}
+		{{ template "stylesheets" $ }}
 	</head>
 	<body>
-		{{template "navbar"}}
+		{{ template "navbar" $ }}
 
 		<div id="content" class="content">
 			<h1>Edit Post</h1>
@@ -114,7 +114,7 @@
 				{{ end }}
 				<div class="columns is-mobile">
 					<div class="column is-half">
-						<a class="button is-info is-outlined" href="/preview/{{- $Post.PreviewPath -}}">Preview</a>
+						<a class="button is-info is-outlined" href="{{ $.Base }}/preview/{{- $Post.PreviewPath -}}">Preview</a>
 					</div>
 					<div class="column is-right is-text-right">
 						<input class="button is-primary" type="submit" value="Save">

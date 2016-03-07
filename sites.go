@@ -26,7 +26,6 @@ import (
 	"os/exec"
 	"path/filepath"
 	"sort"
-	"strings"
 	"sync"
 )
 
@@ -250,10 +249,9 @@ func (s Site) BuildPreview() (err error) {
 	wasCanonical := s.Canonify()
 	if wasCanonical {
 		s.canonifyurls = false
-		s.baseurl = strings.TrimRight(shimURL, "/") + "/preview/" // + strings.TrimRight(siteURL.RequestURI(), " /")
-	} else {
-		s.baseurl = strings.TrimRight(shimURL, "/") + "/preview/"
 	}
+
+	s.baseurl = shimURL + "/preview/"
 	log.Printf("Temporarily %s\n", s.BaseURL())
 	// s.baseurl = origPath + "/preview/"
 	err = s.SaveConfig()

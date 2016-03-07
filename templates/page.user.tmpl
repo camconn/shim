@@ -4,17 +4,17 @@
 	<head>
 		<meta charset="utf-8">
 		<title>SHIM | Users</title>
-		{{template "stylesheets"}}
+		{{ template "stylesheets" $ }}
 	</head>
 	<body>
-		{{- template "navbar" -}}
+		{{ template "navbar" $ }}
 		<div id="content" class="content">
 			<h1 class="title">Manage Users</h1>
 			{{- template "messages" $ -}}
 			<p>You are currently logged in as <code>{{ $.Session.User | html }}</code>.</p>
 			<hr>
 			<div class="box">
-				<form action="/user/" method="post">
+				<form action="{{ $.Base }}/user/" method="post">
 					<h3>Change Password</h3>
 					<input name="accountAction" type="hidden" value="changepass">
 					<p class="control">
