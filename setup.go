@@ -35,8 +35,8 @@ type assets struct {
 	templates string
 	static    string
 	themes    string
-	url       url.URL
 	baseurl   string
+	basepath  string
 }
 
 // Copy a file at `src` to `dest`. Panic if there are any errors.
@@ -189,10 +189,9 @@ func assignAssets() {
 
 	baseurl := strings.TrimRight(viper.GetString("baseurl"), "/")
 	url, err := url.Parse(baseurl)
-	shimAssets.url = *(url)
 	if err != nil {
 		log.Fatal("Invalid URL for \"baseurl\"!")
 	}
-
-	shimAssets.baseurl = strings.TrimRight(shimAssets.url.Path, "/")
+	shimAssets.baseurl = strings.TrimRight(url.String(), "/")
+	shimAssets.basepath = url.Path
 }

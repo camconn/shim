@@ -234,14 +234,6 @@ func (s *Site) BuildPublic() (err error) {
 func (s Site) BuildPreview() (err error) {
 	// Set baseurl to /preview/ to help view
 	origPath := s.BaseURL()[:]
-	/*
-		siteURL, err := url.Parse(s.BaseURL())
-		if err != nil {
-			return
-		}
-	*/
-
-	shimURL := shimAssets.url.String()
 
 	// NOTE: The way that we are publishing these sites means that all of the URLs
 	// **CANNOT** be canonical. So what's happening here is that we're temporarily
@@ -251,7 +243,7 @@ func (s Site) BuildPreview() (err error) {
 		s.canonifyurls = false
 	}
 
-	s.baseurl = shimURL + "/preview/"
+	s.baseurl = shimAssets.baseurl + "/preview/"
 	log.Printf("Temporarily %s\n", s.BaseURL())
 	// s.baseurl = origPath + "/preview/"
 	err = s.SaveConfig()

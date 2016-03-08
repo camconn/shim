@@ -12,7 +12,7 @@
 			<h1>Authentication required</h1>
 			{{- template "messages" $ -}}
 			<div class="container">
-				<form action='{{- .URL -}}' method="post">
+				<form action="{{ $.Base | html }}/login/" method="post">
 					<div class="columns">
 						<div class="column is-2">Username: </div>
 						<div class="column"><input type="text" name="username" autofocus="autofocus"></div>

@@ -66,7 +66,7 @@ func (l *loginHandler) authHandler(h http.Handler) http.Handler {
 		}
 
 		redirectTarget := fmt.Sprintf("%s/login/?redirect=%s%s&warn=yes",
-			shimAssets.baseurl, shimAssets.baseurl, url.QueryEscape(r.URL.String()))
+			shimAssets.basepath, shimAssets.basepath, url.QueryEscape(r.URL.String()))
 		log.Printf("Not logged in! Redirecting to %s\n", redirectTarget)
 		http.Redirect(w, r, redirectTarget, http.StatusSeeOther)
 	})

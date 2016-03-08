@@ -58,7 +58,7 @@ func main() {
 	assignAssets()
 	userSites = make(map[string]string)
 
-	fmt.Printf("base path: %s\n", shimAssets.url.Path)
+	fmt.Printf("base path: %s\n", shimAssets.basepath)
 
 	um = uman.New(filepath.Join(shimAssets.root, "users.db"))
 	um.CheckDelay = 60
@@ -117,7 +117,7 @@ func main() {
 	mServ := http.Server{}
 	addr := fmt.Sprintf(":%s", portEnv)
 	mServ.Addr = fmt.Sprintf(addr)
-	mServ.Handler = http.StripPrefix(shimAssets.baseurl, mux)
+	mServ.Handler = http.StripPrefix(shimAssets.basepath, mux)
 	err = mServ.ListenAndServe()
 	if err != nil {
 		log.Fatalf("Error serving: %s\n", err.Error())
