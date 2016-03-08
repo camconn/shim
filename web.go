@@ -336,11 +336,9 @@ func Login(w http.ResponseWriter, req *http.Request) {
 		if len(warn) > 0 {
 			wrapper.Action = "warn"
 			q.Del("warn")
-			wrapper.URL = shimAssets.basepath + "/login/?" + q.Encode()
+			wrapper.URL = shimAssets.basepath + "/login/"
 			wrapper.Message = "Please login in."
 		}
-	} else {
-		redirect = shimAssets.basepath + "/admin/" // By default, redirect to /admin/
 	}
 
 	if req.Method == "POST" {
@@ -349,6 +347,11 @@ func Login(w http.ResponseWriter, req *http.Request) {
 			wrapper.FailedMessage("Couldn't parse form!")
 			renderAnything(w, "loginPage", &wrapper)
 			return
+		}
+
+		redirect = req.FormValue("redirect")
+		if len(redirect) == 0 {
+			redirect = shimAssets.basepath + "/admin/" // By default, redirect to /admin/
 		}
 
 		username := req.FormValue("username")
@@ -366,6 +369,14 @@ func Login(w http.ResponseWriter, req *http.Request) {
 		}
 
 		wrapper.FailedMessage("Incorrect username/password combination. Please try again.")
+	}
+
+	if len(redirect) > 0 {
+		// Yes, this is semantically **wrong**, but it works for now as a solution, as
+		// you can't really cast to a string from the `WebWrapper.Anything` field from
+		// within a template without making some templateFuncs.
+		// TODO: Make this semantically correct
+		wrapper.Choices = []string{redirect}
 	}
 
 	renderAnything(w, "loginPage", &wrapper)
@@ -562,39 +573,40 @@ func NewPost(w http.ResponseWriter, req *http.Request) {
 	if req.Method == "POST" {
 		req.ParseMultipartForm(fiveMegabytes)
 		newFilename := req.FormValue("title")
+		archeType := req.FormValue("pageType")
 
 		if len(newFilename) > 0 {
 			wrapper.Action = "build"
 
 			contentDirPath := filepath.Join(wrapper.Site.Location(), wrapper.Site.ContentDir())
-			testPostPath := filepath.Join(contentDirPath, "post", newFilename) + ".md"
+			testPostPath := filepath.Join(contentDirPath, archeType, newFilename) + ".md"
 
 			if _, err := os.Stat(testPostPath); !os.IsNotExist(err) {
-				wrapper.FailedMessage("Post already exists!")
+				wrapper.FailedMessage("A page already exists at that location!")
 				goto render
 			}
 
-			path, err := wrapper.Site.newPost(newFilename)
+			path, err := wrapper.Site.newPost(filepath.Join(archeType, newFilename))
 			if err != nil {
-				wrapper.FailedMessage("Could not edit post: " + err.Error())
+				wrapper.FailedMessage("Could not create page: " + err.Error())
 				goto render
 			}
 
 			post, err := wrapper.Site.loadPost(path, contentDirPath)
 			if err != nil {
-				wrapper.FailedMessage("Could not edit post: " + err.Error())
+				wrapper.FailedMessage("Could not create page: " + err.Error())
 				goto render
 			}
 
 			post.draft = true
 			err = post.SavePost()
 			if err != nil {
-				wrapper.FailedMessage("Could not save post: " + err.Error())
+				wrapper.FailedMessage("Could not save page: " + err.Error())
 				goto render
 			}
 
 			if err != nil {
-				wrapper.FailedMessage("Could not save post: " + err.Error())
+				wrapper.FailedMessage("Could not save page: " + err.Error())
 				goto render
 			} else {
 				editLoc := fmt.Sprintf("%s/edit/%s", shimAssets.basepath, post.PostID())

@@ -13,6 +13,9 @@
 			{{- template "messages" $ -}}
 			<div class="container">
 				<form action="{{ $.Base | html }}/login/" method="post">
+					{{- if gt (len $.Choices) 0 -}}
+						<input type="hidden" name="redirect" value="{{ index $.Choices 0 | html }}">
+					{{- end -}}
 					<div class="columns">
 						<div class="column is-2">Username: </div>
 						<div class="column"><input type="text" name="username" autofocus="autofocus"></div>

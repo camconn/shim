@@ -155,21 +155,24 @@ func (s *Site) loadPost(postPath, contentDirPath string) (p *Post, err error) {
 	return p, nil
 }
 
-// hugo new post/`name`.md
+// newPost creates a newPost in site/contentdir/NAME.md where NAME can be
+// a relative directory which includes folder names.
 func (s *Site) newPost(name string) (path string, err error) {
 	// TODO: Check if post already exists
 
 	hugoPath, err := exec.LookPath("hugo")
-	check(err)
+	if err != nil {
+		return "", err
+	}
 
-	cmd := exec.Command(hugoPath, "new", fmt.Sprintf("post/%s.md", name))
+	cmd := exec.Command(hugoPath, "new", fmt.Sprintf("%s.md", name))
 	cmd.Dir = s.location
 	err = cmd.Run()
 	if err != nil {
 		return "", err
 	}
 
-	path = fmt.Sprintf("%s/%s/post/%s.md", s.location, s.ContentDir(), name)
+	path = fmt.Sprintf("%s/%s/%s.md", s.location, s.ContentDir(), name)
 
 	return
 }

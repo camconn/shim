@@ -12,13 +12,24 @@
 		<div id="content" class="content">
 			<h1>Create New Post</h1>
 			{{- template "messages" $ -}}
-			<p>Please fill out the form below:</p>
 			<form action="{{ $.Base }}/new/" method="post">
-				<p class="control">
-					New Post Slug:
-					<input class="input" type="text" name="title" placeholder="my-post">
-				</p>
-				<input class="button is-primary" type="submit" value="Create">
+				<div class="columns">
+					<div class="column is-third">
+						<p><code><b>location</b></code>: the last part of the URL for the new page</p>
+					</div>
+					<div class="column">
+						<input class="input" type="text" name="title" placeholder="my-new-page" autofocus>
+					</div>
+				</div>
+				<div class="columns">
+					<div class="column is-third">
+						<p><code><b>archetype</b></code>: what kind of page this is (for help, see: <a href="https://gohugo.io/content/archetypes/">Archetype</a>)</p>
+					</div>
+					<div class="column">
+						<input class="input" type="input" type="text" name="pageType" value="post">
+					</div>
+				</div>
+				<input class="button is-primary input" type="submit" value="Create">
 			</form>
 		</div>
 

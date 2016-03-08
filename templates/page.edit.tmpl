@@ -13,7 +13,7 @@
 			<h1>Edit Post</h1>
 			{{- template "messages" $ -}}
 			{{- $Post := .Post -}}
-			<form action="{{- .URL -}}" method="post" class="container is-fluid">
+			<form action="{{ $.Base | html }}{{ $.URL | html -}}" method="post" class="container is-fluid">
 				<noscript>
 					<div>
 						<style type="text/css">
