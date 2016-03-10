@@ -88,6 +88,7 @@ func (l *loginHandler) dynamicPreviewHandler(w http.ResponseWriter, r *http.Requ
 			if err != nil {
 				// 404
 				log.Printf("Couldn't find %s\n", location)
+				http.Error(w, "File not found! :(", http.StatusNotFound)
 				return
 			}
 			defer file.Close()
@@ -103,7 +104,6 @@ func (l *loginHandler) dynamicPreviewHandler(w http.ResponseWriter, r *http.Requ
 			}
 
 			// detect if folder, then serve index.html
-			log.Printf("serving from %s\n", location)
 			http.ServeContent(w, r, info.Name(), info.ModTime(), file)
 			return
 		}

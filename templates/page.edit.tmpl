@@ -14,6 +14,25 @@
 			{{- template "messages" $ -}}
 			{{- $Post := .Post -}}
 			<form action="{{ $.Base | html }}{{ $.URL | html -}}" method="post" class="container is-fluid">
+				<input class="input is-large" type="text" name="title" value="{{- $Post.Title | html -}}" placeholder="Your Post's Title">
+
+				<textarea class="textarea monospace" name="articleSrc" id="articleSrc" style="min-height:320px" placeholder="Write some stuff here...">{{- printf "%s" $Post.GetBody | html -}}</textarea>
+
+				{{ if $Post.Draft }}
+				<label class="checkbox"><input type="checkbox" name="doPublish"> Publish Post?</label>
+				{{ else }}
+				<label class="checkbox"><input type="checkbox" name="doPublish" checked> Republish Post?</label>
+				{{ end }}
+
+				<div class="columns is-mobile">
+					<div class="column is-half">
+						<a class="button is-info is-outlined" href="{{ $.Base }}/preview/{{- $Post.PreviewPath -}}">Preview</a>
+					</div>
+					<div class="column is-right is-text-right">
+						<input class="button is-primary" type="submit" value="Save">
+					</div>
+				</div>
+
 				<noscript>
 					<div>
 						<style type="text/css">
@@ -105,25 +124,25 @@
 					<hr>
 				</div>
 				<script type="text/javascript">document.getElementById("collapse").style.display = "none";</script>
-				<input class="input" type="text" name="title" value="{{- $Post.Title | html -}}" placeholder="Your Post's Title">
-				<textarea class="textarea monospace" name="articleSrc" style="min-height:320px" placeholder="Write some stuff here...">{{- $Post.GetBody -}}</textarea>
-				{{ if $Post.Draft }}
-				<label class="checkbox"><input type="checkbox" name="doPublish"> Publish Post?</label>
-				{{ else }}
-				<label class="checkbox"><input type="checkbox" name="doPublish" checked> Republish Post?</label>
-				{{ end }}
-				<div class="columns is-mobile">
-					<div class="column is-half">
-						<a class="button is-info is-outlined" href="{{ $.Base }}/preview/{{- $Post.PreviewPath -}}">Preview</a>
-					</div>
-					<div class="column is-right is-text-right">
-						<input class="button is-primary" type="submit" value="Save">
-					</div>
-				</div>
 			</form>
 		</div>
 
 		{{template "footer"}}
+
+		<link rel="stylesheet" href="/static/editor/simplemde.min.css">
+		<script src="/static/editor/simplemde.min.js"></script>
+		<script>
+			var textarea = document.getElementById('articleSrc'),
+				editor = new SimpleMDE({ element: textarea, spellChecker: false });
+
+			function updateText() {
+				textarea.value = editor.value();
+				console.log(textarea.value);
+			}
+
+			editor.codemirror.on('change', updateText);
+			editor.codemirror.on('keyup', updateText);
+		</script>
 	</body>
 </html>
 {{end}}
