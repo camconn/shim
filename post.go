@@ -46,11 +46,11 @@ type Post struct {
 
 	title       string
 	author      string
-	description string
+	description string // automatically generated
+	manualDesc  string // set by user
 	slug        string
 	draft       bool
 	published   *time.Time
-	body        *bytes.Buffer
 	aliases     []string
 	taxonomies  map[string][]string    // TODO: Is there a better storage format to use?
 	all         map[string]interface{} // All TOML data for this file
@@ -71,7 +71,7 @@ func (p *Post) handleFrontMatter(v *viper.Viper) {
 	if len(p.Author()) == 0 {
 		p.author = p.Site().Author()
 	}
-	p.description = v.GetString("description")
+	p.manualDesc = v.GetString("description")
 	p.slug = v.GetString("slug")
 	p.draft = v.GetBool("draft")
 
@@ -132,7 +132,6 @@ func (s *Site) loadPost(postPath, contentDirPath string) (p *Post, err error) {
 			boundaryCount++
 		} else {
 			_, err := frontMatter.WriteString(line)
-			// fmt.Printf("%d lines written\n", n)
 			if err != nil {
 				log.Fatal("Couldn't load TOML front matter for ", postPath)
 			}
@@ -141,16 +140,38 @@ func (s *Site) loadPost(postPath, contentDirPath string) (p *Post, err error) {
 
 	p.readTOMLMetadata(frontMatter)
 
-	fStat, err := file.Stat()
-	check(err)
-	bodySize := fStat.Size() - pos
-	bodyReader := io.NewSectionReader(file, pos, bodySize)
-
-	p.body = bytes.NewBuffer([]byte{})
-	p.body.ReadFrom(bodyReader)
-
 	relativePathWithSuffix, err := filepath.Rel(contentDirPath, postPath)
 	p.relpath = strings.TrimSuffix(relativePathWithSuffix, filepath.Ext(filepath.Base(postPath)))
+
+	_, err = file.Seek(pos, 0)
+	if err != nil {
+		return nil, err
+	}
+
+	descriptionBuf := new(bytes.Buffer)
+	descriptionBuf.ReadFrom(file)
+
+	num := descriptionBuf.Len()
+	if num > 160 {
+		descriptionBuf.Truncate(160)
+	}
+	descriptionBytes := descriptionBuf.Bytes()
+
+	descriptionBuf = nil
+
+	const dot = '.'
+	if num > 160 {
+
+		// find last newline and truncate to make it pretty
+		lastLineEnd := bytes.LastIndexByte(descriptionBytes, '\n')
+		if lastLineEnd > 0 {
+			descriptionBytes = descriptionBytes[:lastLineEnd]
+		}
+
+		descriptionBytes = append(descriptionBytes, '\n', '\n', '.', '.', '.')
+	}
+
+	p.description = (string)(descriptionBytes)
 
 	return p, nil
 }
@@ -178,7 +199,7 @@ func (s *Site) newPost(name string) (path string, err error) {
 }
 
 // SavePost - Save post to disk to path path
-func (p *Post) SavePost() error {
+func (p *Post) SavePost(body string) error {
 	if p.Draft() { // If saving a draft, the time updated is right now
 		now := time.Now()
 		p.published = &now
@@ -203,7 +224,7 @@ func (p *Post) SavePost() error {
 	tomlEncoder.Encode(p.all)
 	file.WriteString(tomlBoundary)
 
-	_, err = file.WriteString(p.body.String())
+	_, err = file.WriteString(body)
 	if err != nil {
 		return err
 	}
@@ -237,13 +258,17 @@ func (p *Post) updateMap() {
 	p.all["slug"] = p.Slug()
 	p.all["date"] = p.Date()
 	p.all["draft"] = p.Draft()
-	if len(p.description) > 0 {
-		p.all["description"] = p.Description()
+	if len(p.ActualDescription()) > 0 {
+		p.all["description"] = p.ActualDescription()
+	} else {
+		delete(p.all, "description")
 	}
 
 	numAliases := len(p.aliases)
 	if numAliases > 1 || numAliases == 1 && len(p.aliases[0]) != 0 {
 		p.all["aliases"] = p.aliases[:]
+	} else {
+		delete(p.all, "aliases")
 	}
 
 	p.updateTaxonomy()
@@ -292,14 +317,14 @@ func (p *Post) TaxonomyMap() map[string]string {
 }
 
 // Publish - Publish this post
-func (p *Post) Publish() error {
+func (p *Post) Publish(text string) error {
 	if p.published == nil {
 		now := time.Now()
 		p.published = &now
 	}
 	p.draft = false
 
-	err := p.SavePost()
+	err := p.SavePost(text)
 	if err != nil {
 		return err
 	}
@@ -344,33 +369,48 @@ func (p Post) Draft() bool {
 // ActualDescription - Get a short description of this post as a raw string,
 // without calculating it on the fly
 func (p Post) ActualDescription() string {
-	return p.description
+	return p.manualDesc
 }
 
 // Description - A short description of this post.
 func (p Post) Description() string {
-	if len(p.description) != 0 {
-		return p.description
-	}
-
-	// TODO: Do this correctly
-	if p.body.Len() > 160 {
-		return fmt.Sprintf("%s ...", p.body.String()[:160])
-	}
-
-	return p.body.String()
+	return p.description
 }
 
 func (p *Post) String() string {
-	//return fmt.Sprintf("<Post title: %s; author: %s, date: %s; draft: %t>",
-	//	p.Title(), p.Author(), p.Date(), p.Draft())
 	return fmt.Sprintf("<Post title: %s; author: %s, date: %s; draft: %t>",
 		p.Title(), p.Author(), p.Date(), p.Draft())
 }
 
 // GetBody - Get the body of this post
-func (p Post) GetBody() []byte {
-	return p.body.Bytes()
+func (p Post) GetBody() string {
+	log.Printf("post location: %s\n", p.location)
+	pFile, err := os.Open(p.location)
+	if err != nil {
+		return ""
+	}
+
+	postBody := bytes.NewBuffer([]byte{})
+	frontScanner := bufio.NewScanner(pFile)
+
+	pos := (int64)(0)
+	boundaryCount := 0
+
+	for frontScanner.Scan() {
+		line := fmt.Sprintf("%s\n", frontScanner.Text())
+		pos += (int64)(len(line))
+		// TODO: Also support YAML
+		if boundaryCount == 2 {
+			_, err := postBody.WriteString(line)
+			if err != nil {
+				log.Fatalf("Couldn't load body for %s\n", p.location)
+			}
+		} else if strings.Compare(line, tomlBoundary) == 0 {
+			boundaryCount++
+		}
+	}
+
+	return postBody.String()
 }
 
 // RelPath - Get the relative path of this post to the /content/ directory

@@ -48,7 +48,7 @@
 						Published by <b>{{ $post.Author | html }}</b> &mdash; {{ $post.WebDate | html }}
 					{{- end -}}
 				</p>
-				<blockquote>{{- $post.Description | html -}}</blockquote>
+				<blockquote style="font-family: monospace; white-space: pre-wrap; overflow: auto"><div>{{ $post.Description }}</div></blockquote>
 			</div>
 			{{- end -}}
 			{{- end -}}

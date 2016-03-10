@@ -106,7 +106,7 @@
 				</div>
 				<script type="text/javascript">document.getElementById("collapse").style.display = "none";</script>
 				<input class="input" type="text" name="title" value="{{- $Post.Title | html -}}" placeholder="Your Post's Title">
-				<textarea class="textarea monospace" name="articleSrc" style="min-height:320px" placeholder="Write some stuff here...">{{- printf "%s" $Post.GetBody | html -}}</textarea>
+				<textarea class="textarea monospace" name="articleSrc" style="min-height:320px" placeholder="Write some stuff here...">{{- $Post.GetBody -}}</textarea>
 				{{ if $Post.Draft }}
 				<label class="checkbox"><input type="checkbox" name="doPublish"> Publish Post?</label>
 				{{ else }}

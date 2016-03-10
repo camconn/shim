@@ -477,6 +477,8 @@ func EditPost(w http.ResponseWriter, req *http.Request) {
 		publish := false
 		values := req.Form
 
+		var postText string
+
 		for i, v := range values {
 			value := v[0]
 
@@ -487,7 +489,7 @@ func EditPost(w http.ResponseWriter, req *http.Request) {
 				// Don't do anything, because we handled this earlier
 				publish = true
 			case "description":
-				post.description = value
+				post.manualDesc = value
 			case "published":
 				// In reality, this doesn't matter for drafts because when a draft
 				// is saved it's time published is set to when it was last modified.
@@ -503,8 +505,7 @@ func EditPost(w http.ResponseWriter, req *http.Request) {
 			case "title":
 				post.title = value
 			case "articleSrc":
-				post.body.Reset()
-				post.body.WriteString(value)
+				postText = value
 			case "aliases":
 				individualValues := strings.Split(value, ",")
 				stripChars(&individualValues, " ")
@@ -533,7 +534,7 @@ func EditPost(w http.ResponseWriter, req *http.Request) {
 			}
 		}
 
-		err = post.SavePost()
+		err = post.SavePost(postText)
 		if err != nil {
 			log.Printf("Error while saving post: %s\n", err.Error())
 			wrapper.FailedMessage("Could not save post to disk. Error: " + err.Error())
@@ -547,7 +548,7 @@ func EditPost(w http.ResponseWriter, req *http.Request) {
 		}
 
 		if publish {
-			err = post.Publish()
+			err = post.Publish(postText)
 			if err != nil {
 				log.Printf("Could not publish post: %s\n", err.Error())
 				wrapper.FailedMessage("Could not publish post: " + err.Error())
@@ -599,7 +600,7 @@ func NewPost(w http.ResponseWriter, req *http.Request) {
 			}
 
 			post.draft = true
-			err = post.SavePost()
+			err = post.SavePost("")
 			if err != nil {
 				wrapper.FailedMessage("Could not save page: " + err.Error())
 				goto render

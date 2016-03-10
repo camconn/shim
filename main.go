@@ -60,12 +60,13 @@ func main() {
 
 	fmt.Printf("base path: %s\n", shimAssets.basepath)
 
-	um = uman.New(filepath.Join(shimAssets.root, "users.db"))
-	um.CheckDelay = 60
-
 	if firstRun() { // Setup initial username and password so admins can run shim.
+		um = uman.New(filepath.Join(shimAssets.root, "users.db"))
 		um.Register("root", "hunter2")
+	} else {
+		um = uman.New(filepath.Join(shimAssets.root, "users.db"))
 	}
+	um.CheckDelay = 60
 
 	fmt.Printf("Root directory is: %s\n", shimAssets.root)
 
@@ -74,7 +75,6 @@ func main() {
 	checkReason(err, "Was not able to find primary site. Please check your `config.toml` file.")
 	setupSites(siteNames)
 	allSites = loadAllSites(siteNames)
-	fmt.Printf("all sites: %##v\n", allSites)
 
 	// Below this line are things exclusively for running the webapp
 	mux := http.NewServeMux()

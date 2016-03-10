@@ -71,7 +71,7 @@ func setupConfig() {
 // or not this is the first run of shim. If this is the first time running shim,
 // return true, otherwise, return false.
 func firstRun() bool {
-	if _, err := os.Stat("users.db"); os.IsNotExist(err) {
+	if _, err := os.Stat("./users.db"); os.IsNotExist(err) {
 		fmt.Println()
 		fmt.Println("Hello there. Welcome to shim!")
 		fmt.Println("The default username and password are:")
@@ -97,10 +97,8 @@ func findSites() (names []string, err error) {
 		viper.SetDefault(enabledKey, false)
 
 		if viper.GetBool(enabledKey) {
-			fmt.Printf("%s is enabled!\n", name)
 			names = append(names, name)
 		} else {
-			fmt.Printf("%s is disabled!\n", name)
 		}
 	}
 
@@ -125,10 +123,7 @@ func setupSite(name string) {
 	here, err := os.Getwd()
 	checkReason(err, "Couldn't get current directory")
 
-	fmt.Printf("Were are at %s\n", here)
-
 	sitesLoc := path.Join(here, viper.GetString("sitesDir"))
-	fmt.Printf("siteloc: %s\n", sitesLoc)
 
 	// If sites folder doesn't exist, make it!
 	if _, err := os.Stat(sitesLoc); os.IsNotExist(err) {
@@ -139,7 +134,7 @@ func setupSite(name string) {
 	// check if site already exists
 	testLoc := path.Join(here, "sites", name)
 	if _, dirError := os.Stat(testLoc); !os.IsNotExist(dirError) {
-		log.Println("site already exists. Let's get out")
+		// site already exists; let's get out
 		return
 	}
 
@@ -152,8 +147,6 @@ func setupSite(name string) {
 	log.Printf("Creating new site in %s\n", cmd.Dir)
 	err = cmd.Run()
 	checkReason(err, "Error: couldn't create site "+name)
-
-	log.Println("Done setting up site.")
 }
 
 func loadAllSites(names []string) []*Site {
@@ -163,8 +156,6 @@ func loadAllSites(names []string) []*Site {
 		s := loadSite(name)
 		sites = append(sites, &s)
 	}
-
-	fmt.Printf("Sites: %##v\n", sites)
 
 	return sites
 }
