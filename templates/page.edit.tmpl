@@ -129,8 +129,8 @@
 
 		{{template "footer"}}
 
-		<link rel="stylesheet" href="/static/editor/simplemde.min.css">
-		<script src="/static/editor/simplemde.min.js"></script>
+		<link rel="stylesheet" href="{{ $.Base }}/static/editor/simplemde.min.css">
+		<script src="{{ $.Base }}/static/editor/simplemde.min.js"></script>
 		<script>
 			var textarea = document.getElementById('articleSrc'),
 				editor = new SimpleMDE({ element: textarea, spellChecker: false });
