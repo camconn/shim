@@ -136,23 +136,21 @@ func (s *Site) loadConfig(name string) {
 	s.subtitle = v.GetString("params.subtitle")
 	s.author = v.GetString("params.author")
 
-	// Taxonomies
+	// Set sane defaults for taxonomies
+	taxDefaults := map[string]string{
+		"tag":      "tags",
+		"category": "categories",
+	}
+	v.SetDefault("taxonomies", taxDefaults)
+
 	s.taxonomies = make(TaxonomyKinds)
 	taxonomies := v.GetStringMapString("taxonomies")
+
 	if taxonomies != nil {
 		for singular, plural := range taxonomies {
 			s.taxonomies.NewTaxonomy(singular, plural)
 		}
 	}
-
-	// We're doing this another time to save any values that may be already in
-	// the params.WHATEVER namespace from being lost.
-	paramsMap := v.GetStringMap("params")
-	allCopiedParams := make(map[string]interface{})
-	for key, value := range paramsMap {
-		allCopiedParams[key] = value
-	}
-	v.SetDefault("params", allCopiedParams)
 
 	s.loadTaxonomyTerms()
 

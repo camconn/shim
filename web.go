@@ -257,26 +257,29 @@ func ViewTaxonomies(w http.ResponseWriter, req *http.Request) {
 			wrapper.Action = "add"
 
 			// Split into two names
-			namePair := strings.SplitAfterN(name, ",", 2)
-			stripChars(&namePair, ", ")
-			removeDuplicates(&namePair)
+			singular := strings.TrimSpace(req.Form.Get("kindNameSingular"))
+			plural := strings.TrimSpace(req.Form.Get("kindNamePlural"))
 
-			if len(namePair) != 2 {
+			if len(singular) <= 0 || len(plural) <= 0 {
 				wrapper.FailedMessage("You need to enter a new name pair for this Taxonomy.")
 				goto renderTaxonomy
 			}
 
-			plural := namePair[1]
-			_, err := wrapper.Site.Taxonomies().GetTaxonomy(plural)
+			_, err := wrapper.Site.Taxonomies().GetTaxonomy(singular)
 			if err == nil {
-				wrapper.FailedMessage("Failed to create taxonomy because it already exists!")
+				wrapper.FailedMessage("Sorry, but the name " + singular + " is already taken. Please try another name.")
+				goto renderTaxonomy
+			}
+			_, err = wrapper.Site.Taxonomies().GetTaxonomy(plural)
+			if err == nil {
+				wrapper.FailedMessage("Sorry, but the name " + plural + " is already taken. Please try another name.")
 				goto renderTaxonomy
 			}
 
-			fmt.Printf("Creating new taxonomy: (%s, %s)\n", namePair[0], namePair[1])
-			wrapper.Site.Taxonomies().NewTaxonomy(namePair[0], namePair[1])
+			fmt.Printf("Creating new taxonomy: (%s, %s)\n", singular, plural)
+			wrapper.Site.Taxonomies().NewTaxonomy(singular, plural)
 			// check the taxonomy was added
-			_, err = wrapper.Site.Taxonomies().GetTaxonomy(namePair[1])
+			_, err = wrapper.Site.Taxonomies().GetTaxonomy(plural)
 			if err != nil {
 				wrapper.FailedMessage("Failed to create taxonomy.")
 				goto renderTaxonomy
@@ -286,7 +289,7 @@ func ViewTaxonomies(w http.ResponseWriter, req *http.Request) {
 			if err != nil {
 				wrapper.FailedMessage("Able to create taxonomy, but couldn't save it. Please try saving again.")
 			} else {
-				wrapper.SuccessMessage("Taxonomy created.")
+				wrapper.SuccessMessage("Taxonomy " + plural + " created.")
 			}
 		} else if len(delKind) > 0 {
 			wrapper.Action = "delete"
@@ -699,7 +702,6 @@ func EditSite(w http.ResponseWriter, req *http.Request) {
 		// get values
 		values := req.Form
 
-		wrapper.Site.builddrafts = false
 		wrapper.Site.canonifyurls = false
 
 		for i, v := range values {
@@ -714,14 +716,6 @@ func EditSite(w http.ResponseWriter, req *http.Request) {
 				wrapper.Site.baseurl = value
 			case "theme":
 				wrapper.Site.theme = value
-			case "contentDir":
-				wrapper.Site.contentDir = value
-			case "layoutDir":
-				wrapper.Site.layoutDir = value
-			case "publishDir":
-				wrapper.Site.publishDir = value
-			case "builddrafts":
-				wrapper.Site.builddrafts = true
 			case "canonifyurls":
 				wrapper.Site.canonifyurls = true
 

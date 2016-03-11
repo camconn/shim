@@ -35,41 +35,16 @@
 
 				<div class="columns">
 					<div class="column is-third">
-						<p><code><b>contentdir</b></code>: the site s content direcctory</p>
-					</div>
-					<div class="column">
-						<input class="input" type="text" name="contentDir" value="{{ $.Site.ContentDir | html }}">
-					</div>
-				</div>
-
-				<div class="columns">
-					<div class="column is-third">
-						<p><code><b>layoutdir</b></code>: the site s layouts directory</p>
-					</div>
-					<div class="column">
-						<input class="input" type="text" name="layoutDir" value="{{ $.Site.LayoutDir | html }}">
-					</div>
-				</div>
-
-				<div class="columns">
-					<div class="column is-third">
-						<p><code><b>publishdir</b></code>: what folder to publish the site to</p>
-					</div>
-					<div class="column">
-						<input class="input" type="text" name="publishDir" value="{{ $.Site.PublishDir | html }}">
-					</div>
-				</div>
-
-				<div class="columns">
-					<div class="column is-third">
 						<p><code><b>canonifyurls</b></code>: are urls canonical?</p>
 					</div>
 					<div class="column">
+						<p>
 						{{- if $.Site.Canonify -}}
-						<input class="input" type="checkbox" name="canonifyurls" checked />
+						<input type="checkbox" name="canonifyurls" checked />
 						{{- else -}}
-						<input class="input" type="checkbox" name="canonifyurls" />
+						<input type="checkbox" name="canonifyurls" />
 						{{- end -}}
+						&nbsp; If checked, URLs will be canonical</p>
 					</div>
 				</div>
 

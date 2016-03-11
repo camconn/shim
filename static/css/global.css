@@ -17,7 +17,7 @@
  */
 
 /* Globally used */
-.toggle {
+.toggle-div {
 	width: 15px;
 	height: 15px;
 	border-radius: 15px;
@@ -34,15 +34,67 @@
 	margin-bottom: 10px;
 }
 
-.toggle:hover {
-	color: #eee;
-	text-shadow: 0 0 1px #666;
-	text-decoration: none;
-	box-shadow: 0 0 4px #222 inset;
-	opacity: 1;
-	margin-bottom: 10px;
+/* for pretty toggle switches */
+.toggle-button-common {
+  position: absolute;
+  margin-left: -9999px;
+  visibility: hidden;
+}
+.toggle-button-common + label {
+  display: block;
+  position: relative;
+  cursor: pointer;
+  outline: none;
+  user-select: none;
+}
+input.toggle-button-text + label {
+	padding: 2px;
+	/* width: 120px; temporarily disabled */
+	height: 32px;
+	display: block;
+	cursor: pointer;
+	outline: none;
+	user-select: none;
+}
+input.toggle-button-text + label:before,
+input.toggle-button-text + label:after {
+  display: block;
+  position: absolute;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  right: 0;
+  color: #fff;
+  font-size: 15px;
+  text-align: center;
+  line-height: 24px;
+}
+input.toggle-button-text + label:before {
+	/* background-color: #dddddd; */
+	background-color: red;
+	content: attr(data-off);
+	transition: transform 0.5s;
+	backface-visibility: hidden;
+}
+input.toggle-button-text + label:after {
+	background-color: #8ce196;
+	content: attr(data-on);
+	transition: transform 0.5s;
+	transform: rotateY(180deg);
+	backface-visibility: hidden;
+}
+input.toggle-button-text:checked + label:before {
+  transform: rotateY(180deg);
+}
+input.toggle-button-text:checked + label:after {
+  transform: rotateY(0);
 }
 
 .monospace {
 	font-family:Consolas,Monaco,Lucida Console,Liberation Mono,DejaVu Sans Mono,Bitstream Vera Sans Mono,Courier New, monospace
+}
+
+.description {
+	white-space: pre-wrap;
+	overflow: auto
 }

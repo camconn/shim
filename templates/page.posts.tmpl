@@ -10,14 +10,11 @@
 		{{ template "navbar" $ }}
 
 		<div id="content" class="content">
-			<h1>Site Posts</h1>
-			<hr>
-			{{- if eq (len .Site.Posts) 0 -}}
-			<p>It looks like you do not have any posts! Would you like to <a href="{{ $.Base }}/new/">write some</a>?</p>
-			{{- else -}}
+			<h1>Posts ({{ len $.Site.Posts }} total)</h1>
 			{{- range $post := .Site.Posts -}}
 			<div class="box">
-				<nav class="navbar" style="margin-bottom: 0em;">
+				<!-- <nav class="navbar" style="margin-bottom: 0em;"> -->
+				<nav class="navbar">
 					<div class="navbar-left">
 						<div class="navbar-item">
 							<h3>{{- $post.Title | html -}}</h3>
@@ -48,9 +45,11 @@
 						Published by <b>{{ $post.Author | html }}</b> &mdash; {{ $post.WebDate | html }}
 					{{- end -}}
 				</p>
-				<blockquote style="font-family: monospace; white-space: pre-wrap; overflow: auto"><div>{{ $post.Description }}</div></blockquote>
+				<blockquote class="monospace description"><div>{{ $post.Description }}</div></blockquote>
 			</div>
-			{{- end -}}
+			{{- else -}}
+			<hr>
+			<p>It looks like you do not have any posts! Would you like to <a href="{{ $.Base }}/new/">write some</a>?</p>
 			{{- end -}}
 		</div>
 

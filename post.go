@@ -27,6 +27,7 @@ import (
 	"log"
 	"os"
 	"os/exec"
+	"path"
 	"path/filepath"
 	"strings"
 	"time"
@@ -178,7 +179,7 @@ func (s *Site) loadPost(postPath, contentDirPath string) (p *Post, err error) {
 
 // newPost creates a newPost in site/contentdir/NAME.md where NAME can be
 // a relative directory which includes folder names.
-func (s *Site) newPost(name string) (path string, err error) {
+func (s *Site) newPost(name string) (fPath string, err error) {
 	// TODO: Check if post already exists
 
 	hugoPath, err := exec.LookPath("hugo")
@@ -193,7 +194,7 @@ func (s *Site) newPost(name string) (path string, err error) {
 		return "", err
 	}
 
-	path = fmt.Sprintf("%s/%s/%s.md", s.location, s.ContentDir(), name)
+	fPath = path.Join(s.location, s.ContentDir(), name+".md")
 
 	return
 }

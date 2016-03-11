@@ -3,7 +3,7 @@
 <html lang="en">
 	<head>
 		<meta charset="utf-8">
-		<title>SHIM | Site Configuration</title>
+		<title>SHIM | Taxonomies</title>
 		{{ template "stylesheets" $ }}
 	</head>
 	<body>
@@ -25,12 +25,14 @@
 					<div class="box">
 						<div class="columns">
 							<div class="column is-quarter">
-								<p><span class="title">{{- $kinds.Plural | html -}}</span> ({{ $kinds.NumTerms }})</p>
+								<p><span class="title" title="singular: {{ $kinds.Singular }}">{{- $kinds.Plural | html -}}</span> ({{ $kinds.NumTerms }} pages)</p>
 							</div>
 							<div class="column">
 								<p>
 								{{- range $name := $kinds.TermNames -}}
 									<span class="tag is-info is-outlined">{{ $name | html }} </span>
+								{{- else -}}
+									It looks like you have no pages using this taxonomy.
 								{{- end -}}
 								</p>
 							</div>
@@ -44,27 +46,29 @@
 			<hr>
 			<form action="{{ $.Base }}/taxonomy/" method="post">
 				<div class="box">
+					<input name="newKind" type="hidden" value="true"/>
 					<div class="columns">
 						<div class="column is-quarter">
 							<p class="title">New Taxonomy</p>
 						</div>
-						<div class="column">
-							<input class="input" name="kindName" type="text" placeholder="blog, blogs" />
-							<input name="newKind" type="hidden" value="true"/>
+						<div class="column control">
+							<label>Singular: </label>
+							<input class="input" name="kindNameSingular" type="text" placeholder="blog" />
+						</div>
+						<div class="column control">
+							<label>Plural: </label>
+							<input class="input" name="kindNamePlural" type="text" placeholder="blogs" />
 						</div>
 						<div class="column is-2 is-text-right">
 							<input class="button is-primary" type="submit" value="Save">
 						</div>
 					</div>
 					<p class="content">
-						To create new taxonomy, simply use the format <code>first, second</code>, where <code>first</code> is the
-						singular tense of the taxonomy name, then a comma <code>,</code> and where <code>second</code> is the plural
-						of the taxonomy name.
+						To create a new taxonomy, write the singular and plural version of the name in the appropriate fields.
+						For example, you could use <code>dog</code> and <code>dogs</code>.
 					</p>
 				</div>
 				<br />
-				<p>For example, you could type <code>dog, dogs</code> to create a Taxonomy for dog-related pages.</p>
-				<p>Spaces at the beginning and end of <code>first</code> and <code>second</code> are automatically trimmed.</p>
 			</form>
 		</div>
 

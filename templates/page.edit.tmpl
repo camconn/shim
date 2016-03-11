@@ -16,20 +16,21 @@
 			<form action="{{ $.Base | html }}{{ $.URL | html -}}" method="post" class="container is-fluid">
 				<input class="input is-large" type="text" name="title" value="{{- $Post.Title | html -}}" placeholder="Your Post's Title">
 
-				<textarea class="textarea monospace" name="articleSrc" id="articleSrc" style="min-height:320px" placeholder="Write some stuff here...">{{- printf "%s" $Post.GetBody | html -}}</textarea>
-
-				{{ if $Post.Draft }}
-				<label class="checkbox"><input type="checkbox" name="doPublish"> Publish Post?</label>
-				{{ else }}
-				<label class="checkbox"><input type="checkbox" name="doPublish" checked> Republish Post?</label>
-				{{ end }}
-
-				<div class="columns is-mobile">
-					<div class="column is-half">
-						<a class="button is-info is-outlined" href="{{ $.Base }}/preview/{{- $Post.PreviewPath -}}">Preview</a>
+				<textarea class="textarea monospace editor" name="articleSrc" id="articleSrc" placeholder="Write some stuff here...">{{- printf "%s" $Post.GetBody | html -}}</textarea>
+				<div class="columns">
+					<div class="column is-4">
+						{{- if $Post.Draft -}}
+						<input type="checkbox" class="input toggle-button-common toggle-button-text" name="doPublish" id="publishToggle">
+						{{- else -}}
+						<input type="checkbox" class="input toggle-button-common toggle-button-text" name="doPublish" id="publishToggle" checked>
+						{{- end -}}
+						<label for="publishToggle" data-on="Publish" data-off="Draft"></label>
 					</div>
-					<div class="column is-right is-text-right">
-						<input class="button is-primary" type="submit" value="Save">
+					<div class="column is-4">
+						<a class="input button is-info is-outlined" href="{{ $.Base }}/preview/{{- $Post.PreviewPath -}}">Preview</a>
+					</div>
+					<div class="column is-4">
+						<input class="input button is-primary" type="submit" value="Save">
 					</div>
 				</div>
 
@@ -61,7 +62,7 @@
 				}
 				</script>
 				<div id="toggleButtonDiv">
-					<p><a href="#" onclick="toggleCollapse()"><span class="toggle" onclick="">+</span>Click to show post properties.</a></p>
+					<p><a onclick="toggleCollapse()"><span class="toggle-div">+</span>Click to show post properties.</a></p>
 					<br />
 				</div>
 				<div id="collapse">
@@ -93,11 +94,15 @@
 					</div>
 
 					<div class="columns">
-							<div class="column is-third">
-								<p><code>published</code>: when this post was published</p>
-							</div>
+						<div class="column is-third">
+							<p><code>published</code>: the date and time when this post was published</p>
+						</div>
 						<div class="column">
+							{{- if $Post.Draft -}}
+							<p>You must first publish this post to set the publish time. The publish time will be set automatically when published.</p>
+							{{- else -}}
 							<input class="input" type="text" name="published" value="{{- $Post.WebDate | html -}}" placeholder="25 Dec 2000 @ 23:59">
+							{{- end -}}
 						</div>
 					</div>
 
@@ -120,16 +125,16 @@
 						</div>
 					</div>
 					{{- end -}}
-					<p class="is-text-right"><i>Taxonomies are a list of words separated by commas. All spaces are removed.</i></p>
-					<hr>
+					<p class="is-text-right"><i><a href="{{ $.Base }}/taxonomy">Taxonomies</a> are a list of words separated by commas. All spaces are removed.</i></p>
 				</div>
-				<script type="text/javascript">document.getElementById("collapse").style.display = "none";</script>
+
 			</form>
 		</div>
 
 		{{template "footer"}}
 
 		<link rel="stylesheet" href="{{ $.Base }}/static/editor/simplemde.min.css">
+		<script type="text/javascript">document.getElementById("collapse").style.display = "none";</script>
 		<script src="{{ $.Base }}/static/editor/simplemde.min.js"></script>
 		<script>
 			var textarea = document.getElementById('articleSrc'),
