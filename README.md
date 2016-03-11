@@ -1,30 +1,41 @@
 # SHIM
 
-**SHIM IS ALPHA QUALITY SOFTWARE. USE CAUTION AS WELL AS BACKUPS!!**
+**SHIM IS ALPHA QUALITY™ SOFTWARE. USE CAUTION AS WELL AS BACKUPS!!**
 
-SHIM (also called *Shim*) is a web front-end interface for [Hugo](https://github.com/spf13/hugo).
-Shim is meant to provide writers and editors with an easy way to draft, preview,
-and publish content to their websites. Shim adds in the ease of use of dynamic
-blogging platforms such as WordPress or Ghost to the speed Hugo, a static site
-generation platform.
+```
+     _     _
+ ___| |__ (_)_ __ ___
+/ __| '_ \| | '_ ` _ \
+\__ \ | | | | | | | | |
+|___/_| |_|_|_| |_| |_|
 
-SHIM stands for Simple Hugo Interface and Manager.
+shim the hugo interface and manager
+```
 
-## Why this Way?
+SHIM (also called *Shim* or *shim*) is a blog-focused interface for
+[Hugo](https://github.com/spf13/hugo).
+
+Shim provides the ease-of-use of traditional blog engines like Wordpress with
+the blistering speed of static site generators. Because Shim lets Hugo do all
+of the work associated with site generation, Shim can focus exclusively on
+providing the best user experience.
+
+## Why?
 
 One traditional downside of static site generators is that the writer cannot see
-how their content will look until after they run a generation command. Shim intends
-to wedge (or *shim*) itself between the content producers and the site generator.
+how their content will look until after they run a generation command.
 
-The approach SHIM takes will lower the load of web hosts while still allowing the
-users to dynamically create their content (similar to Ghost).
+Shim solves this by handling all interaction with the with Hugo, including
+changing site settings, saving posts, and generating preview and public builds
+automatically for the user. This allows content creators to focus on what they
+do best: producing and uploading content.
 
 ## Setup
-To set up Shim requires a few steps. Before attempting this guide, make sure that
-Go is installed, and that you have a working `$GOBIN`, `$GOPATH`, and `$GOROOT`.
+It takes a few steps to set up Shim. Before attempting this guide, make sure that
+Go 1.5 or later is installed, and that you have a working `$GOBIN`, `$GOPATH`,
+and `$GOROOT`.
 
-The first step is installing Hugo. After this, an environment must be set up so
-that shim can actually do its job.
+The first step is installing Hugo. After that, Shim's dependencies must be satisfied.
 
 ```
 $ go get github.com/spf13/hugo
@@ -34,9 +45,11 @@ $ go get -v github.com/BurntSushi/toml \
             github.com/justinas/alice \
             github.com/niemal/uman \
             github.com/spf13/viper
-$ git submodule init
+$ git submodule init  # fetches default themes
 $ go build
 $ ./shim
+# At this point, a message will printed out telling you the default credentials
+# for your shim instance.
 ```
 
 After all this, Shim will have created a test site, `test` for you in the `sites/` folder.
@@ -50,9 +63,7 @@ you can run the following command:
 $ gin -p 8080 run
 ```
 
-For further configuration, you can modify `config.toml`. If that file doesn't
-exist, then copy `config.toml.example` to `config.toml` and edit the newly
-copied file.
+Shim-specific settings may be changed by modifying `config.toml`.
 
 ## Contributing
 If you wish to contribute to Shim, you **must** grant the project maintainer
