@@ -72,7 +72,7 @@ func main() {
 
 	// Lot sites and whatnot
 	siteNames, err := findSites()
-	checkReason(err, "Was not able to find primary site. Please check your `config.toml` file.")
+	checkReason(err, "Was not able to load sites. Please check your `config.toml` file.")
 	setupSites(siteNames)
 	allSites = loadAllSites(siteNames)
 

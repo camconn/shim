@@ -2,30 +2,34 @@
 <!DOCTYPE html>
 <html lang="en">
 	<head>
-		<meta charset="utf-8">
+		{{ template "meta" }}
 		<title>SHIM | Login</title>
 		{{ template "stylesheets" $ }}
 	</head>
 	<body>
 		{{ template "navbar" $ }}
 		<div id="content" class="content">
-			<h1>Authentication required</h1>
 			{{- template "messages" $ -}}
-			<div class="container">
-				<form action="{{ $.Base | html }}/login/" method="post">
-					{{- if gt (len $.Choices) 0 -}}
+			<div class="columns">
+				<div class="column is-half is-offset-quarter">
+					<div class="container box">
+					<h1>Authentication Required</h1>
+					<form action="{{ $.Base | html }}/login/" method="post">
+						{{- if gt (len $.Choices) 0 -}}
 						<input type="hidden" name="redirect" value="{{ index $.Choices 0 | html }}">
-					{{- end -}}
-					<div class="columns">
-						<div class="column is-2">Username: </div>
-						<div class="column"><input type="text" name="username" autofocus="autofocus"></div>
+						{{- end -}}
+						<p class="control has-icon">
+							<input class="input" type="text" name="username" autofocus="autofocus" placeholder="Username">
+							<i class="fa icon icon-user"></i>
+						</p>
+						<p class="control has-icon">
+							<input class="input" type="password" name="password" placeholder="Password">
+							<i class="fa icon icon-lock"></i>
+						</p>
+						<p><input class="button is-primary" type="submit" value="Login"></p>
+					</form>
 					</div>
-					<div class="columns">
-						<div class="column is-2">Password: </div>
-						<div class="column"><input type="password" name="password"></div>
-					</div>
-					<p><input type="submit" value="Login"></p>
-				</form>
+				</div>
 			</div>
 		</div>
 		{{template "footer"}}

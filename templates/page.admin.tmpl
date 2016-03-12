@@ -2,7 +2,7 @@
 <!DOCTYPE html>
 <html lang="en">
 	<head>
-		<meta charset="utf-8">
+		{{ template "meta" }}
 		<title>SHIM | Admin</title>
 		{{ template "stylesheets" $ }}
 	</head>
@@ -14,10 +14,10 @@
 			<div class="box">
 				<form action="{{ $.Base }}/admin/" method="post">
 					<p>Quick Options</p>
-					<button class="button is-success" type="submit" value="1" name="doBuild">Build Public</button>
+					<button class="button is-success" type="submit" value="1" name="doBuild"><i class="fa icon icon-globe-alt is-small"></i> Build Public</button>
 					<button class="button is-info is-outlined" type="submit" value="1" name="doPreview">Build Preview</button>
-					<a href="{{ $.Base }}/preview/"><button type="button" class="button is-primary">Preview Site</button></a>
-					<button class="button is-primary is-warning" type="submit" value="1" name="doReload">Reload Site</button>
+					<a href="{{ $.Base }}/preview/"><button type="button" class="button is-primary"><i class="fa icon icon-export is-small"></i> Preview</button></a>
+					<button class="button is-primary is-warning" type="submit" value="1" name="doReload"><i class="fa icon icon-cw is-small"></i> Reload Site</button>
 				</form>
 			</div>
 			<div class="box">
@@ -35,7 +35,7 @@
 							{{- end -}}
 						</select>
 					</span>
-					<button class="button is-info" type="submit">Switch Site</button>
+					<button class="button is-info" type="submit"><i class="fa icon icon-shuffle is-small"></i> Switch Site</button>
 				</form>
 			</div>
 			<hr>

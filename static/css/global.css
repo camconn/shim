@@ -48,8 +48,7 @@
   user-select: none;
 }
 input.toggle-button-text + label {
-	padding: 2px;
-	/* width: 120px; temporarily disabled */
+	/* padding: 4px; */
 	height: 32px;
 	display: block;
 	cursor: pointer;
@@ -58,16 +57,17 @@ input.toggle-button-text + label {
 }
 input.toggle-button-text + label:before,
 input.toggle-button-text + label:after {
-  display: block;
-  position: absolute;
-  top: 0;
-  left: 0;
-  bottom: 0;
-  right: 0;
-  color: #fff;
-  font-size: 15px;
-  text-align: center;
-  line-height: 24px;
+	display: block;
+	position: absolute;
+	top: 0;
+	left: 0;
+	bottom: 0;
+	right: 0;
+	padding-top: 4px;
+	color: #fff;
+	font-size: 15px;
+	text-align: center;
+	line-height: 24px;
 }
 input.toggle-button-text + label:before {
 	/* background-color: #dddddd; */
@@ -84,10 +84,10 @@ input.toggle-button-text + label:after {
 	backface-visibility: hidden;
 }
 input.toggle-button-text:checked + label:before {
-  transform: rotateY(180deg);
+	transform: rotateY(180deg);
 }
 input.toggle-button-text:checked + label:after {
-  transform: rotateY(0);
+	transform: rotateY(0);
 }
 
 .monospace {
@@ -97,4 +97,8 @@ input.toggle-button-text:checked + label:after {
 .description {
 	white-space: pre-wrap;
 	overflow: auto
+}
+
+.space-right {
+	padding-right: 1.5em;
 }

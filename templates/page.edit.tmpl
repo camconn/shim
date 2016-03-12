@@ -2,7 +2,7 @@
 <!DOCTYPE html>
 <html lang="en">
 	<head>
-		<meta charset="utf-8">
+		{{ template "meta" }}
 		<title>SHIM | Editor</title>
 		{{ template "stylesheets" $ }}
 	</head>
@@ -13,10 +13,11 @@
 			<h1>Edit Post</h1>
 			{{- template "messages" $ -}}
 			{{- $Post := .Post -}}
-			<form action="{{ $.Base | html }}{{ $.URL | html -}}" method="post" class="container is-fluid">
-				<input class="input is-large" type="text" name="title" value="{{- $Post.Title | html -}}" placeholder="Your Post's Title">
-
-				<textarea class="textarea monospace editor" name="articleSrc" id="articleSrc" placeholder="Write some stuff here...">{{- printf "%s" $Post.GetBody | html -}}</textarea>
+			<form action="{{ $.Base | html }}{{ $.URL | html -}}" method="post" class="container">
+				<input class="input is-large" type="text" name="title" value="{{- $Post.Title | html -}}" placeholder="How I Proved the Riemann Hypothesis">
+				<br>
+				<textarea class="textarea monospace editor" name="articleSrc" id="articleSrc" placeholder="So it's official! I finally solved the age-old problem...">{{- printf "%s" $Post.GetBody | html -}}</textarea>
+				<noscript><br></noscript> <!-- Give some space for JS-disabled users -->
 				<div class="columns">
 					<div class="column is-4">
 						{{- if $Post.Draft -}}
@@ -63,7 +64,7 @@
 				</script>
 				<div id="toggleButtonDiv">
 					<p><a onclick="toggleCollapse()"><span class="toggle-div">+</span>Click to show post properties.</a></p>
-					<br />
+					<br>
 				</div>
 				<div id="collapse">
 					<div class="columns">
@@ -71,7 +72,10 @@
 								<p><code>author</code>: the author for this post</p>
 							</div>
 						<div class="column">
-							<input class="input" type="text" name="author" value="{{- $Post.Author -}}">
+							<p class="control has-icon">
+								<input class="input" type="text" name="author" value="{{- $Post.Author -}}" placeholder="Bernhard Riemann">
+								<i class="fa icon icon-user"></i>
+							</p>
 						</div>
 					</div>
 
@@ -80,7 +84,10 @@
 								<p><code>description</code>: a short summary of the post &mdash; if none is provided, it will automatically be generated</p>
 							</div>
 						<div class="column">
-							<input class="input" type="text" name="description" value="{{- $Post.ActualDescription -}}">
+							<p class="control has-icon">
+								<input class="input" type="text" name="description" value="{{- $Post.ActualDescription -}}" placeholder="My proof of the Riemann Hypothesis">
+								<i class="fa icon icon-clipboard"></i>
+							</p>
 						</div>
 					</div>
 
@@ -89,7 +96,10 @@
 								<p><code>slug</code>: the token to appear in the tail of the url &mdash; if none is provided, the filename will be used</p>
 							</div>
 						<div class="column">
-							<input class="input" type="text" name="slug" value="{{- $Post.Slug -}}">
+							<p class="control has-icon">
+								<input class="input" type="text" name="slug" value="{{- $Post.Slug -}}" placeholder="riemann-hypothesis">
+								<i class="fa icon icon-right-hand"></i>
+							</p>
 						</div>
 					</div>
 
@@ -101,7 +111,10 @@
 							{{- if $Post.Draft -}}
 							<p>You must first publish this post to set the publish time. The publish time will be set automatically when published.</p>
 							{{- else -}}
-							<input class="input" type="text" name="published" value="{{- $Post.WebDate | html -}}" placeholder="25 Dec 2000 @ 23:59">
+							<p class="control has-icon">
+								<input class="input" type="text" name="published" value="{{- $Post.WebDate | html -}}" placeholder="25 Dec 2000 @ 23:59">
+								<i class="fa icon icon-calendar"></i>
+							</p>
 							{{- end -}}
 						</div>
 					</div>
@@ -111,21 +124,34 @@
 								<p><code>aliases</code>: a comma-separated list of absolute URIs for this post which will redirect to this post</p>
 							</div>
 						<div class="column">
-							<input class="input" type="text" name="aliases" value="{{- $Post.WebAliases | html -}}" placeholder="/my-cool-post/, /2010/04/28/my-cool-post/">
+							<p class="control has-icon">
+								<input class="input" type="text" name="aliases" value="{{- $Post.WebAliases | html -}}" placeholder="/my-math-proof/, /riemann-proof/">
+								<i class="fa icon icon-right"></i>
+							</p>
 						</div>
 					</div>
 
 					{{- range $name, $joined := $Post.TaxonomyMap -}}
 					<div class="columns">
 						<div class="column is-quarter">
-							<p class="title">{{- $name | html -}}</p>
+							{{- $kind := index $.Site.Taxonomies $name -}}
+							<p class="title" title="singular: {{ $kind.Singular }}">{{- $name | html -}}</p>
 						</div>
 						<div class="column">
-							<input class="input" type="text" name='{{- printf "taxonomy.%s" $name | html -}}' value="{{- $joined | html -}}">
+							<p class="control has-icon">
+							<input class="input" type="text" name='{{- printf "taxonomy.%s" $name | html -}}' value="{{- $joined | html -}}"
+								 placeholder="{{ $kind.Singular }}1, {{ $kind.Singular }}2, {{ $kind.Singular }}3, ...">
+								<i class="fa icon icon-tag"></i>
+							</p>
 						</div>
 					</div>
+					{{- else -}}
+					<p>You have no taxonomies to add to this page. How about <a href="{{ $.Base }}/taxonomy">making some?</a></p>
 					{{- end -}}
+
+					{{- if gt (len $.Site.Taxonomies) 0 -}}
 					<p class="is-text-right"><i><a href="{{ $.Base }}/taxonomy">Taxonomies</a> are a list of words separated by commas. All spaces are removed.</i></p>
+					{{- end -}}
 				</div>
 
 			</form>

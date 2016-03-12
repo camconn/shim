@@ -2,7 +2,7 @@
 <!DOCTYPE html>
 <html lang="en">
 	<head>
-		<meta charset="utf-8">
+		{{ template "meta" }}
 		<title>SHIM | View Posts</title>
 		{{ template "stylesheets" $ }}
 	</head>
@@ -23,27 +23,37 @@
 					<div class="navbar-right">
 						{{- if $post.Draft -}}
 						<div class="navbar-item">
-							<h4><span class="tag is-warning">Draft</span></h4>
+							<h4><span class="tag is-warning is-medium"><i class="icon is-small icon-clipboard"></i> Draft</span></h4>
 						</div>
 						{{- else -}}
 						<div class="navbar-item">
-							<h4><span class="tag is-success">Published</span></h4>
+							<h4><span class="tag is-success is-medium"><i class="icon is-small icon-ok"></i> Published</span></h4>
 						</div>
 						{{- end -}}
 						<div class="navbar-item">
-							<h4><a class="tag is-primary" href="{{ $.Base }}/edit/{{ $post.PostID }}">Edit</a></h4>
+							<h4>
+								<a class="tag is-primary is-medium" href="{{ $.Base }}/edit/{{ $post.PostID }}">
+									<i class="icon is-small icon-edit is-small"></i>Edit</a>
+							</h4>
 						</div>
 						<div class="navbar-item">
-							<h4><a class="tag is-danger" href="{{ $.Base }}/delete/{{ $post.PostID }}">Delete</a></h4>
+							<h4>
+								<a class="tag is-danger is-medium" href="{{ $.Base }}/delete/{{ $post.PostID }}">
+									<i class="icon is-small icon-trash is-small"></i>Delete</a>
+							</h4>
 						</div>
 					</div>
 				</nav>
 				<p class="subtitle">
+					<i class="icon icon-user is-small"></i> <b>{{ $post.Author | html }}</b> &mdash; <i class="icon icon-calendar is-small"></i>{{ $post.WebDate | html }}
+					<!-- 
 					{{- if $post.Draft -}}
 						Written by <b>{{ $post.Author | html }}</b> &mdash; {{ $post.WebDate | html }}
+						<i class="icon icon-user"> <b>{{ $post.Author | html }}</b> &mdash; {{ $post.WebDate | html }}
 					{{- else -}}
 						Published by <b>{{ $post.Author | html }}</b> &mdash; {{ $post.WebDate | html }}
 					{{- end -}}
+					-->
 				</p>
 				<blockquote class="monospace description"><div>{{ $post.Description }}</div></blockquote>
 			</div>

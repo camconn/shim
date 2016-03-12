@@ -1,27 +1,31 @@
 {{define "navbar"}}
 <div id="navbar">
 	<nav class="navbar">
-		<div class="navbar-item is-text-centered">
-			<p class="title">SHIM</p>
+		<div class="navbar-left">
+			<div class="navbar-item is-text-centered">
+				<a class="link" href="{{ $.Base }}/admin/"><p class="title">SHIM</p></a>
+			</div>
 		</div>
-		<p class="navbar-item is-text-centered">
-			<a class="link is-info" href="{{ $.Base }}/admin/">Administration</a>
-		</p>
-		<p class="navbar-item is-text-centered">
-			<a class="link is-info" href="{{ $.Base }}/config/">Site Configuration</a>
-		</p>
-		<p class="navbar-item is-text-centered">
-			<a class="link is-info" href="{{ $.Base }}/staticfiles/">Files</a>
-		</p>
-		<p class="navbar-item is-text-centered">
-			<a class="link is-info" href="{{ $.Base }}/posts/">Posts</a>
-		</p>
-		<p class="navbar-item is-text-centered">
-			<a class="link is-info" href="{{ $.Base }}/new/">New Post</a>
-		</p>
-		<p class="navbar-item is-text-centered">
-			<a class="link is-info" href="{{ $.Base }}/user/">Settings</a>
-		</p>
+		<div class="navbar-right">
+			<p class="navbar-item is-text-centered space-right">
+				<a class="link is-info" href="{{ $.Base }}/admin/"><i class="icon icon-gauge is-small"></i>Admin</a>
+			</p>
+			<p class="navbar-item is-text-centered space-right">
+				<a class="link is-info" href="{{ $.Base }}/config/"><i class="icon icon-website is-small"></i>Edit Site</a>
+			</p>
+			<p class="navbar-item is-text-centered space-right">
+				<a class="link is-info" href="{{ $.Base }}/staticfiles/"><i class="icon icon-folder is-small"></i>Files</a>
+			</p>
+			<p class="navbar-item is-text-centered space-right">
+				<a class="link is-info" href="{{ $.Base }}/posts/"><i class="icon icon-list is-small"></i>Posts</a>
+			</p>
+			<p class="navbar-item is-text-centered space-right">
+				<a class="link is-info" href="{{ $.Base }}/user/"><i class="icon icon-cog is-small"></i>Settings</a>
+			</p>
+			<p class="navbar-item is-text-centered">
+				<a class="button is-info link is-success" href="{{ $.Base }}/new/"><i class="fa icon icon-doc-new is-small"></i>New Post</a>
+			</p>
+		</div>
 	</nav>
 </div>
 {{end}}

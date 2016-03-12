@@ -24,7 +24,7 @@ import (
 	"net/url"
 	"os"
 	"os/exec"
-	"path"
+	"path/filepath"
 	"strings"
 )
 
@@ -123,7 +123,7 @@ func setupSite(name string) {
 	here, err := os.Getwd()
 	checkReason(err, "Couldn't get current directory")
 
-	sitesLoc := path.Join(here, viper.GetString("sitesDir"))
+	sitesLoc := filepath.Join(here, viper.GetString("sitesDir"))
 
 	// If sites folder doesn't exist, make it!
 	if _, err := os.Stat(sitesLoc); os.IsNotExist(err) {
@@ -132,7 +132,7 @@ func setupSite(name string) {
 	}
 
 	// check if site already exists
-	testLoc := path.Join(here, "sites", name)
+	testLoc := filepath.Join(here, "sites", name)
 	if _, dirError := os.Stat(testLoc); !os.IsNotExist(dirError) {
 		// site already exists; let's get out
 		return
@@ -142,7 +142,7 @@ func setupSite(name string) {
 	hugoPath, err := exec.LookPath("hugo")
 	checkReason(err, "Couldn't find hugo. Make sure it's in your PATH")
 
-	cmd := exec.Command(hugoPath, "new", "site", path.Join(sitesLoc, name))
+	cmd := exec.Command(hugoPath, "new", "site", filepath.Join(sitesLoc, name))
 	cmd.Dir = sitesLoc
 	log.Printf("Creating new site in %s\n", cmd.Dir)
 	err = cmd.Run()
