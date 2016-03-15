@@ -20,7 +20,7 @@
 						<p><code><b>title</b></code>: the site title</p>
 					</div>
 					<div class="column">
-						<input class="input" type="text" name="title" value="{{ $.Site.Title| html }}">
+						<input class="input" type="text" name="title" value="{{ $.Site.Title| html }}" placeholder="My Shim Blog">
 					</div>
 				</div>
 
@@ -29,7 +29,7 @@
 						<p><code><b>baseurl</b></code>: the base URL for the site</p>
 					</div>
 					<div class="column">
-						<input class="input" type="text" name="baseurl" value="{{ $.Site.BaseURL | html }}">
+						<input class="input" type="text" name="baseurl" value="{{ $.Site.BaseURL | html }}" placeholder="http://example.com/">
 					</div>
 				</div>
 
@@ -38,13 +38,17 @@
 						<p><code><b>canonifyurls</b></code>: are urls canonical?</p>
 					</div>
 					<div class="column">
-						<p>
-						{{- if $.Site.Canonify -}}
-						<input type="checkbox" name="canonifyurls" checked />
-						{{- else -}}
-						<input type="checkbox" name="canonifyurls" />
-						{{- end -}}
-						&nbsp; If checked, URLs will be canonical</p>
+						<p class="control">
+							<label class="checkbox">
+							{{- if $.Site.Canonify -}}
+							<input type="checkbox" name="canonifyurls" checked />
+							{{- else -}}
+							<input type="checkbox" name="canonifyurls" />
+							{{- end -}}
+							If checked, URLs will be canonical
+							</label>
+						</p>
+
 					</div>
 				</div>
 
@@ -72,21 +76,23 @@
 						<p><code><b>author</b></code>: the default author for new posts</p>
 					</div>
 					<div class="column">
-						<input class="input" type="text" name="params.author" value="{{ $.Site.Author | html }}">
+						<input class="input" type="text" name="params.author" value="{{ $.Site.Author | html }}" placeholder="Bernhard Riemann">
 					</div>
 				</div>
 
 				<div class="columns">
 					<div class="column is-third">
-						<p><code><b>subtitle</b></code>: the subtitle for the site</p>
+						<p><code><b>subtitle</b></code>: the subtitle for the site &mdash; this being displayed depends on the theme</p>
 					</div>
 					<div class="column">
-						<input class="input" type="text" name="params.subtitle" value="{{ $.Site.Subtitle | html }}">
+						<input class="input" type="text" name="params.subtitle" value="{{ $.Site.Subtitle | html }}" placeholder="The coolest blog ever">
 					</div>
 				</div>
 
-				<input class="button is-primary is-text-right" type="submit" value="Save">
-
+				<button type="submit" class="button has-icon is-primary">
+					<i class="fa icon icon-ok is-small"></i>
+					Save
+				</button>
 				</div>
 			</form>
 		</div>

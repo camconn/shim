@@ -16,13 +16,30 @@
 				<p>Author: <code>{{ .Post.Author }}</code></p>
 			</div>
 			<hr>
-			<p>Are you <i>really</i> want to delete this post?</p>
+			<div class="message is-danger">
+				<div class="message-header"> 
+					WARNING!
+				</div>
+				<div class="message-body">
+					Do you <i>really</i> want to delete this post? This action is <b>irreversible</b>!
+				</div>
+			</div>
 			<div class="columns control">
 				<div class="column is-half">
-					<a href="{{ .Base }}/posts/" class="button is-primary">No! I didn't mean it!</a>
+					<a href="{{ .Base }}/posts/" class="is-primary">
+						<button class="button is-primary">
+							<i class="fa icon icon-left is-small"></i>
+							No! I didn't mean it!
+						</button>
+					</a>
 				</div>
 				<div class="column is-half is-text-right">
-					<a href="{{ .Base }}{{- .URL -}}?confirm=yes" class="button is-danger">Yes! Get rid of it!</a>
+					<a href="{{ .Base }}{{- .URL -}}?confirm=yes" class="is-danger">
+						<button class="button is-danger">
+							<i class="fa icon icon-trash is-small"></i>
+							Yes! Get rid of it!
+						</button>
+					</a>
 				</div>
 			</div>
 		</div>

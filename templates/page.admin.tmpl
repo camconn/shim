@@ -14,10 +14,30 @@
 			<div class="box">
 				<form action="{{ $.Base }}/admin/" method="post">
 					<p>Quick Options</p>
-					<button class="button is-success" type="submit" value="1" name="doBuild"><i class="fa icon icon-globe-alt is-small"></i> Build Public</button>
-					<button class="button is-info is-outlined" type="submit" value="1" name="doPreview">Build Preview</button>
-					<a href="{{ $.Base }}/preview/"><button type="button" class="button is-primary"><i class="fa icon icon-export is-small"></i> Preview</button></a>
-					<button class="button is-primary is-warning" type="submit" value="1" name="doReload"><i class="fa icon icon-cw is-small"></i> Reload Site</button>
+					<a href="{{ $.Site.BaseURL }}">
+						<button type="button" class="button is-primary">
+							<i class="fa icon icon-globe-alt is-small"></i>
+							View Site
+						</button>
+					</a>
+					<button class="button is-success has-icon" type="submit" value="1" name="doBuild">
+						<i class="fa icon icon-arrows-cw is-small"></i>
+						Build Public
+					</button>
+					<a href="{{ $.Base }}/preview/">
+						<button type="button" class="button is-primary">
+							<i class="fa icon icon-export is-small"></i>
+							Preview
+						</button>
+					</a>
+					<button class="button is-info is-outlined has-icon" type="submit" value="1" name="doPreview">
+						<i class="fa icon icon-arrows-cw is-small"></i>
+						Build Preview
+					</button>
+					<button class="button is-primary is-warning" type="submit" value="1" name="doReload">
+						<i class="fa icon icon-cw is-small"></i>
+						Reload Site
+					</button>
 				</form>
 			</div>
 			<div class="box">
@@ -40,23 +60,19 @@
 			</div>
 			<hr>
 			<h1 class="title">Taxonomies <span class="subtitle"><a href="{{ $.Base }}/taxonomy/">edit</a></span></h1> &nbsp;
-			<!-- TODO: Implement page counts for taxonomies -->
 			<table class="table is-striped">
 				<thead>
 					<tr>
 						<th>Taxonomy</th>
 						<th>Number of Terms</th>
-						<!-- <th>Pages</th> -->
 					</tr>
 				</thead>
 				<tbody>
 			{{- range $name, $kind := .Site.Taxonomies -}}
-			<div>
 				<tr>
 					<td>{{ $name | html -}} &nbsp; (also: <i>{{- $kind.Singular | html -}}</i>)</td>
 					<td>{{ $kind.NumTerms | html }}</td>
-					<!-- <td>TBD</td> -->
-			</div>
+				</tr>
 			{{- end -}}
 			</table>
 		</div>

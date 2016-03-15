@@ -203,6 +203,18 @@
       "css": "shuffle",
       "code": 59424,
       "src": "elusive"
+    },
+    {
+      "uid": "d5fabfa46384953ae055fceacb2229a7",
+      "css": "arrows-cw",
+      "code": 59425,
+      "src": "elusive"
+    },
+    {
+      "uid": "4fc965c0a4abf27512ac06752c56b3b5",
+      "css": "upload",
+      "code": 59426,
+      "src": "elusive"
     }
   ]
 }

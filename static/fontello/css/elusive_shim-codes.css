@@ -32,3 +32,5 @@
 .icon-clipboard:before { content: '\e81e'; } /* '' */
 .icon-right-hand:before { content: '\e81f'; } /* '' */
 .icon-shuffle:before { content: '\e820'; } /* '' */
+.icon-arrows-cw:before { content: '\e821'; } /* '' */
+.icon-upload:before { content: '\e822'; } /* '' */

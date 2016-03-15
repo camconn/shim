@@ -1,11 +1,11 @@
 @font-face {
   font-family: 'elusive_shim';
-  src: url('../font/elusive_shim.eot?73412463');
-  src: url('../font/elusive_shim.eot?73412463#iefix') format('embedded-opentype'),
-       url('../font/elusive_shim.woff2?73412463') format('woff2'),
-       url('../font/elusive_shim.woff?73412463') format('woff'),
-       url('../font/elusive_shim.ttf?73412463') format('truetype'),
-       url('../font/elusive_shim.svg?73412463#elusive_shim') format('svg');
+  src: url('../font/elusive_shim.eot?38573169');
+  src: url('../font/elusive_shim.eot?38573169#iefix') format('embedded-opentype'),
+       url('../font/elusive_shim.woff2?38573169') format('woff2'),
+       url('../font/elusive_shim.woff?38573169') format('woff'),
+       url('../font/elusive_shim.ttf?38573169') format('truetype'),
+       url('../font/elusive_shim.svg?38573169#elusive_shim') format('svg');
   font-weight: normal;
   font-style: normal;
 }
@@ -15,7 +15,7 @@
 @media screen and (-webkit-min-device-pixel-ratio:0) {
   @font-face {
     font-family: 'elusive_shim';
-    src: url('../font/elusive_shim.svg?73412463#elusive_shim') format('svg');
+    src: url('../font/elusive_shim.svg?38573169#elusive_shim') format('svg');
   }
 }
 */
@@ -88,3 +88,5 @@
 .icon-clipboard:before { content: '\e81e'; } /* '' */
 .icon-right-hand:before { content: '\e81f'; } /* '' */
 .icon-shuffle:before { content: '\e820'; } /* '' */
+.icon-arrows-cw:before { content: '\e821'; } /* '' */
+.icon-upload:before { content: '\e822'; } /* '' */

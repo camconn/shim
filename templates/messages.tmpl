@@ -1,14 +1,16 @@
 {{- define "messages" -}}
     {{/* Simple subtemplate to handle messages */}}
 	{{- if eq .Action "warn" -}}
-		<p class="notification is-warning">{{- .Message | html -}}</p>
+		<div class="notification is-warning">
+			<p>{{- .Message -}}</p>
+		</div>
 	{{- else if .Failed -}}
 		<div class="notification is-danger">
-			<p>{{- .Message | html -}}</p>
+			<p>{{- .Message -}}</p>
 		</div>
 	{{- else if .Success -}}
 		<div class="notification is-success">
-			<p>{{- .Message | html -}}</p>
+			<p>{{- .Message -}}</p>
 		</div>
 	{{- end -}}
 {{- end -}}
