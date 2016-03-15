@@ -105,17 +105,17 @@
 
 					<div class="columns">
 						<div class="column is-third">
-							<p><code>published</code>: the date and time when this post was published</p>
+							<p><code>published</code>: the date and time when this post was published &mdash; if this field is left blank, it will be automatically filled upon publishing this post</p>
 						</div>
 						<div class="column">
-							{{- if $Post.Draft -}}
-							<p>You must first publish this post to set the publish time. The publish time will be set automatically when published.</p>
-							{{- else -}}
 							<p class="control has-icon">
-								<input class="input" type="text" name="published" value="{{- $Post.WebDate | html -}}" placeholder="25 Dec 2000 @ 23:59">
+							{{- if $Post.HasDate -}}
+								<input class="input" type="text" name="published" value="{{ $Post.WebDate }}" placeholder="{{ $Post.WebDate }}">
+							{{- else -}}
+								<input class="input" type="text" name="published" value="" placeholder="{{ $Post.WebDate }}">
+							{{- end -}}
 								<i class="fa icon icon-calendar"></i>
 							</p>
-							{{- end -}}
 						</div>
 					</div>
 

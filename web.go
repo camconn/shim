@@ -494,15 +494,20 @@ func EditPost(w http.ResponseWriter, req *http.Request) {
 			case "description":
 				post.manualDesc = value
 			case "published":
-				// In reality, this doesn't matter for drafts because when a draft
-				// is saved it's time published is set to when it was last modified.
-				parsedTime, err := time.Parse(dateFormat, value)
+				post.published = nil
+				trimmedTime := strings.TrimSpace(value)
+				if len(trimmedTime) == 0 {
+					continue
+				}
+
+				parsedTime, err := time.Parse(dateFormat, trimmedTime)
 				if err != nil {
 					wrapper.FailedMessage("Could not parse publishing time! " +
 						"Please use a valid format, date, and time for time published.")
 					continue
 				}
 				post.published = &parsedTime
+				log.Printf("parsed time: %s\n", parsedTime.Format(time.RFC3339))
 			case "slug":
 				post.slug = value
 			case "title":
@@ -537,36 +542,28 @@ func EditPost(w http.ResponseWriter, req *http.Request) {
 			}
 		}
 
-		err = post.SavePost(postText)
-		if err != nil {
-			log.Printf("Error while saving post: %s\n", err.Error())
-			wrapper.FailedMessage("Could not save post to disk. Error: " + err.Error())
-			goto renderEditedPost
-		} else if wrapper.Failed {
-			// We try and save whatever data we do have if something failed before
-			// this point (for example, if the time the user gave us was wrong, try
-			// parsing it anyways, then try saving their post, then tell them that
-			// an error occurred.
-			goto renderEditedPost
-		}
-
 		if publish {
+			post.draft = false
 			err = post.Publish(postText)
 			if err != nil {
 				log.Printf("Could not publish post: %s\n", err.Error())
 				wrapper.FailedMessage("Could not publish post: " + err.Error())
-				goto renderEditedPost
+			} else {
+				wrapper.SuccessMessage("Post saved and published.")
 			}
 		} else {
 			post.draft = true
+			err = post.SavePost(postText)
+			if err != nil {
+				log.Printf("Error while saving post: %s\n", err.Error())
+				wrapper.FailedMessage("Could not save post to disk. Error: " + err.Error())
+			} else {
+				wrapper.SuccessMessage("Post saved.")
+			}
 		}
-
-		wrapper.SuccessMessage("Post saved.")
 	}
 
-renderEditedPost:
 	wrapper.Post = post
-
 	renderAnything(w, "editPage", wrapper)
 }
 

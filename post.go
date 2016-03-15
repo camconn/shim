@@ -85,14 +85,28 @@ func (p *Post) handleFrontMatter(v *viper.Viper) {
 		p.aliases = aliases
 	}
 
-	// Handle time parsing and error checking
-	publishString := v.GetString("date")
-	if publishString != "" {
-		pTime, err := time.Parse(time.RFC3339, publishString)
-		if err != nil {
-			log.Fatalf("Error parsing time: %s\n", err)
+	{
+		publishString := v.GetString("date")
+		if publishString != "" {
+			pTime, err := time.Parse(time.RFC3339, publishString)
+			if err != nil {
+				log.Fatalf("Error parsing time: %s\n", err)
+			}
+			p.published = &pTime
 		}
-		p.published = &pTime
+	}
+
+	p.all = v.AllSettings()
+
+	{
+		// If the post is a draft, and there is no "editdate" key, then this post has
+		// no date, even if we assigned it earlier.
+		lastEditDate := v.GetString("editdate")
+		if p.Draft() && len(lastEditDate) == 0 {
+			p.all["editdate"] = p.Date().Format(time.RFC3339)
+			delete(p.all, "date")
+			p.published = nil
+		}
 	}
 
 	for _, kind := range p.Site().Taxonomies().GetKinds() {
@@ -102,8 +116,6 @@ func (p *Post) handleFrontMatter(v *viper.Viper) {
 			p.taxonomies[plural] = terms
 		}
 	}
-
-	p.all = v.AllSettings()
 }
 
 // contentDirPath is used to find the relative path of the post
@@ -201,11 +213,6 @@ func (s *Site) newPost(name string) (fPath string, err error) {
 
 // SavePost - Save post to disk to path path
 func (p *Post) SavePost(body string) error {
-	if p.Draft() { // If saving a draft, the time updated is right now
-		now := time.Now()
-		p.published = &now
-	}
-
 	// Go ahead and update the map of all TOML keys
 	p.updateMap()
 
@@ -218,7 +225,6 @@ func (p *Post) SavePost(body string) error {
 		return err
 	}
 
-	// write TOML stuff
 	tomlEncoder := toml.NewEncoder(file)
 
 	file.WriteString(tomlBoundary)
@@ -257,8 +263,15 @@ func (p *Post) updateMap() {
 	p.all["author"] = p.Author()
 	p.all["title"] = p.Title()
 	p.all["slug"] = p.Slug()
-	p.all["date"] = p.Date()
 	p.all["draft"] = p.Draft()
+
+	p.all["editdate"] = time.Now().Format(time.RFC3339)
+	if p.HasDate() {
+		p.all["date"] = p.Date().Format(time.RFC3339)
+	} else {
+		delete(p.all, "date")
+	}
+
 	if len(p.ActualDescription()) > 0 {
 		p.all["description"] = p.ActualDescription()
 	} else {
@@ -319,11 +332,10 @@ func (p *Post) TaxonomyMap() map[string]string {
 
 // Publish - Publish this post
 func (p *Post) Publish(text string) error {
-	if p.published == nil {
-		now := time.Now()
-		p.published = &now
-	}
 	p.draft = false
+	if p.published == nil {
+		p.published = p.Date()
+	}
 
 	err := p.SavePost(text)
 	if err != nil {
@@ -331,11 +343,6 @@ func (p *Post) Publish(text string) error {
 	}
 
 	return nil
-}
-
-// ClearSettings - clear the hashmap of the full list of settings for this post
-func (p *Post) ClearSettings() {
-	p.all = nil
 }
 
 // Author - The author of this post
@@ -353,13 +360,41 @@ func (p Post) Slug() string {
 	return p.slug
 }
 
-// Date - The published date of this post
+// Date The published date of this post OR the last time it was edited
+// if this post is a draft.
 func (p Post) Date() *time.Time {
-	if p.published == nil {
-		now := time.Now()
-		return &now
+	if p.published != nil {
+		return p.published
 	}
-	return p.published
+
+	// If there's an edit date, try and use that for sorting.
+	if p.Draft() {
+		if editTimeValue, ok := p.all["editdate"]; ok {
+			log.Println("Have edited value")
+			if editTimeStr, ok := editTimeValue.(string); ok {
+				log.Printf("time: %s\n", editTimeStr)
+				editTime, err := time.Parse(time.RFC3339, editTimeStr)
+				if err == nil {
+					log.Printf("got time: %s\n", editTime.String())
+					return &editTime
+				}
+				log.Println("Couldn't parse time: " + err.Error())
+			}
+		}
+	}
+
+	now := time.Now()
+	return &now
+}
+
+// HasDate lets you know if the user has manually specified a date for this post
+func (p Post) HasDate() bool {
+	return (p.published != nil)
+}
+
+// WebDate - Get the date displayed in shim for this post
+func (p Post) WebDate() string {
+	return p.Date().Format(dateFormat)
 }
 
 // Draft - Is this post a draft?
@@ -428,11 +463,6 @@ func (p *Post) PostID() string {
 	b64Path := base64.StdEncoding.EncodeToString([]byte(relPathStr))
 
 	return b64Path
-}
-
-// WebDate - Get the date displayed in shim for this post
-func (p Post) WebDate() string {
-	return p.Date().Format(dateFormat)
 }
 
 // PreviewPath - Get the preview path for this post. This is effectively final

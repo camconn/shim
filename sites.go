@@ -75,6 +75,8 @@ func (s SitePosts) Less(i, j int) bool {
 	postB := s[j]
 	if postA.Draft() && !postB.Draft() {
 		return true
+	} else if postB.Draft() && !postA.Draft() {
+		return false
 	}
 
 	timeA := postA.Date().Add(0)
