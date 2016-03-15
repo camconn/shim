@@ -17,6 +17,14 @@
 			<div class="box">
 				<p>Here is your embedding code. Copy and paste it into your post source:</p>
 				<input class="input" type="text" value="{{- $.Message | html -}}" form="none">
+				<br>
+				<div class="notification is-warning">
+					<p>
+						In order to properly display these embeds with Shim and Hugo, make sure your theme has the following
+						line somewhere in the <code>head</code> element. <br>
+						<code>&lt;base href="{{"{{"}}.Site.BaseURL{{"}}"}}"&gt;</code>
+					</p>
+				</div>
 			</div>
 			<hr>
 			{{- end -}}

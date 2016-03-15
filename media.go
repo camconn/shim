@@ -25,7 +25,7 @@ import (
 )
 
 const (
-	embedFmt = "{{< figure src=\"/files/%s\" title=\"Put Figure Name Here\" >}}"
+	embedFmt = "{{< figure src=\"files/%s\" title=\"Put Figure Name Here\" >}}"
 )
 
 // StaticFiles retrieves and returns a list of all of the statically-uploaded

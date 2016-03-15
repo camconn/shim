@@ -100,15 +100,20 @@ func (l *loginHandler) dynamicPreviewHandler(w http.ResponseWriter, r *http.Requ
 				file.Close()
 				file, _ = location.Open(filepath.Join(filename, "index.html"))
 				info, err = file.Stat()
+				if err != nil {
+					log.Printf("no index file!")
+					http.Error(w, "Could not find index file to serve", http.StatusNotFound)
+					return
+				}
 				defer file.Close()
 			}
 
 			// detect if folder, then serve index.html
 			http.ServeContent(w, r, info.Name(), info.ModTime(), file)
-			return
 		}
+	} else {
+		log.Println("not logged in!")
+		http.Error(w, "You must log in first!", http.StatusUnauthorized)
 	}
-
-	log.Println("not logged in!")
 
 }
