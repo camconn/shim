@@ -18,7 +18,6 @@ package main
 
 import (
 	"fmt"
-	"github.com/niemal/uman"
 	"log"
 	"net/http"
 	"net/url"
@@ -40,25 +39,11 @@ func timeoutHandler(next http.Handler) http.Handler {
 	return http.Handler(http.TimeoutHandler(next, time.Duration(15*time.Second), "Sorry, but we took too long to handle your request. Sorry?"))
 }
 
-// Middleware for requiring login on certain pages.
-type loginHandler struct {
-	handler http.Handler
-	userMan *uman.UserManager
-}
-
-// newLoginHandler Creates a new LoginHandler, which requires logins
-// from all visiting users or redirects them to /login/
-func newLoginHandler(um *uman.UserManager) *loginHandler {
-	return &loginHandler{
-		userMan: um,
-	}
-}
-
 // Simple syntax candy method to ensure that users are logged in whenever accessing
 // protected Shim pages.
-func (l *loginHandler) authHandler(h http.Handler) http.Handler {
+func authHandler(h http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		session := l.userMan.GetHTTPSession(w, r)
+		session := um.GetHTTPSession(w, r)
 
 		if session.IsLogged() {
 			h.ServeHTTP(w, r)
@@ -72,8 +57,8 @@ func (l *loginHandler) authHandler(h http.Handler) http.Handler {
 	})
 }
 
-func (l *loginHandler) dynamicPreviewHandler(w http.ResponseWriter, r *http.Request) {
-	session := l.userMan.GetHTTPSession(w, r)
+func dynamicPreviewHandler(w http.ResponseWriter, r *http.Request) {
+	session := um.GetHTTPSession(w, r)
 
 	if session.IsLogged() {
 		site := findUserSite(session.User)

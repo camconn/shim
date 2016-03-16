@@ -79,9 +79,7 @@ func main() {
 	// Below this line are things exclusively for running the webapp
 	mux := http.NewServeMux()
 
-	loginH := newLoginHandler(um)
-	loginRequirer := loginH.authHandler
-	withAuth := alice.New(loggingHandler, loginRequirer)
+	withAuth := alice.New(loggingHandler, authHandler)
 
 	mux.Handle("/", withAuth.ThenFunc(Home))
 	mux.Handle("/config/", withAuth.ThenFunc(EditSite))
@@ -96,7 +94,7 @@ func main() {
 	mux.Handle("/taxonomy/", withAuth.ThenFunc(ViewTaxonomies))
 	mux.Handle("/thumb/", withAuth.ThenFunc(Thumbnailer))
 
-	previewer := http.HandlerFunc(loginH.dynamicPreviewHandler)
+	previewer := http.HandlerFunc(dynamicPreviewHandler)
 	mux.Handle("/preview/", http.StripPrefix("/preview", withAuth.Then(previewer)))
 
 	// workaround hack to serve preview static files correctly (e.g. images)

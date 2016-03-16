@@ -21,7 +21,6 @@ import (
 	"github.com/nfnt/resize"
 	"image"
 	"io"
-	"log"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -75,7 +74,6 @@ func (s *Site) AddStaticFile(path string, uploadFile io.Reader) error {
 	// TODO: This is dangerous. Maybe make sure that path is a descendant of
 	// the static file path?
 	newFilePath := filepath.Join(s.Location(), "static", "files", path)
-	fmt.Printf("New file path: %s\n", newFilePath)
 	newFile, err := os.Create(newFilePath)
 	defer newFile.Close()
 	if err != nil {
@@ -131,17 +129,45 @@ func Thumbnailer(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	filesRoot := filepath.Join(wrapper.Site.Location(), "static", "files")
-
-	log.Printf("Looking at filesRoot: %s\n", filesRoot)
-	staticFSRoot := http.Dir(filesRoot)
-
-	file, err := staticFSRoot.Open(fileName)
+	file, err := wrapper.Site.GetStaticFile(fileName)
 	defer file.Close()
 	if err != nil {
 		http.Error(w, "Could not open file: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
+
+	heads := w.Header()
+
+	typeBuf := make([]byte, 512) // At most, http.DetectContentType reads 512 bytes
+	_, err = file.Read(typeBuf)
+	fileType := "application/octet-stream"
+	if err == nil {
+		fileType = http.DetectContentType(typeBuf)
+	} else {
+		http.Error(w, "Couldn't detect file type...", http.StatusInternalServerError)
+		return
+	}
+
+	info, err := file.Stat()
+	if err != nil {
+		http.Error(w, "Could not fetch file info: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	switch fileType {
+	case "image/jpeg":
+	case "image/jpg":
+	case "image/png":
+	case "image/gif":
+		// we have a format we can handle. Don't worry about it
+		break
+	default:
+		serveFailThumb(w, req)
+		return
+	}
+
+	heads.Set("Content-Type", fileType)
+	file.Seek(0, 0)
 
 	decodedImage, _, err := image.Decode(file)
 	if err != nil {
@@ -149,17 +175,7 @@ func Thumbnailer(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	thumb := resize.Thumbnail(256, 256, decodedImage, resize.Bilinear)
-	heads := w.Header()
-
-	typeBuf := make([]byte, 256)
-	file.Seek(0, 0)
-	_, err = file.Read(typeBuf)
-	fileType := "application/octet-stream"
-	if err != nil {
-		fileType = http.DetectContentType(typeBuf)
-	}
-	heads.Set("Content-Type", fileType)
+	thumb := resize.Thumbnail(256, 512, decodedImage, resize.Bicubic)
 
 	isImage := (strings.Index(fileType, "image/") >= 0)
 	if !isImage {
@@ -167,13 +183,19 @@ func Thumbnailer(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	if info, err := file.Stat(); err == nil {
+	if info != nil {
 		heads.Set("Last-Modified", info.ModTime().Format(http.TimeFormat))
 	}
+
 	w.WriteHeader(http.StatusOK)
 	err = jpeg.Encode(w, thumb, &jpegOpts)
 	if err != nil {
 		http.Error(w, "Could not decode file: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
+}
+
+func serveFailThumb(w http.ResponseWriter, req *http.Request) {
+	failThumbpath := filepath.Join(shimAssets.root, shimAssets.static, "failthumb.png")
+	http.ServeFile(w, req, failThumbpath)
 }
