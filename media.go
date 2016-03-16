@@ -175,7 +175,7 @@ func Thumbnailer(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	thumb := resize.Thumbnail(256, 512, decodedImage, resize.Bicubic)
+	thumb := resize.Thumbnail(250, 150, decodedImage, resize.NearestNeighbor)
 
 	isImage := (strings.Index(fileType, "image/") >= 0)
 	if !isImage {

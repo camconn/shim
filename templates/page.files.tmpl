@@ -52,13 +52,12 @@
 			{{- else -}}
 			<div class="columns is-multiline is-mobile">
 				{{- range $filename := $files -}}
-				<div class="column is-third-desktop is-half-tablet">
+				<div class="column is-quarter-desktop is-third-tablet">
 					<div class="card">
 					<form action="{{ $.Base }}/staticfiles/" method="post">
 						<a href="{{ $.Base }}/files/{{- $filename -}}" target="_blank">
 							<div class="card-image">
-								<!-- TODO: Show <img> based on if the file is actually an image -->
-								<img class="restrict-image-height" src="{{ $.Base }}/thumb/{{- $filename -}}">
+								<img src="{{ $.Base }}/thumb/{{- $filename -}}">
 							</div>
 						</a>
 						<div class="card-content">
