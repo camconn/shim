@@ -102,3 +102,7 @@ input.toggle-button-text:checked + label:after {
 .space-right {
 	padding-right: 1.5em;
 }
+
+.restrict-image-height {
+	max-height: 14em;
+}

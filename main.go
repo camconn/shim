@@ -94,9 +94,11 @@ func main() {
 	mux.Handle("/admin/", withAuth.ThenFunc(Admin))
 	mux.Handle("/user/", withAuth.ThenFunc(Users))
 	mux.Handle("/taxonomy/", withAuth.ThenFunc(ViewTaxonomies))
+	mux.Handle("/thumb/", withAuth.ThenFunc(Thumbnailer))
 
 	previewer := http.HandlerFunc(loginH.dynamicPreviewHandler)
 	mux.Handle("/preview/", http.StripPrefix("/preview", withAuth.Then(previewer)))
+
 	// workaround hack to serve preview static files correctly (e.g. images)
 	mux.Handle("/files/", withAuth.Then(previewer))
 

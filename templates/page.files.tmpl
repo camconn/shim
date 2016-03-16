@@ -50,31 +50,36 @@
 			{{- if eq (len $files) 0 -}}
 				<p>It looks like you do not have any files. Try uploading some!</p>
 			{{- else -}}
+			<div class="columns is-multiline is-mobile">
 				{{- range $filename := $files -}}
-				<div class="box">
-
+				<div class="column is-third-desktop is-half-tablet">
+					<div class="card">
 					<form action="{{ $.Base }}/staticfiles/" method="post">
-						<input type="hidden" name="removeFile" value="{{- $filename -}}">
-						<p>Filename: {{ $filename | html }}</p>
 						<a href="{{ $.Base }}/files/{{- $filename -}}" target="_blank">
-							<button type="button" class="button is-info is-outlined">
-								<i class="fa icon icon-export is-small"></i>
-								View
-							</button>
+							<div class="card-image">
+								<!-- TODO: Show <img> based on if the file is actually an image -->
+								<img class="restrict-image-height" src="{{ $.Base }}/thumb/{{- $filename -}}">
+							</div>
 						</a>
-						<a href="{{ $.Base }}/staticfiles/?embed={{- $filename -}}">
-							<button type="button" class="button is-primary">
-								<i class="fa icon icon-clipboard is-small"></i>
-								Embed
-							</button>
-						</a>
-						<button class="button is-danger" type="submit">
-							<i class="fa icon icon-trash is-small"></i>
-							Delete File
-						</button>
+						<div class="card-content">
+							<input type="hidden" name="removeFile" value="{{- $filename -}}">
+							<p>{{ $filename | html }}</p>
+							<p>
+								<a href="{{ $.Base }}/staticfiles/?embed={{- $filename -}}">
+									<button type="button" class="button is-primary" title="Embed">
+										<i class="fa icon icon-clipboard is-small"></i>
+									</button>
+								</a>
+								<button class="button is-danger" type="submit" title="Delete">
+									<i class="fa icon icon-trash is-small"></i>
+								</button>
+							</p>
+						</div>
 					</form>
+					</div>
 				</div>
 				{{- end -}}
+				</div>
 			{{- end -}}
 		</div>
 

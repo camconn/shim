@@ -18,10 +18,18 @@ package main
 
 import (
 	"fmt"
+	"github.com/nfnt/resize"
+	"image"
 	"io"
+	"log"
 	"net/http"
 	"os"
 	"path/filepath"
+	"strings"
+
+	_ "image/gif"
+	"image/jpeg"
+	_ "image/png"
 )
 
 const (
@@ -108,4 +116,64 @@ func (s *Site) RemoveStaticFile(path string) error {
 func (s *Site) GetEmbedCode(path string) string {
 	embedCode := fmt.Sprintf(embedFmt, path)
 	return embedCode
+}
+
+var jpegOpts = jpeg.Options{Quality: 85}
+
+// Thumbnailer creates a thumbnail from a site's content
+func Thumbnailer(w http.ResponseWriter, req *http.Request) {
+	wrapper := NewWrapper(w, req)
+
+	fileName := req.URL.Path[len("/thumb/"):]
+
+	if len(fileName) == 0 {
+		http.Error(w, "No thumbnail file to do found!", http.StatusNotFound)
+		return
+	}
+
+	filesRoot := filepath.Join(wrapper.Site.Location(), "static", "files")
+
+	log.Printf("Looking at filesRoot: %s\n", filesRoot)
+	staticFSRoot := http.Dir(filesRoot)
+
+	file, err := staticFSRoot.Open(fileName)
+	defer file.Close()
+	if err != nil {
+		http.Error(w, "Could not open file: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	decodedImage, _, err := image.Decode(file)
+	if err != nil {
+		http.Error(w, "Could not decode image: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	thumb := resize.Thumbnail(256, 256, decodedImage, resize.Bilinear)
+	heads := w.Header()
+
+	typeBuf := make([]byte, 256)
+	file.Seek(0, 0)
+	_, err = file.Read(typeBuf)
+	fileType := "application/octet-stream"
+	if err != nil {
+		fileType = http.DetectContentType(typeBuf)
+	}
+	heads.Set("Content-Type", fileType)
+
+	isImage := (strings.Index(fileType, "image/") >= 0)
+	if !isImage {
+		http.Error(w, "That is not an image! Thus, I can't thumbnail it!", http.StatusNotAcceptable)
+		return
+	}
+
+	if info, err := file.Stat(); err == nil {
+		heads.Set("Last-Modified", info.ModTime().Format(http.TimeFormat))
+	}
+	w.WriteHeader(http.StatusOK)
+	err = jpeg.Encode(w, thumb, &jpegOpts)
+	if err != nil {
+		http.Error(w, "Could not decode file: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
 }

@@ -44,7 +44,8 @@ $ cd shim
 $ go get -v github.com/BurntSushi/toml \
             github.com/justinas/alice \
             github.com/niemal/uman \
-            github.com/spf13/viper
+            github.com/spf13/viper \
+            github.com/nfnt/resize
 $ git submodule init  # fetches default themes
 $ go build
 $ ./shim
