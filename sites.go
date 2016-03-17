@@ -421,6 +421,10 @@ func (s Site) AllSettings() map[string]interface{} {
 
 // Author - Default author for the site
 func (s Site) Author() string {
+	if len(s.author) == 0 {
+		return "John Doe" // default
+	}
+
 	return s.author
 }
 

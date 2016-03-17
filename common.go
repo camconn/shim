@@ -17,7 +17,12 @@
 package main
 
 import (
+	"golang.org/x/text/transform"
+	"golang.org/x/text/unicode/norm"
+	"log"
+	"regexp"
 	"strings"
+	"unicode"
 )
 
 // Hashmap of which users are on which sites.
@@ -62,4 +67,40 @@ func removeDuplicates(slice *[]string) {
 		}
 	}
 	*slice = (*slice)[:j]
+}
+
+var regexWhitespace = regexp.MustCompile(`\s+`)
+var regexURLSafe = regexp.MustCompile(`^[a-z0-9\._\|\-\/]+$`)
+var regexSlashSymbols = regexp.MustCompile(`[~%\^\#!\?\(\)&\*]+`)
+
+// NormalizeSlug creates a page slug from a post title which can be used safely
+// in both URLs as well as filenames.
+func NormalizeSlug(title, archetype string) string {
+	// Normalization for slugs
+	newSlug := strings.TrimSpace(title)
+	newSlug = strings.ToLower(newSlug)
+	// compress all repeating whitespace into single space
+	newSlug = regexWhitespace.ReplaceAllString(newSlug, "-")
+	newSlug = regexSlashSymbols.ReplaceAllString(newSlug, "-")
+
+	// If we aren't doing an absolute path, then remove slashes
+	newSlug = strings.Replace(newSlug, "..", "", -1) // prevent sketchy stuff
+
+	removeNonSpacing := transform.RemoveFunc(func(r rune) bool {
+		return unicode.Is(unicode.Mn, r)
+	})
+	removeNonSafe := transform.RemoveFunc(func(r rune) bool {
+		return !regexURLSafe.MatchString(string(r))
+	})
+
+	chain := transform.Chain(norm.NFD, removeNonSpacing, removeNonSafe, norm.NFC)
+	newSlug, _, err := transform.String(chain, newSlug)
+	if err != nil {
+		log.Println("ayy lmao error")
+	}
+	log.Println("Here's the normalized stuff: ")
+	log.Println(newSlug)
+	log.Println("end normalized stuff")
+
+	return newSlug
 }

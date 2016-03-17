@@ -25,6 +25,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"path"
 	"path/filepath"
 	"strings"
 	"time"
@@ -573,33 +574,42 @@ func NewPost(w http.ResponseWriter, req *http.Request) {
 
 	if req.Method == "POST" {
 		req.ParseMultipartForm(fiveMegabytes)
-		newFilename := req.FormValue("title")
+		newTitle := req.FormValue("title")
 		archeType := req.FormValue("pageType")
 
-		if len(newFilename) > 0 {
+		newSlug := NormalizeSlug(newTitle, archeType)
+
+		if len(newTitle) > 0 {
 			wrapper.Action = "build"
 
 			contentDirPath := filepath.Join(wrapper.Site.Location(), wrapper.Site.ContentDir())
-			testPostPath := filepath.Join(contentDirPath, archeType, newFilename) + ".md"
+			var newPostPath string
 
-			if _, err := os.Stat(testPostPath); !os.IsNotExist(err) {
-				wrapper.FailedMessage("A page already exists at that location!")
-				goto render
+			if len(archeType) > 0 {
+				// with a pre-made archetype, there is no need for subdirectories (for now)
+				newSlug = strings.Replace(newSlug, "/", "", -1)
+
+				newPostPath = path.Join(archeType, newSlug)
+			} else {
+				newPostPath = newSlug
 			}
+			newPostPath += ".md"
 
-			path, err := wrapper.Site.newPost(filepath.Join(archeType, newFilename))
+			pPath, err := wrapper.Site.newPost(newPostPath)
 			if err != nil {
 				wrapper.FailedMessage("Could not create page: " + err.Error())
 				goto render
 			}
 
-			post, err := wrapper.Site.loadPost(path, contentDirPath)
+			post, err := wrapper.Site.loadPost(pPath, contentDirPath)
 			if err != nil {
 				wrapper.FailedMessage("Could not create page: " + err.Error())
 				goto render
 			}
 
 			post.draft = true
+			post.slug = newSlug
+			post.title = newTitle
 			err = post.SavePost("")
 			if err != nil {
 				wrapper.FailedMessage("Could not save page: " + err.Error())
@@ -610,7 +620,7 @@ func NewPost(w http.ResponseWriter, req *http.Request) {
 				wrapper.FailedMessage("Could not save page: " + err.Error())
 				goto render
 			} else {
-				editLoc := fmt.Sprintf("%s/edit/%s", shimAssets.basepath, post.PostID())
+				editLoc := path.Join(shimAssets.basepath, "/edit/", post.PostID())
 				log.Printf("redirecting to %s\n", editLoc)
 				http.Redirect(w, req, editLoc, http.StatusSeeOther)
 				return

@@ -190,24 +190,31 @@ func (s *Site) loadPost(postPath, contentDirPath string) (p *Post, err error) {
 }
 
 // newPost creates a newPost in site/contentdir/NAME.md where NAME can be
-// a relative directory which includes folder names.
+// a relative directory which includes folder names. For example, the
+// `name` argument could be "post/my-first-post.md". The returned value
+// fPath is the absolute location of the post created if there is no error
+// while creating the post. If the post already exists, fPath will be a blank
+// string and an error will be returned.
 func (s *Site) newPost(name string) (fPath string, err error) {
-	// TODO: Check if post already exists
+	testPostLoc := filepath.Join(s.Location(), s.ContentDir(), name)
+	if _, err = os.Stat(testPostLoc); !os.IsNotExist(err) {
+		return "", fmt.Errorf("A page already exists at that location!")
+	}
 
 	hugoPath, err := exec.LookPath("hugo")
 	if err != nil {
 		return "", err
 	}
 
-	cmd := exec.Command(hugoPath, "new", fmt.Sprintf("%s.md", name))
+	// TODO: Capture build output and send to logs
+	cmd := exec.Command(hugoPath, "new", name)
 	cmd.Dir = s.location
 	err = cmd.Run()
 	if err != nil {
 		return "", err
 	}
 
-	fPath = path.Join(s.location, s.ContentDir(), name+".md")
-
+	fPath = path.Join(s.location, s.ContentDir(), name)
 	return
 }
 

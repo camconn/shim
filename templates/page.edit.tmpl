@@ -16,7 +16,7 @@
 			<form action="{{ $.Base | html }}{{ $.URL | html -}}" method="post" class="container">
 				<input class="input is-large" type="text" name="title" value="{{- $Post.Title | html -}}" placeholder="How I Proved the Riemann Hypothesis">
 				<br>
-				<textarea class="textarea monospace editor" name="articleSrc" id="articleSrc" placeholder="So it's official! I finally solved the age-old problem...">{{- printf "%s" $Post.GetBody | html -}}</textarea>
+				<textarea class="textarea monospace editor" name="articleSrc" id="articleSrc" placeholder="So it's official! I finally solved the age-old problem..." autofocus="true">{{- printf "%s" $Post.GetBody | html -}}</textarea>
 				<noscript><br></noscript> <!-- Give some space for JS-disabled users -->
 				<div class="columns">
 					<div class="column is-4">
@@ -164,7 +164,7 @@
 		<script src="{{ $.Base }}/static/editor/simplemde.min.js"></script>
 		<script>
 			var textarea = document.getElementById('articleSrc'),
-				editor = new SimpleMDE({ element: textarea, spellChecker: false });
+				editor = new SimpleMDE({ element: textarea, spellChecker: false, autofocus: true});
 
 			function updateText() {
 				textarea.value = editor.value();
