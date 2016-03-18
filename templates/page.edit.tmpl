@@ -10,9 +10,14 @@
 		{{ template "navbar" $ }}
 
 		<div id="content" class="content">
-			<h1>Edit Post</h1>
-			{{- template "messages" $ -}}
 			{{- $Post := .Post -}}
+			<div class="is-clearfix">
+				<h1 class="is-pulled-left">Edit Post</h1>
+				<a class="tag is-danger is-medium is-pulled-right" href="{{ $.Base }}/delete/{{ $Post.PostID }}">
+					<i class="icon is-small icon-trash is-small"></i>Delete</a>
+			</div>
+
+			{{- template "messages" $ -}}
 			<form action="{{ $.Base | html }}{{ $.URL | html -}}" method="post" class="container">
 				<input class="input is-large" type="text" name="title" value="{{- $Post.Title | html -}}" placeholder="How I Proved the Riemann Hypothesis">
 				<br>
@@ -25,7 +30,7 @@
 						{{- else -}}
 						<input type="checkbox" class="input toggle-button-common toggle-button-text" name="doPublish" id="publishToggle" checked>
 						{{- end -}}
-						<label for="publishToggle" data-on="Publish" data-off="Draft"></label>
+						<label for="publishToggle" data-on="Publish" data-off="Draft" title="Click to toggle"></label>
 					</div>
 					<div class="column is-4">
 						<a class="input button is-info is-outlined" href="{{ $.Base }}/preview/{{- $Post.PreviewPath -}}">Preview</a>

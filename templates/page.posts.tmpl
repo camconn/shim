@@ -13,47 +13,26 @@
 			<h1>Posts ({{ len $.Site.Posts }} total)</h1>
 			{{- range $post := .Site.Posts -}}
 			<div class="box">
-				<!-- <nav class="navbar" style="margin-bottom: 0em;"> -->
-				<nav class="navbar">
-					<div class="navbar-left">
-						<div class="navbar-item">
-							<h3>{{- $post.Title | html -}}</h3>
-						</div>
-					</div>
-					<div class="navbar-right">
-						{{- if $post.Draft -}}
-						<div class="navbar-item">
-							<h4><span class="tag is-warning is-medium"><i class="icon is-small icon-clipboard"></i> Draft</span></h4>
-						</div>
-						{{- else -}}
-						<div class="navbar-item">
-							<h4><span class="tag is-success is-medium"><i class="icon is-small icon-ok"></i> Published</span></h4>
-						</div>
-						{{- end -}}
-						<div class="navbar-item">
-							<h4>
-								<a class="tag is-primary is-medium" href="{{ $.Base }}/edit/{{ $post.PostID }}">
-									<i class="icon is-small icon-edit is-small"></i>Edit</a>
-							</h4>
-						</div>
-						<div class="navbar-item">
-							<h4>
-								<a class="tag is-danger is-medium" href="{{ $.Base }}/delete/{{ $post.PostID }}">
-									<i class="icon is-small icon-trash is-small"></i>Delete</a>
-							</h4>
-						</div>
-					</div>
-				</nav>
+				<div class="is-clearfix">
+					<h3 class="is-pulled-left">{{- $post.Title -}}</h3>
+					<p class="is-pulled-right is-unselectable">
+						<a href="{{ $.Base }}/preview/{{- $post.PreviewPath -}}">
+							{{- if $post.Draft -}}
+							<span class="tag is-warning is-medium"><i class="icon is-small icon-clipboard"></i> Draft</span>
+							{{- else -}}
+							<span class="tag is-success is-medium"><i class="icon is-small icon-ok"></i> Published</span>
+							{{- end -}}
+						</a>
+						<a class="tag is-primary is-medium" href="{{ $.Base }}/edit/{{ $post.PostID }}">
+							<i class="icon is-small icon-edit is-small"></i>Edit</a>
+						<a class="tag is-danger is-medium" href="{{ $.Base }}/delete/{{ $post.PostID }}">
+							<i class="icon is-small icon-trash is-small"></i>Delete</a>
+					</p>
+				</div >
 				<p class="subtitle">
-					<i class="icon icon-user is-small"></i> <b>{{ $post.Author | html }}</b> &mdash; <i class="icon icon-calendar is-small"></i>{{ $post.WebDate | html }}
-					<!-- 
-					{{- if $post.Draft -}}
-						Written by <b>{{ $post.Author | html }}</b> &mdash; {{ $post.WebDate | html }}
-						<i class="icon icon-user"> <b>{{ $post.Author | html }}</b> &mdash; {{ $post.WebDate | html }}
-					{{- else -}}
-						Published by <b>{{ $post.Author | html }}</b> &mdash; {{ $post.WebDate | html }}
-					{{- end -}}
-					-->
+					<i class="icon icon-user is-small"></i>{{ $post.Author | html }}
+					&mdash;
+					<i class="icon icon-calendar is-small"></i> {{ $post.WebDate | html -}}
 				</p>
 				<blockquote class="monospace description"><div>{{ $post.Description }}</div></blockquote>
 			</div>

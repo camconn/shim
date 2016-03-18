@@ -377,12 +377,9 @@ func (p Post) Date() *time.Time {
 	// If there's an edit date, try and use that for sorting.
 	if p.Draft() {
 		if editTimeValue, ok := p.all["editdate"]; ok {
-			log.Println("Have edited value")
 			if editTimeStr, ok := editTimeValue.(string); ok {
-				log.Printf("time: %s\n", editTimeStr)
 				editTime, err := time.Parse(time.RFC3339, editTimeStr)
 				if err == nil {
-					log.Printf("got time: %s\n", editTime.String())
 					return &editTime
 				}
 				log.Println("Couldn't parse time: " + err.Error())

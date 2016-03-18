@@ -96,11 +96,8 @@ func NormalizeSlug(title, archetype string) string {
 	chain := transform.Chain(norm.NFD, removeNonSpacing, removeNonSafe, norm.NFC)
 	newSlug, _, err := transform.String(chain, newSlug)
 	if err != nil {
-		log.Println("ayy lmao error")
+		log.Println("Error normalizing to slug: " + err.Error())
 	}
-	log.Println("Here's the normalized stuff: ")
-	log.Println(newSlug)
-	log.Println("end normalized stuff")
 
 	return newSlug
 }
