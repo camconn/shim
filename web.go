@@ -610,6 +610,8 @@ func NewPost(w http.ResponseWriter, req *http.Request) {
 			post.draft = true
 			post.slug = newSlug
 			post.title = newTitle
+			post.published = nil // Force date to not automatically be assigned.
+
 			err = post.SavePost("")
 			if err != nil {
 				wrapper.FailedMessage("Could not save page: " + err.Error())
