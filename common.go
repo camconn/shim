@@ -99,5 +99,6 @@ func NormalizeSlug(title, archetype string) string {
 		log.Println("Error normalizing to slug: " + err.Error())
 	}
 
-	return newSlug
+	// Make sure to remove preceding or trailing -dashes-
+	return strings.Trim(newSlug, "-")
 }

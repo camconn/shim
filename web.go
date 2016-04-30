@@ -613,8 +613,8 @@ func NewPost(w http.ResponseWriter, req *http.Request) {
 
 			// Force reset initial values
 			post.published = nil
-			for value := range post.TaxonomyMap() {
-				post.TaxonomyMap()[value] = []string{}
+			for v := range post.TaxonomyMap() {
+				post.TaxonomyMap()[v] = ""
 			}
 
 			err = post.SavePost("")
