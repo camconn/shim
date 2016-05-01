@@ -153,8 +153,9 @@ func loadAllSites(names []string) []*Site {
 	sites := []*Site{}
 
 	for _, name := range names {
-		s := loadSite(name)
-		sites = append(sites, &s)
+		if s, err := loadSite(name); err == nil {
+			sites = append(sites, s)
+		}
 	}
 
 	return sites

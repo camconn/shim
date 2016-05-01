@@ -80,6 +80,7 @@ func (p *Post) handleFrontMatter(v *viper.Viper) {
 	aliases := v.GetStringSlice("aliases")
 	stripChars(&aliases, " ")
 	removeDuplicates(&aliases)
+
 	// Make sure we don't get any alias lists with only blank spaces
 	if (len(aliases) > 1) || (len(aliases) == 1 && len(aliases[0]) > 0) {
 		p.aliases = aliases
@@ -87,11 +88,14 @@ func (p *Post) handleFrontMatter(v *viper.Viper) {
 
 	{
 		publishString := v.GetString("date")
-		if publishString != "" {
+		if len(publishString) > 0 {
 			pTime, err := time.Parse(time.RFC3339, publishString)
+
+			// Default to current time in case of parsing error
 			if err != nil {
-				log.Fatalf("Error parsing time: %s\n", err)
+				pTime = time.Now()
 			}
+
 			p.published = &pTime
 		}
 	}
@@ -119,17 +123,23 @@ func (p *Post) handleFrontMatter(v *viper.Viper) {
 }
 
 // contentDirPath is used to find the relative path of the post
-func (s *Site) loadPost(postPath, contentDirPath string) (p *Post, err error) {
-	p = &Post{}
+func (s *Site) loadPost(postPath, contentDirPath string) (*Post, error) {
+	var err error
+
+	p := &Post{}
 	p.site = s
 	p.location, err = filepath.Abs(postPath)
+
+	if err != nil {
+		return nil, fmt.Errorf("Could not load post: invalid post path")
+	}
+
 	p.taxonomies = make(map[string][]string)
-	check(err)
 
 	file, err := os.Open(postPath)
 	defer file.Close()
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("Could not open post data file: %s\n", err.Error())
 	}
 
 	frontMatter := bytes.NewBuffer([]byte{})
@@ -146,7 +156,7 @@ func (s *Site) loadPost(postPath, contentDirPath string) (p *Post, err error) {
 		} else {
 			_, err := frontMatter.WriteString(line)
 			if err != nil {
-				log.Fatal("Couldn't load TOML front matter for ", postPath)
+				return nil, fmt.Errorf("Couldn't load front matter for %s", postPath)
 			}
 		}
 	}
@@ -158,7 +168,7 @@ func (s *Site) loadPost(postPath, contentDirPath string) (p *Post, err error) {
 
 	_, err = file.Seek(pos, 0)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("could not find post path: %s\n", err.Error())
 	}
 
 	descriptionBuf := new(bytes.Buffer)
@@ -174,14 +184,13 @@ func (s *Site) loadPost(postPath, contentDirPath string) (p *Post, err error) {
 
 	const dot = '.'
 	if num > 160 {
-
 		// find last newline and truncate to make it pretty
 		lastLineEnd := bytes.LastIndexByte(descriptionBytes, '\n')
 		if lastLineEnd > 0 {
 			descriptionBytes = descriptionBytes[:lastLineEnd]
 		}
 
-		descriptionBytes = append(descriptionBytes, '\n', '\n', '.', '.', '.')
+		descriptionBytes = append(descriptionBytes, '\n', '\n', dot, dot, dot)
 	}
 
 	p.description = (string)(descriptionBytes)
@@ -221,7 +230,10 @@ func (s *Site) newPost(name string) (fPath string, err error) {
 // SavePost - Save post to disk to path path
 func (p *Post) SavePost(body string) error {
 	// Go ahead and update the map of all TOML keys
-	p.updateMap()
+	err := p.updateMap()
+	if err != nil {
+		return fmt.Errorf("Could not update post metadata: %s", err.Error())
+	}
 
 	// We're only writing here, we want to create a file if it doesn't exist,
 	// and we want to truncate the file if we don't write the full thing.
@@ -229,7 +241,7 @@ func (p *Post) SavePost(body string) error {
 	file, err := os.OpenFile(p.location, mode, 0666)
 	defer file.Close()
 	if err != nil {
-		return err
+		return fmt.Errorf("Could not load post: %s\n", err.Error())
 	}
 
 	tomlEncoder := toml.NewEncoder(file)
@@ -243,9 +255,10 @@ func (p *Post) SavePost(body string) error {
 		return err
 	}
 
-	// Go ahead and rebuild the site
+	// TODO: Use a build queue or worker system
 	go func() {
-		err = nil
+		var err error
+
 		if p.Draft() {
 			err = p.Site().BuildPreview()
 		} else {
@@ -262,7 +275,7 @@ func (p *Post) SavePost(body string) error {
 }
 
 // update the hashmap associated with this post
-func (p *Post) updateMap() {
+func (p *Post) updateMap() error {
 	if p.all == nil {
 		p.all = make(map[string]interface{})
 	}
@@ -292,11 +305,16 @@ func (p *Post) updateMap() {
 		delete(p.all, "aliases")
 	}
 
-	p.updateTaxonomy()
+	err := p.updateTaxonomy()
+	if err != nil {
+		return fmt.Errorf("Could not update post taxonomies: %s\n", err.Error())
+	}
+
+	return nil
 }
 
 // update this site's view of this post's taxonomy
-func (p *Post) updateTaxonomy() {
+func (p *Post) updateTaxonomy() error {
 	for term, values := range (*p).taxonomies {
 
 		// don't worry about tags which don't have anything
@@ -308,7 +326,7 @@ func (p *Post) updateTaxonomy() {
 
 		kind, err := p.Site().Taxonomies().GetTaxonomy(term)
 		if err != nil {
-			log.Fatal("Tried to add a value to a taxonomy term that doesn't exist.")
+			return fmt.Errorf("Tried to add a value to a taxonomy term that doesn't exist.")
 		}
 
 		for _, v := range values {
@@ -322,6 +340,8 @@ func (p *Post) updateTaxonomy() {
 			}
 		}
 	}
+
+	return nil
 }
 
 // TaxonomyMap get a hashmap of the taxonomies of a post followed by the
@@ -427,7 +447,7 @@ func (p Post) GetBody() string {
 	log.Printf("post location: %s\n", p.location)
 	pFile, err := os.Open(p.location)
 	if err != nil {
-		return ""
+		return fmt.Sprintf("[ERROR]: Could not open post data file: %s", err.Error())
 	}
 
 	postBody := bytes.NewBuffer([]byte{})
@@ -443,7 +463,7 @@ func (p Post) GetBody() string {
 		if boundaryCount == 2 {
 			_, err := postBody.WriteString(line)
 			if err != nil {
-				log.Fatalf("Couldn't load body for %s\n", p.location)
+				return fmt.Sprintf("[ERROR]: Couldn't load text for this post: %s", p.location)
 			}
 		} else if strings.Compare(line, tomlBoundary) == 0 {
 			boundaryCount++

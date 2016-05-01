@@ -32,10 +32,6 @@ var shimAssets *assets
 var um *uman.UserManager
 
 // Pretty methods to check errors
-func check(err error) {
-	checkReason(err, "An error occurred: ")
-}
-
 func checkReason(err error, reason string) {
 	if err != nil {
 		log.Fatalf("%s\nDebug: %s\n", reason, err.Error())
@@ -50,9 +46,7 @@ func main() {
 	viper.SetConfigName("config")
 	viper.AddConfigPath(".")
 	err := viper.ReadInConfig()
-	if err != nil {
-		log.Fatalf("Couldn't read config. Does 'config.toml' not exist?\nError: %s\n", err.Error())
-	}
+	checkReason(err, "Could no read config. Does 'config.toml' not exist?")
 
 	// Setup assets and appropriate folders
 	assignAssets()
@@ -119,7 +113,5 @@ func main() {
 	mServ.Addr = fmt.Sprintf(addr)
 	mServ.Handler = http.StripPrefix(shimAssets.basepath, mux)
 	err = mServ.ListenAndServe()
-	if err != nil {
-		log.Fatalf("Error serving: %s\n", err.Error())
-	}
+	checkReason(err, "Error serving webapp")
 }

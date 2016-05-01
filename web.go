@@ -155,8 +155,13 @@ func Admin(w http.ResponseWriter, req *http.Request) {
 			status.SuccessMessage("Build completed!")
 		}
 	} else if status.Action == "reload" {
-		status.Site.Reload()
-		status.SuccessMessage("Site reloaded.")
+		err := status.Site.Reload()
+
+		if err == nil {
+			status.SuccessMessage("Site reloaded.")
+		} else {
+			status.FailedMessage(fmt.Sprintf("Could not reload site: %s", err.Error()))
+		}
 	} else if status.Action == "switch" {
 		newSite := strings.TrimSpace(req.FormValue("newSite"))
 		if newSite == status.Site.ShortName() {

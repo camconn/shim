@@ -17,7 +17,6 @@
 package main
 
 import (
-	"container/list"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -26,47 +25,26 @@ import (
 )
 
 // GetThemes - Find a list of all themes available in the themesDir.
-func GetThemes(themesDir string) (themes []string, err error) {
-	// themes = []string{"hello", "world"}
-
-	if _, err = os.Stat(fmt.Sprintf("%s/slim", themesDir)); os.IsNotExist(err) {
-		failMsg := "Sorry, but I couldn't find the default theme!\nPlease run 'git submodule --init', then try again."
-		log.Fatal(failMsg)
-	}
-
+func GetThemes(themesDir string) ([]string, error) {
+	themes := []string{}
 	files, err := ioutil.ReadDir(themesDir)
 	if err != nil {
-		return
+		return themes, fmt.Errorf("Could not load theme directory: %s", err.Error())
 	}
 
-	numThemes := 0
-	themeFolders := list.New()
 	for _, f := range files {
 		if f.IsDir() {
-			themeFolders.PushBack(f.Name())
-			numThemes++
+			themes = append(themes, f.Name())
 		}
 	}
 
-	if numThemes == 0 {
-		log.Fatal("There are no themes! Install some!")
+	if _, err := os.Stat(fmt.Sprintf("%s/slim", themesDir)); len(themes) == 0 || os.IsNotExist(err) {
+		// It's okay to use log.Fatal here:
+		log.Fatal("Could not find the default theme!\n" +
+			"Please run 'git submodule --init', then try again.")
 	}
 
-	themes = make([]string, numThemes)
-	elem := themeFolders.Front()
-	for i := 0; i < numThemes; i++ {
-		folder, ok := elem.Value.(string)
-
-		if ok {
-			themes[i] = folder
-		} else {
-			log.Fatal("How did this happen?")
-		}
-
-		elem = elem.Next()
-	}
-
-	return
+	return themes, nil
 }
 
 // DownloadTheme - Download a theme from a given git url with a custom name to

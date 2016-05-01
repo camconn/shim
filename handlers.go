@@ -22,6 +22,7 @@ import (
 	"log"
 	"net/http"
 	"net/url"
+	"os"
 	"path/filepath"
 	"time"
 )
@@ -75,45 +76,58 @@ func (l *loginHandler) authHandler(h http.Handler) http.Handler {
 func (l *loginHandler) dynamicPreviewHandler(w http.ResponseWriter, r *http.Request) {
 	session := l.userMan.GetHTTPSession(w, r)
 
-	if session.IsLogged() {
-		site := findUserSite(session.User)
-		if site != nil {
-			filename := "index.html"
-			if len(r.URL.RequestURI()) > 0 {
-				filename = r.URL.RequestURI()
-			}
-
-			location := http.Dir(filepath.Join(site.Location(), "preview"))
-			file, err := location.Open(filename)
-			if err != nil {
-				// 404
-				log.Printf("Couldn't find %s\n", location)
-				http.Error(w, "File not found! :(", http.StatusNotFound)
-				return
-			}
-			defer file.Close()
-
-			info, err := file.Stat()
-			check(err)
-
-			if info.IsDir() {
-				file.Close()
-				file, _ = location.Open(filepath.Join(filename, "index.html"))
-				info, err = file.Stat()
-				if err != nil {
-					log.Printf("no index file!")
-					http.Error(w, "Could not find index file to serve", http.StatusNotFound)
-					return
-				}
-				defer file.Close()
-			}
-
-			// detect if folder, then serve index.html
-			http.ServeContent(w, r, info.Name(), info.ModTime(), file)
-		}
-	} else {
+	if !session.IsLogged() {
 		log.Println("not logged in!")
 		http.Error(w, "You must log in first!", http.StatusUnauthorized)
+		return
 	}
 
+	site := findUserSite(session.User)
+	if site == nil {
+		http.Error(w, "We don't know what site to show you... Sorry", http.StatusInternalServerError)
+		return
+	}
+
+	filename := "index.html"
+	if len(r.URL.RequestURI()) > 0 {
+		filename = r.URL.RequestURI()
+	}
+
+	location := http.Dir(filepath.Join(site.Location(), "preview"))
+	file, err := location.Open(filename)
+	if err != nil {
+		if file != nil {
+			file.Close()
+		}
+		log.Printf("Couldn't find preview at %s\n", location)
+		http.Error(w, "File not found! :(", http.StatusNotFound)
+		return
+	}
+
+	info, err := file.Stat()
+	if err != nil {
+		file.Close()
+		http.Error(w, "File not found", http.StatusNotFound)
+		return
+	}
+
+	if info.IsDir() {
+		file.Close()
+		file, err = location.Open(filepath.Join(filename, "index.html"))
+
+		if err != nil {
+			defer file.Close() // be sure to close it up here
+
+			if os.IsNotExist(err) {
+				log.Printf("%s has no index file!\n", site.ShortName())
+				http.Error(w, "Could not find index file to serve", http.StatusNotFound)
+				return
+			}
+
+			http.Error(w, "Had an issue serving you the file: "+err.Error(), http.StatusInternalServerError)
+			return
+		}
+	}
+
+	http.ServeContent(w, r, info.Name(), info.ModTime(), file)
 }

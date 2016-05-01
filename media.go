@@ -19,6 +19,7 @@ package main
 import (
 	"fmt"
 	"io"
+	"log"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -52,7 +53,9 @@ func (s *Site) StaticFiles() []string {
 	}
 
 	err := filepath.Walk(staticPath, scanFunc)
-	check(err)
+	if err != nil {
+		log.Printf("Could not load static files: %s\n", err.Error())
+	}
 
 	return staticFiles
 }
