@@ -20,30 +20,56 @@ import (
 	"golang.org/x/text/transform"
 	"golang.org/x/text/unicode/norm"
 	"log"
+	"net/http"
 	"regexp"
 	"strings"
+	"time"
 	"unicode"
 )
 
-// Hashmap of which users are on which sites.
-var userSites map[string]string
+const (
+	siteSelectionLifespan = 3600 * 24 * 7 * 365 * 5
+)
 
-// Find which site a user is currently viewing. If the user isn't found in
-// userSites, then just return the default site.
-func findUserSite(username string) *Site {
-	if sitename, ok := userSites[username]; ok {
-		// find site by that name then return it
+// Find which site a user is currently viewing.
+func findUserSite(rw http.ResponseWriter, req *http.Request) *Site {
+	var siteName string
+
+	siteCookie, err := req.Cookie("currentSite")
+	validSite := false
+
+	userSite := allSites[0] // Default to first site
+
+	if err == nil {
+		siteName = siteCookie.Value
 		for _, s := range allSites {
-			if s.ShortName() == sitename {
-				return s
+			if len(siteName) == len(s.ShortName()) && siteName == s.ShortName() {
+				validSite = true
+				userSite = s
+				break
 			}
 		}
-		return allSites[0]
 	}
 
-	defaultSite := allSites[0]
-	userSites[username] = defaultSite.ShortName()
-	return defaultSite
+	if !validSite {
+		setUserSite(rw, req, userSite.ShortName())
+	}
+
+	return userSite
+}
+
+func setUserSite(rw http.ResponseWriter, req *http.Request, siteName string) {
+	newSiteCookie := http.Cookie{
+		Name:     "currentSite",
+		Value:    siteName,
+		Expires:  time.Unix(time.Now().Unix()+siteSelectionLifespan, 0),
+		Path:     "/",
+		HttpOnly: true,
+		MaxAge:   int(siteSelectionLifespan),
+	}
+
+	http.SetCookie(rw, &newSiteCookie)
+
 }
 
 // stripChars Trims the characters in `chars` from each element in a slice.

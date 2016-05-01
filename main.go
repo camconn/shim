@@ -50,7 +50,6 @@ func main() {
 
 	// Setup assets and appropriate folders
 	assignAssets()
-	userSites = make(map[string]string)
 
 	fmt.Printf("base path: %s\n", shimAssets.basepath)
 

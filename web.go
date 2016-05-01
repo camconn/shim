@@ -83,13 +83,7 @@ func NewWrapper(w http.ResponseWriter, req *http.Request) *WebWrapper {
 	wr.URL = req.URL.String()
 	wr.Base = shimAssets.baseurl
 
-	session := um.GetHTTPSession(w, req)
-	if session != nil && session.IsLogged() {
-		site := findUserSite(session.User)
-		wr.Site = site
-	} else {
-		wr.Site = allSites[0]
-	}
+	wr.Site = findUserSite(w, req)
 
 	return wr
 }
@@ -167,19 +161,19 @@ func Admin(w http.ResponseWriter, req *http.Request) {
 		if newSite == status.Site.ShortName() {
 			status.FailedMessage("You're already using that site!")
 		} else {
-			session := um.GetHTTPSession(w, req)
-			for _, s := range allSites {
-				if s.ShortName() == newSite {
-					uName := session.User
-					delete(userSites, uName)
-					userSites[uName] = newSite
-					status.Site.Reload()
-					status.Site = s
-					// Go ahead and build a preview in the background
-					go status.Site.BuildPreview()
-					status.SuccessMessage("Switched to site.")
-					break
+			if newSite != status.Site.ShortName() {
+				setUserSite(w, req, newSite)
+
+				// Update to current site (bug workaround)
+				for _, site := range allSites {
+					if site.ShortName() == newSite {
+						status.Site = site
+						break
+					}
 				}
+				status.SuccessMessage("Switched to site.")
+			} else {
+				status.FailedMessage("You're already using that site!")
 			}
 		}
 	}

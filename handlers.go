@@ -82,7 +82,7 @@ func (l *loginHandler) dynamicPreviewHandler(w http.ResponseWriter, r *http.Requ
 		return
 	}
 
-	site := findUserSite(session.User)
+	site := findUserSite(w, r)
 	if site == nil {
 		http.Error(w, "We don't know what site to show you... Sorry", http.StatusInternalServerError)
 		return
