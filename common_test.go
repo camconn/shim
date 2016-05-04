@@ -43,21 +43,23 @@ func TestRemoveDupes(t *testing.T) {
 	}
 }
 
-func TestNormalizeSlugs(t *testing.T) {
+func TestNormalizeNames(t *testing.T) {
 	inputs := []string{
 		"Hello, world!",
 		"😀  Ayy LMAO",
 		"Nobody Expects the Spanish Inquisition!!!",
+		"my rare memes",
 	}
 
 	outputs := []string{
 		"hello-world",
 		"ayy-lmao",
 		"nobody-expects-the-spanish-inquisition",
+		"my-rare-memes",
 	}
 
 	for i, input := range inputs {
-		norm := NormalizeSlug(input, "post")
+		norm := NormalizeName(input)
 		if norm != outputs[i] {
 			t.Errorf("|%s| was supposed to normalize to |%s|\n", norm, outputs[i])
 		}

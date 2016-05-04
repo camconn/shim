@@ -24,7 +24,13 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
+)
+
+const (
+	handleFiles   = 0
+	handlePreview = 1
 )
 
 func loggingHandler(next http.Handler) http.Handler {
@@ -73,7 +79,7 @@ func (l *loginHandler) authHandler(h http.Handler) http.Handler {
 	})
 }
 
-func (l *loginHandler) dynamicPreviewHandler(w http.ResponseWriter, r *http.Request) {
+func (l *loginHandler) dynamicPreviewHandler(w http.ResponseWriter, r *http.Request, mode int) {
 	session := l.userMan.GetHTTPSession(w, r)
 
 	if !session.IsLogged() {
@@ -89,11 +95,23 @@ func (l *loginHandler) dynamicPreviewHandler(w http.ResponseWriter, r *http.Requ
 	}
 
 	filename := "index.html"
-	if len(r.URL.RequestURI()) > 0 {
-		filename = r.URL.RequestURI()
+	if mode == handlePreview &&
+		len(r.URL.Path) > 0 &&
+		!strings.HasSuffix(r.URL.Path, "index.html") {
+
+		filename = filepath.Join(r.URL.String(), "index.html")
+	} else if mode == handleFiles {
+		filename = strings.TrimLeft(r.URL.Path, "/files/")
 	}
 
-	location := http.Dir(filepath.Join(site.Location(), "preview"))
+	var location http.Dir
+
+	if mode == handlePreview {
+		location = http.Dir(filepath.Join(site.Location(), "preview"))
+	} else {
+		location = http.Dir(filepath.Join(site.Location(), "static", "files"))
+	}
+
 	file, err := location.Open(filename)
 	if err != nil {
 		if file != nil {

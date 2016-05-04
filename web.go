@@ -408,10 +408,12 @@ func ViewFiles(w http.ResponseWriter, req *http.Request) {
 			for name, value := range form.File {
 				fmt.Printf("form field: %s\n", name)
 				for _, v := range value {
-					fmt.Printf("filename: %s\n", v.Filename)
+					cleanName := NormalizeName(v.Filename)
+					fmt.Printf("filename: %s\n", cleanName)
 					file, err := v.Open()
+
 					defer file.Close()
-					err = wrapper.Site.AddStaticFile(v.Filename, file)
+					err = wrapper.Site.AddStaticFile(cleanName, file)
 					if err != nil {
 						wrapper.FailedMessage("Failed to upload file: " + err.Error())
 						break
@@ -576,7 +578,18 @@ func NewPost(w http.ResponseWriter, req *http.Request) {
 		newTitle := req.FormValue("title")
 		archeType := req.FormValue("pageType")
 
-		newSlug := NormalizeSlug(newTitle, archeType)
+		if len(archeType) == 0 {
+			split := strings.SplitN(newTitle, "/", 2)
+			if len(split) >= 2 {
+				archeType = split[0]
+				newTitle = split[1]
+			} else {
+				wrapper.FailedMessage("You need to enter in a type of archetype!")
+				goto render
+			}
+		}
+
+		newSlug := NormalizeName(newTitle)
 
 		if len(newTitle) > 0 {
 			wrapper.Action = "build"
