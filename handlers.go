@@ -25,7 +25,6 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
-	"time"
 )
 
 const (
@@ -40,11 +39,6 @@ func loggingHandler(next http.Handler) http.Handler {
 	}
 
 	return http.HandlerFunc(fn)
-}
-
-// BUG: This is horribly broken. Fix it please.
-func timeoutHandler(next http.Handler) http.Handler {
-	return http.Handler(http.TimeoutHandler(next, time.Duration(15*time.Second), "Sorry, but we took too long to handle your request. Sorry?"))
 }
 
 // Middleware for requiring login on certain pages.
@@ -127,9 +121,7 @@ func (l *loginHandler) dynamicPreviewHandler(w http.ResponseWriter, r *http.Requ
 		file.Close()
 		http.Error(w, "File not found", http.StatusNotFound)
 		return
-	}
-
-	if info.IsDir() {
+	} else if info.IsDir() {
 		file.Close()
 		file, err = location.Open(filepath.Join(filename, "index.html"))
 
@@ -137,15 +129,18 @@ func (l *loginHandler) dynamicPreviewHandler(w http.ResponseWriter, r *http.Requ
 			defer file.Close() // be sure to close it up here
 
 			if os.IsNotExist(err) {
-				log.Printf("%s has no index file!\n", site.ShortName())
 				http.Error(w, "Could not find index file to serve", http.StatusNotFound)
-				return
+			} else {
+				http.Error(w, "Had an issue serving you the file: "+err.Error(), http.StatusInternalServerError)
 			}
 
-			http.Error(w, "Had an issue serving you the file: "+err.Error(), http.StatusInternalServerError)
 			return
 		}
 	}
 
 	http.ServeContent(w, r, info.Name(), info.ModTime(), file)
+}
+
+func panicHandler(w http.ResponseWriter, req *http.Request) {
+
 }

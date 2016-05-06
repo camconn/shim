@@ -88,13 +88,13 @@ func NewWrapper(w http.ResponseWriter, req *http.Request) *WebWrapper {
 	return wr
 }
 
-// TODO: Just do it?
-// var t = template.Must(template.ParseGlob("templates/*"))
-// var t = template.Must(template.ParseGlob(fmt.Sprintf("%s/*", shimAssets.templates)))
+var t *template.Template
 
-func renderAnything(w http.ResponseWriter, tmpl string, i interface{}) {
-	// TODO: Move this to a global variable
-	t := template.Must(template.ParseGlob(fmt.Sprintf("%s/*", shimAssets.templates)))
+func parseTemplate() {
+	t = template.Must(template.ParseGlob(fmt.Sprintf("%s/*", shimAssets.templates)))
+}
+
+func renderPage(w http.ResponseWriter, tmpl string, i interface{}) {
 	err := t.ExecuteTemplate(w, tmpl, i)
 	if err != nil {
 		log.Printf("Couldn't execute template: %s\n", err)
@@ -178,7 +178,7 @@ func Admin(w http.ResponseWriter, req *http.Request) {
 		}
 	}
 
-	renderAnything(w, "adminPage", status)
+	renderPage(w, "adminPage", status)
 }
 
 // Users - User Management Page
@@ -230,7 +230,7 @@ func Users(w http.ResponseWriter, req *http.Request) {
 		}
 	}
 
-	renderAnything(w, "userPage", wrapper)
+	renderPage(w, "userPage", wrapper)
 }
 
 // ViewTaxonomies Taxonomy management page
@@ -323,7 +323,7 @@ func ViewTaxonomies(w http.ResponseWriter, req *http.Request) {
 	}
 
 renderTaxonomy:
-	renderAnything(w, "taxonomyPage", wrapper)
+	renderPage(w, "taxonomyPage", wrapper)
 }
 
 // Login - The login page
@@ -348,7 +348,7 @@ func Login(w http.ResponseWriter, req *http.Request) {
 		err := req.ParseForm()
 		if err != nil {
 			wrapper.FailedMessage("Couldn't parse form!")
-			renderAnything(w, "loginPage", &wrapper)
+			renderPage(w, "loginPage", &wrapper)
 			return
 		}
 
@@ -382,7 +382,7 @@ func Login(w http.ResponseWriter, req *http.Request) {
 		wrapper.Choices = []string{redirect}
 	}
 
-	renderAnything(w, "loginPage", &wrapper)
+	renderPage(w, "loginPage", &wrapper)
 }
 
 // ViewPosts - View all posts
@@ -390,7 +390,7 @@ func ViewPosts(w http.ResponseWriter, req *http.Request) {
 	wrapper := NewWrapper(w, req)
 	wrapper.Site.GetAllPosts()
 
-	renderAnything(w, "postsPage", wrapper)
+	renderPage(w, "postsPage", wrapper)
 }
 
 // ViewFiles - View all files uploaded to this site
@@ -443,7 +443,7 @@ func ViewFiles(w http.ResponseWriter, req *http.Request) {
 		}
 	}
 
-	renderAnything(w, "filesPage", wrapper)
+	renderPage(w, "filesPage", wrapper)
 }
 
 // EditPost - Edit a Post
@@ -566,7 +566,7 @@ func EditPost(w http.ResponseWriter, req *http.Request) {
 	}
 
 	wrapper.Post = post
-	renderAnything(w, "editPage", wrapper)
+	renderPage(w, "editPage", wrapper)
 }
 
 // NewPost - Create a new post
@@ -650,7 +650,7 @@ func NewPost(w http.ResponseWriter, req *http.Request) {
 	}
 
 render:
-	renderAnything(w, "newPostPage", wrapper)
+	renderPage(w, "newPostPage", wrapper)
 
 }
 
@@ -706,7 +706,7 @@ func RemovePost(w http.ResponseWriter, req *http.Request) {
 		}
 	}
 
-	renderAnything(w, "deletePage", wrapper)
+	renderPage(w, "deletePage", wrapper)
 }
 
 // EditSite - Edit a site's basic configuration
@@ -771,7 +771,7 @@ func EditSite(w http.ResponseWriter, req *http.Request) {
 		wrapper.SuccessMessage("Site configuration has been updated.")
 	}
 renderBasicConfig:
-	renderAnything(w, "siteConfig", wrapper)
+	renderPage(w, "siteConfig", wrapper)
 }
 
 // AdvancedConfig - Edit a site's configuration (for power users)
@@ -828,5 +828,5 @@ func AdvancedConfig(w http.ResponseWriter, req *http.Request) {
 	}
 
 renderAdvancedConfig:
-	renderAnything(w, "siteConfigAdvanced", wrapper)
+	renderPage(w, "siteConfigAdvanced", wrapper)
 }

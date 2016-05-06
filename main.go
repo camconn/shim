@@ -53,6 +53,8 @@ func main() {
 
 	fmt.Printf("base path: %s\n", shimAssets.basepath)
 
+	parseTemplate() // in web.go
+
 	if firstRun() { // Setup initial username and password so admins can run shim.
 		um = uman.New(filepath.Join(shimAssets.root, "users.db"))
 		um.Register("root", "hunter2")
