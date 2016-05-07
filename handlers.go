@@ -141,6 +141,24 @@ func (l *loginHandler) dynamicPreviewHandler(w http.ResponseWriter, r *http.Requ
 	http.ServeContent(w, r, info.Name(), info.ModTime(), file)
 }
 
-func panicHandler(w http.ResponseWriter, req *http.Request) {
+func panicHandler(h http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
 
+		defer func() {
+			if r := recover(); r != nil {
+				log.Printf("Recovered from error: %v\n", r)
+
+				tmpWrapper := new(WebWrapper)
+				tmpWrapper.FailedMessage(fmt.Sprint(r))
+				tmpWrapper.Base = shimAssets.baseurl
+				tmpWrapper.URL = req.URL.String()
+
+				w.WriteHeader(http.StatusInternalServerError)
+
+				renderPage(w, "errorPage", tmpWrapper)
+			}
+		}()
+
+		h.ServeHTTP(w, req)
+	})
 }

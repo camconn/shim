@@ -74,9 +74,11 @@ func main() {
 	// Below this line are things exclusively for running the webapp
 	mux := http.NewServeMux()
 
+	crashHandler := panicHandler
+
 	loginH := newLoginHandler(um)
 	loginRequirer := loginH.authHandler
-	withAuth := alice.New(loggingHandler, loginRequirer)
+	withAuth := alice.New(loggingHandler, crashHandler, loginRequirer)
 
 	mux.Handle("/", withAuth.ThenFunc(Home))
 	mux.Handle("/config/", withAuth.ThenFunc(EditSite))
@@ -103,7 +105,7 @@ func main() {
 	})
 	mux.Handle("/files/", withAuth.Then(fileViewer))
 
-	noAuth := alice.New(loggingHandler)
+	noAuth := alice.New(loggingHandler, crashHandler)
 	staticFilesRoot := filepath.Join(shimAssets.root, shimAssets.static)
 	staticFileHandler := http.FileServer(http.Dir(staticFilesRoot))
 

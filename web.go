@@ -94,12 +94,11 @@ func parseTemplate() {
 	t = template.Must(template.ParseGlob(fmt.Sprintf("%s/*", shimAssets.templates)))
 }
 
-func renderPage(w http.ResponseWriter, tmpl string, i interface{}) {
-	err := t.ExecuteTemplate(w, tmpl, i)
+func renderPage(w http.ResponseWriter, tmpl string, wrapper *WebWrapper) {
+	err := t.ExecuteTemplate(w, tmpl, wrapper)
 	if err != nil {
 		log.Printf("Couldn't execute template: %s\n", err)
 	}
-
 }
 
 // Home - The home page -- Just redirect to login
@@ -348,7 +347,7 @@ func Login(w http.ResponseWriter, req *http.Request) {
 		err := req.ParseForm()
 		if err != nil {
 			wrapper.FailedMessage("Couldn't parse form!")
-			renderPage(w, "loginPage", &wrapper)
+			renderPage(w, "loginPage", wrapper)
 			return
 		}
 
@@ -382,7 +381,7 @@ func Login(w http.ResponseWriter, req *http.Request) {
 		wrapper.Choices = []string{redirect}
 	}
 
-	renderPage(w, "loginPage", &wrapper)
+	renderPage(w, "loginPage", wrapper)
 }
 
 // ViewPosts - View all posts

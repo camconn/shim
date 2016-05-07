@@ -1,0 +1,29 @@
+{{define "errorPage"}}
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		{{ template "meta" }}
+		<title>SHIM | Server Error</title>
+		{{ template "stylesheets" $ }}
+	</head>
+	<body>
+		{{ template "navbar" $ }}
+		<div id="content" class="content">
+			<h1>Shim experienced an internal error</h1>
+			<p>Houston, we have a problem...</p>
+			<div class="message is-danger">
+				<div class="message-body">
+					<p>Shim had an internal error while trying to complete your request.</p>
+					<p>If you see a <s>monkey</s> programmer, please give them this: </p>
+					<pre>{{ .Message }}</pre>
+				</div>
+			</div>
+			<br>
+			<a class="button is-primary" href="https://github.com/camconn/shim/issues">
+				File Bug
+			</a>
+		</div>
+		{{ template "footer" }}
+	</body>
+</html>
+{{end}}
