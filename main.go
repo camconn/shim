@@ -95,15 +95,12 @@ func main() {
 	sitePreviewer := http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
 		loginH.dynamicPreviewHandler(w, req, handlePreview)
 	})
-	mux.Handle("/preview/", http.StripPrefix("/preview", withAuth.Then(sitePreviewer)))
-
-	// workaround hack to serve preview static files correctly (e.g. images)
-	// mux.Handle("/files/", withAuth.Then(previewer))
+	mux.Handle("/preview/", http.StripPrefix("/preview/", withAuth.Then(sitePreviewer)))
 
 	fileViewer := http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
 		loginH.dynamicPreviewHandler(w, req, handleFiles)
 	})
-	mux.Handle("/files/", withAuth.Then(fileViewer))
+	mux.Handle("/files/", http.StripPrefix("/files/", withAuth.Then(fileViewer)))
 
 	noAuth := alice.New(loggingHandler, crashHandler)
 	staticFilesRoot := filepath.Join(shimAssets.root, shimAssets.static)
@@ -120,8 +117,7 @@ func main() {
 	fmt.Printf("portenv: %s\n", portEnv)
 
 	mServ := http.Server{}
-	addr := fmt.Sprintf(":%s", portEnv)
-	mServ.Addr = fmt.Sprintf(addr)
+	mServ.Addr = fmt.Sprintf(":%s", portEnv)
 	mServ.Handler = http.StripPrefix(shimAssets.basepath, mux)
 	err = mServ.ListenAndServe()
 	checkReason(err, "Error serving webapp")

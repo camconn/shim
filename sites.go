@@ -35,11 +35,11 @@ type SitePosts []*Post
 
 // Site - Represent a Hugo site (as in blog.example.com)
 type Site struct {
-	location  string
-	shortName string
-	title     string
-	subtitle  string
-	baseurl   string
+	Location  string
+	ShortName string
+	Title     string
+	Subtitle  string
+	BaseURL   string
 	author    string
 	theme     string
 
@@ -63,7 +63,7 @@ type Site struct {
 }
 
 func (s *Site) String() string {
-	return fmt.Sprintf("Site \"%s\" - baseurl: \"%s\"", s.location, s.baseurl)
+	return fmt.Sprintf("Site \"%s\" - BaseURL: \"%s\"", s.Location, s.BaseURL)
 }
 
 // Sorting stuff used to order posts on the view posts page.
@@ -74,9 +74,9 @@ func (s SitePosts) Swap(i, j int) { s[i], s[j] = s[j], s[i] }
 func (s SitePosts) Less(i, j int) bool {
 	postA := s[i]
 	postB := s[j]
-	if postA.Draft() && !postB.Draft() {
+	if postA.Draft && !postB.Draft {
 		return true
-	} else if postB.Draft() && !postA.Draft() {
+	} else if postB.Draft && !postA.Draft {
 		return false
 	}
 
@@ -87,7 +87,7 @@ func (s SitePosts) Less(i, j int) bool {
 
 // Reload - Reload this site from configuration
 func (s Site) Reload() error {
-	err := s.loadConfig(s.ShortName())
+	err := s.loadConfig(s.ShortName)
 
 	if err != nil {
 		return fmt.Errorf("Could not reload site; error: %s", err.Error())
@@ -110,10 +110,10 @@ func loadSite(name string) (*Site, error) {
 
 func (s *Site) loadConfig(name string) error {
 	// This is (SHIM_ROOT/sites/sitename)
-	s.location = filepath.Join(shimAssets.root, shimAssets.sites, name)
-	s.shortName = name
+	s.Location = filepath.Join(shimAssets.root, shimAssets.sites, name)
+	s.ShortName = name
 
-	confLoc := fmt.Sprintf("%s/config.toml", s.location)
+	confLoc := fmt.Sprintf("%s/config.toml", s.Location)
 	fmt.Printf("Opening config at %s\n", confLoc)
 	file, err := os.Open(confLoc)
 	defer file.Close()
@@ -131,7 +131,7 @@ func (s *Site) loadConfig(name string) error {
 	v.SetDefault("layoutdir", "layouts")
 	v.SetDefault("publishdir", "public")
 	v.SetDefault("builddrafts", false)
-	v.SetDefault("baseurl", "http://myblog.example.com/")
+	v.SetDefault("BaseURL", "http://myblog.example.com/")
 	v.SetDefault("canonifyurls", false)
 	v.SetDefault("title", "My Hugo+Shim Site")
 	v.SetDefault("theme", "slim")
@@ -142,15 +142,15 @@ func (s *Site) loadConfig(name string) error {
 	defaultParams["subtitle"] = "My Shim Blog"
 	v.SetDefault("params", defaultParams)
 
-	s.baseurl = v.GetString("baseurl")
+	s.BaseURL = v.GetString("BaseURL")
 	s.contentDir = v.GetString("contentdir")
 	s.layoutDir = v.GetString("layoutdir")
 	s.publishDir = v.GetString("publishdir")
 	s.builddrafts = v.GetBool("builddrafts")
 	s.canonifyurls = v.GetBool("canonifyurls")
-	s.title = v.GetString("title")
+	s.Title = v.GetString("title")
 	s.theme = v.GetString("theme")
-	s.subtitle = v.GetString("params.subtitle")
+	s.Subtitle = v.GetString("params.Subtitle")
 	s.author = v.GetString("params.author")
 
 	// Set sane defaults for taxonomies
@@ -192,7 +192,7 @@ func (s Site) loadTaxonomyTerms() {
 // GetAllPosts - Find all posts for this site.
 // TODO: Don't reload posts if they haven't been modified since last load.
 func (s *Site) GetAllPosts() {
-	contentPath := filepath.Join(s.Location(), s.ContentDir())
+	contentPath := filepath.Join(s.Location, s.ContentDir())
 
 	allPostFiles := list.New()
 	numPosts := 0
@@ -206,7 +206,7 @@ func (s *Site) GetAllPosts() {
 			ext := filepath.Ext(path)
 			// for now, we only care about Markdown files
 			if ext == ".md" {
-				(*allPostFiles).PushBack(path)
+				allPostFiles.PushBack(path)
 				numPosts++
 			}
 		}
@@ -243,15 +243,15 @@ func (s *Site) GetAllPosts() {
 
 // BuildPublic - Build the public site using Hugo
 func (s *Site) BuildPublic() (err error) {
-	publicDir := filepath.Join(s.Location(), "public")
+	publicDir := filepath.Join(s.Location, "public")
 	err = s.build(publicDir, false)
 	return
 }
 
 // BuildPreview - Build a preview with hugo
 func (s Site) BuildPreview() (err error) {
-	// Set baseurl to /preview/ to help view
-	origPath := s.BaseURL()[:]
+	// Set BaseURL to /preview/ to help view
+	origPath := s.BaseURL[:]
 
 	// NOTE: The way that we are publishing these sites means that all of the URLs
 	// **CANNOT** be canonical. So what's happening here is that we're temporarily
@@ -261,25 +261,25 @@ func (s Site) BuildPreview() (err error) {
 		s.canonifyurls = false
 	}
 
-	s.baseurl = shimAssets.baseurl + "/preview/"
-	log.Printf("Temporarily %s\n", s.BaseURL())
-	// s.baseurl = origPath + "/preview/"
+	s.BaseURL = shimAssets.baseurl + "/preview/"
+	log.Printf("Temporarily %s\n", s.BaseURL)
+	// s.BaseURL = origPath + "/preview/"
 	err = s.SaveConfig()
 	if err != nil {
 		return
 	}
 
-	previewDir := filepath.Join(s.Location(), "preview")
+	previewDir := filepath.Join(s.Location, "preview")
 	err = s.build(previewDir, true)
 	if err != nil {
 		return
 	}
 
 	// reset to original path
-	s.baseurl = origPath
+	s.BaseURL = origPath
 	s.canonifyurls = wasCanonical
 	_ = s.SaveConfig()
-	log.Printf("Now %s\n", s.BaseURL())
+	log.Printf("Now %s\n", s.BaseURL)
 
 	return err
 }
@@ -303,9 +303,9 @@ func (s *Site) build(path string, drafts bool) error {
 
 	cmd := &exec.Cmd{}
 	if drafts {
-		cmd = exec.Command(hugoPath, "-D", "-s", s.Location(), "-d", path)
+		cmd = exec.Command(hugoPath, "-D", "-s", s.Location, "-d", path)
 	} else {
-		cmd = exec.Command(hugoPath, "-s", s.Location(), "-d", path)
+		cmd = exec.Command(hugoPath, "-s", s.Location, "-d", path)
 	}
 
 	err = cmd.Run()
@@ -324,7 +324,7 @@ func (s Site) SaveConfig() error {
 	}
 
 	// fmt.Printf("opening at %s/config.toml\n", s.location)
-	fileLoc := fmt.Sprintf("%s/config.toml", s.location)
+	fileLoc := fmt.Sprintf("%s/config.toml", s.Location)
 
 	mode := os.O_WRONLY | os.O_CREATE | os.O_TRUNC
 	file, err := os.OpenFile(fileLoc, mode, 0666)
@@ -357,8 +357,8 @@ func (s *Site) updateMap() error {
 
 	// Even though TOML is case-sensitive, viper, the library Hugo uses, is not.
 	// Therefore, everything is lowercase here to prevent accidental duplication.
-	s.allSettings["title"] = s.Title()
-	s.allSettings["baseurl"] = s.BaseURL()
+	s.allSettings["title"] = s.Title
+	s.allSettings["BaseURL"] = s.BaseURL
 	s.allSettings["contentdir"] = s.ContentDir()
 	s.allSettings["layoutdir"] = s.LayoutDir()
 	s.allSettings["publishdir"] = s.PublishDir()
@@ -377,7 +377,7 @@ func (s *Site) updateMap() error {
 		if ok {
 			// Site-wide parameters
 			paramsMap["author"] = s.Author()
-			paramsMap["subtitle"] = s.Subtitle()
+			paramsMap["subtitle"] = s.Subtitle
 		} else {
 			return errors.New("allSettings[\"params\"] is *not* a map[string]interface{}! WTF")
 		}
@@ -393,23 +393,6 @@ func (s *Site) updateMap() error {
 	s.allSettings["taxonomies"] = taxonomies
 
 	return nil
-}
-
-/* These are just accessors */
-
-// Title - Get title of site
-func (s Site) Title() string {
-	return s.title
-}
-
-// Subtitle - Get title of site
-func (s Site) Subtitle() string {
-	return s.subtitle
-}
-
-// BaseURL - Get base url of site
-func (s Site) BaseURL() string {
-	return s.baseurl
 }
 
 // ContentDir - Directory where content (e.g. posts, images) will be stored
@@ -454,16 +437,6 @@ func (s Site) Author() string {
 // Theme - This site's theme
 func (s Site) Theme() string {
 	return s.theme
-}
-
-// ShortName - This site's short name
-func (s Site) ShortName() string {
-	return s.shortName
-}
-
-// Location - This site's location on disk
-func (s Site) Location() string {
-	return s.location
 }
 
 // Taxonomies - This site's taxonomies

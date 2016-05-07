@@ -41,19 +41,19 @@ const (
 // Post - Represents a post along with all its metadata
 type Post struct {
 	// These are never edited by us. They are effectively constants.
-	location string
-	relpath  string
-	site     *Site
+	Location string
+	RelPath  string
+	Site     *Site
 
-	title       string
+	Title       string
 	author      string
-	description string // automatically generated
-	manualDesc  string // set by user
-	slug        string
-	draft       bool
-	published   *time.Time
-	aliases     []string
-	taxonomies  map[string][]string    // TODO: Is there a better storage format to use?
+	Description string // automatically generated
+	ManualDesc  string // set by user
+	Slug        string
+	Draft       bool
+	Published   *time.Time
+	Aliases     []string
+	Taxonomies  map[string][]string    // TODO: Is there a better storage format to use?
 	all         map[string]interface{} // All TOML data for this file
 }
 
@@ -67,14 +67,11 @@ func (p *Post) readTOMLMetadata(data io.Reader) {
 }
 
 func (p *Post) handleFrontMatter(v *viper.Viper) {
-	p.title = v.GetString("title")
+	p.Title = v.GetString("title")
 	p.author = v.GetString("author")
-	if len(p.Author()) == 0 {
-		p.author = p.Site().Author()
-	}
-	p.manualDesc = v.GetString("description")
-	p.slug = v.GetString("slug")
-	p.draft = v.GetBool("draft")
+	p.ManualDesc = v.GetString("description")
+	p.Slug = v.GetString("slug")
+	p.Draft = v.GetBool("draft")
 
 	v.SetDefault("aliases", []string{})
 	aliases := v.GetStringSlice("aliases")
@@ -83,7 +80,7 @@ func (p *Post) handleFrontMatter(v *viper.Viper) {
 
 	// Make sure we don't get any alias lists with only blank spaces
 	if (len(aliases) > 1) || (len(aliases) == 1 && len(aliases[0]) > 0) {
-		p.aliases = aliases
+		p.Aliases = aliases
 	}
 
 	{
@@ -96,7 +93,7 @@ func (p *Post) handleFrontMatter(v *viper.Viper) {
 				pTime = time.Now()
 			}
 
-			p.published = &pTime
+			p.Published = &pTime
 		}
 	}
 
@@ -106,18 +103,18 @@ func (p *Post) handleFrontMatter(v *viper.Viper) {
 		// If the post is a draft, and there is no "editdate" key, then this post has
 		// no date, even if we assigned it earlier.
 		lastEditDate := v.GetString("editdate")
-		if p.Draft() && len(lastEditDate) == 0 {
+		if p.Draft && len(lastEditDate) == 0 {
 			p.all["editdate"] = p.Date().Format(time.RFC3339)
 			delete(p.all, "date")
-			p.published = nil
+			p.Published = nil
 		}
 	}
 
-	for _, kind := range p.Site().Taxonomies().GetKinds() {
+	for _, kind := range p.Site.Taxonomies().GetKinds() {
 		plural := kind.Plural()
 		terms := v.GetStringSlice(plural)
 		if len(terms) != 0 {
-			p.taxonomies[plural] = terms
+			p.Taxonomies[plural] = terms
 		}
 	}
 }
@@ -127,14 +124,14 @@ func (s *Site) loadPost(postPath, contentDirPath string) (*Post, error) {
 	var err error
 
 	p := &Post{}
-	p.site = s
-	p.location, err = filepath.Abs(postPath)
+	p.Site = s
+	p.Location, err = filepath.Abs(postPath)
 
 	if err != nil {
 		return nil, fmt.Errorf("Could not load post: invalid post path")
 	}
 
-	p.taxonomies = make(map[string][]string)
+	p.Taxonomies = make(map[string][]string)
 
 	file, err := os.Open(postPath)
 	defer file.Close()
@@ -164,7 +161,7 @@ func (s *Site) loadPost(postPath, contentDirPath string) (*Post, error) {
 	p.readTOMLMetadata(frontMatter)
 
 	relativePathWithSuffix, err := filepath.Rel(contentDirPath, postPath)
-	p.relpath = strings.TrimSuffix(relativePathWithSuffix, filepath.Ext(filepath.Base(postPath)))
+	p.RelPath = strings.TrimSuffix(relativePathWithSuffix, filepath.Ext(filepath.Base(postPath)))
 
 	_, err = file.Seek(pos, 0)
 	if err != nil {
@@ -193,7 +190,7 @@ func (s *Site) loadPost(postPath, contentDirPath string) (*Post, error) {
 		descriptionBytes = append(descriptionBytes, '\n', '\n', dot, dot, dot)
 	}
 
-	p.description = (string)(descriptionBytes)
+	p.Description = (string)(descriptionBytes)
 
 	return p, nil
 }
@@ -205,7 +202,7 @@ func (s *Site) loadPost(postPath, contentDirPath string) (*Post, error) {
 // while creating the post. If the post already exists, fPath will be a blank
 // string and an error will be returned.
 func (s *Site) newPost(name string) (fPath string, err error) {
-	testPostLoc := filepath.Join(s.Location(), s.ContentDir(), name)
+	testPostLoc := filepath.Join(s.Location, s.ContentDir(), name)
 	if _, err = os.Stat(testPostLoc); !os.IsNotExist(err) {
 		return "", fmt.Errorf("A page already exists at that location!")
 	}
@@ -217,13 +214,13 @@ func (s *Site) newPost(name string) (fPath string, err error) {
 
 	// TODO: Capture build output and send to logs
 	cmd := exec.Command(hugoPath, "new", name)
-	cmd.Dir = s.location
+	cmd.Dir = s.Location
 	err = cmd.Run()
 	if err != nil {
 		return "", err
 	}
 
-	fPath = path.Join(s.location, s.ContentDir(), name)
+	fPath = path.Join(s.Location, s.ContentDir(), name)
 	return
 }
 
@@ -238,7 +235,7 @@ func (p *Post) SavePost(body string) error {
 	// We're only writing here, we want to create a file if it doesn't exist,
 	// and we want to truncate the file if we don't write the full thing.
 	mode := os.O_WRONLY | os.O_CREATE | os.O_TRUNC
-	file, err := os.OpenFile(p.location, mode, 0666)
+	file, err := os.OpenFile(p.Location, mode, 0666)
 	defer file.Close()
 	if err != nil {
 		return fmt.Errorf("Could not load post: %s\n", err.Error())
@@ -259,17 +256,17 @@ func (p *Post) SavePost(body string) error {
 	go func() {
 		var err error
 
-		if p.Draft() {
-			err = p.Site().BuildPreview()
+		if p.Draft {
+			err = p.Site.BuildPreview()
 		} else {
-			err = p.Site().BuildPublic()
+			err = p.Site.BuildPublic()
 		}
 		if err != nil {
 			log.Printf("Failed to run build in background: %s\n", err.Error())
 		}
 	}()
 
-	go p.Site().loadTaxonomyTerms()
+	go p.Site.loadTaxonomyTerms()
 	return nil
 
 }
@@ -281,9 +278,9 @@ func (p *Post) updateMap() error {
 	}
 
 	p.all["author"] = p.Author()
-	p.all["title"] = p.Title()
-	p.all["slug"] = p.Slug()
-	p.all["draft"] = p.Draft()
+	p.all["title"] = p.Title
+	p.all["slug"] = p.Slug
+	p.all["draft"] = p.Draft
 
 	p.all["editdate"] = time.Now().Format(time.RFC3339)
 	if p.HasDate() {
@@ -292,15 +289,15 @@ func (p *Post) updateMap() error {
 		delete(p.all, "date")
 	}
 
-	if len(p.ActualDescription()) > 0 {
-		p.all["description"] = p.ActualDescription()
+	if len(p.ManualDesc) > 0 {
+		p.all["description"] = p.ManualDesc
 	} else {
 		delete(p.all, "description")
 	}
 
-	numAliases := len(p.aliases)
-	if numAliases > 1 || numAliases == 1 && len(p.aliases[0]) != 0 {
-		p.all["aliases"] = p.aliases[:]
+	numAliases := len(p.Aliases)
+	if numAliases > 1 || numAliases == 1 && len(p.Aliases[0]) != 0 {
+		p.all["aliases"] = p.Aliases[:]
 	} else {
 		delete(p.all, "aliases")
 	}
@@ -315,16 +312,16 @@ func (p *Post) updateMap() error {
 
 // update this site's view of this post's taxonomy
 func (p *Post) updateTaxonomy() error {
-	for term, values := range (*p).taxonomies {
+	for term, values := range p.Taxonomies {
 
 		// don't worry about tags which don't have anything
 		if len(values) == 1 && len(values[0]) == 0 {
 			continue
 		}
 
-		(*p).all[term] = values
+		p.all[term] = values
 
-		kind, err := p.Site().Taxonomies().GetTaxonomy(term)
+		kind, err := p.Site.Taxonomies().GetTaxonomy(term)
 		if err != nil {
 			return fmt.Errorf("Tried to add a value to a taxonomy term that doesn't exist.")
 		}
@@ -344,13 +341,13 @@ func (p *Post) updateTaxonomy() error {
 	return nil
 }
 
-// TaxonomyMap get a hashmap of the taxonomies of a post followed by the
+// TaxonomyMap get a hashmap of the taxonomies of a post followed by
 // a joined string of each taxonomy's applicable values
 func (p *Post) TaxonomyMap() map[string]string {
 	items := make(map[string]string)
-	for _, kind := range p.Site().Taxonomies().GetKinds() {
+	for _, kind := range p.Site.Taxonomies().GetKinds() {
 		term := kind.Plural()
-		values := (*p).taxonomies[term]
+		values := p.Taxonomies[term]
 		items[term] = strings.Join(values, ", ")
 	}
 
@@ -359,9 +356,9 @@ func (p *Post) TaxonomyMap() map[string]string {
 
 // Publish - Publish this post
 func (p *Post) Publish(text string) error {
-	p.draft = false
-	if p.published == nil {
-		p.published = p.Date()
+	p.Draft = false
+	if p.Published == nil {
+		p.Published = p.Date()
 	}
 
 	err := p.SavePost(text)
@@ -372,30 +369,24 @@ func (p *Post) Publish(text string) error {
 	return nil
 }
 
-// Author - The author of this post
+// Author is the writer of this post
 func (p Post) Author() string {
+	if len(p.author) == 0 {
+		return p.Site.Author()
+	}
+
 	return p.author
-}
-
-// Title - The title of this post
-func (p Post) Title() string {
-	return p.title
-}
-
-// Slug - The short URL of this post
-func (p Post) Slug() string {
-	return p.slug
 }
 
 // Date The published date of this post OR the last time it was edited
 // if this post is a draft.
 func (p Post) Date() *time.Time {
-	if p.published != nil {
-		return p.published
+	if p.Published != nil {
+		return p.Published
 	}
 
 	// If there's an edit date, try and use that for sorting.
-	if p.Draft() {
+	if p.Draft {
 		if editTimeValue, ok := p.all["editdate"]; ok {
 			if editTimeStr, ok := editTimeValue.(string); ok {
 				editTime, err := time.Parse(time.RFC3339, editTimeStr)
@@ -413,7 +404,7 @@ func (p Post) Date() *time.Time {
 
 // HasDate lets you know if the user has manually specified a date for this post
 func (p Post) HasDate() bool {
-	return (p.published != nil)
+	return (p.Published != nil)
 }
 
 // WebDate - Get the date displayed in shim for this post
@@ -421,31 +412,15 @@ func (p Post) WebDate() string {
 	return p.Date().Format(dateFormat)
 }
 
-// Draft - Is this post a draft?
-func (p Post) Draft() bool {
-	return p.draft
-}
-
-// ActualDescription - Get a short description of this post as a raw string,
-// without calculating it on the fly
-func (p Post) ActualDescription() string {
-	return p.manualDesc
-}
-
-// Description - A short description of this post.
-func (p Post) Description() string {
-	return p.description
-}
-
-func (p *Post) String() string {
+func (p Post) String() string {
 	return fmt.Sprintf("<Post title: %s; author: %s, date: %s; draft: %t>",
-		p.Title(), p.Author(), p.Date(), p.Draft())
+		p.Title, p.Author(), p.Date(), p.Draft)
 }
 
 // GetBody - Get the body of this post
 func (p Post) GetBody() string {
-	log.Printf("post location: %s\n", p.location)
-	pFile, err := os.Open(p.location)
+	log.Printf("post location: %s\n", p.Location)
+	pFile, err := os.Open(p.Location)
 	if err != nil {
 		return fmt.Sprintf("[ERROR]: Could not open post data file: %s", err.Error())
 	}
@@ -463,7 +438,7 @@ func (p Post) GetBody() string {
 		if boundaryCount == 2 {
 			_, err := postBody.WriteString(line)
 			if err != nil {
-				return fmt.Sprintf("[ERROR]: Couldn't load text for this post: %s", p.location)
+				return fmt.Sprintf("[ERROR]: Couldn't load text for this post: %s", p.Location)
 			}
 		} else if strings.Compare(line, tomlBoundary) == 0 {
 			boundaryCount++
@@ -473,16 +448,11 @@ func (p Post) GetBody() string {
 	return postBody.String()
 }
 
-// RelPath - Get the relative path of this post to the /content/ directory
-func (p Post) RelPath() string {
-	return p.relpath
-}
-
 // PostID is the base64 of the relative path for this post.
 //
 // See also: Post.RelPath
 func (p *Post) PostID() string {
-	relPathStr := p.RelPath()
+	relPathStr := p.RelPath
 
 	b64Path := base64.StdEncoding.EncodeToString([]byte(relPathStr))
 
@@ -493,19 +463,14 @@ func (p *Post) PostID() string {
 // path of the URL the page will be at after Hugo generates this page.
 // TODO: Permalinks?
 func (p Post) PreviewPath() string {
-	if len(p.Slug()) == 0 {
-		return p.RelPath() + "/"
+	if len(p.Slug) == 0 {
+		return p.RelPath + "/"
 	}
 
-	return filepath.Join(p.RelPath(), "..", p.Slug()) + "/"
-}
-
-// Site - This post's site
-func (p Post) Site() *Site {
-	return p.site
+	return filepath.Join(p.RelPath, "..", p.Slug+"/")
 }
 
 // WebAliases - Access this post's aliases in a format for the web
 func (p Post) WebAliases() string {
-	return strings.Join(p.aliases, ", ")
+	return strings.Join(p.Aliases, ", ")
 }

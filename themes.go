@@ -64,7 +64,7 @@ func ChangeTheme(site *Site, themeName string) error {
 		return err
 	}
 
-	siteThemePath := filepath.Join(site.Location(), "themes")
+	siteThemePath := filepath.Join(site.Location, "themes")
 	if _, err := os.Stat(siteThemePath); os.IsNotExist(err) {
 		fmt.Printf("Could not find old theme folder at %s. It does not exist!\n", siteThemePath)
 		return err

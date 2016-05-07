@@ -32,14 +32,14 @@ const (
 // StaticFiles retrieves and returns a list of all of the statically-uploaded
 // user files for this site.
 func (s *Site) StaticFiles() []string {
-	staticPath := filepath.Join(s.Location(), "static", "files")
+	staticPath := filepath.Join(s.Location, "static", "files")
 
 	if _, err := os.Stat(staticPath); os.IsNotExist(err) {
 		os.Mkdir(staticPath, 0755)
 	}
 
 	staticFiles := []string{}
-	staticLoc := filepath.Join(s.Location(), "static", "files")
+	staticLoc := filepath.Join(s.Location, "static", "files")
 
 	scanFunc := func(path string, fileInfo os.FileInfo, _ error) error {
 		if !fileInfo.IsDir() {
@@ -69,7 +69,7 @@ func (s *Site) AddStaticFile(path string, uploadFile io.Reader) error {
 
 	// TODO: This is dangerous. Maybe make sure that path is a descendant of
 	// the static file path?
-	newFilePath := filepath.Join(s.Location(), "static", "files", path)
+	newFilePath := filepath.Join(s.Location, "static", "files", path)
 	fmt.Printf("New file path: %s\n", newFilePath)
 	newFile, err := os.Create(newFilePath)
 	defer newFile.Close()
@@ -84,7 +84,7 @@ func (s *Site) AddStaticFile(path string, uploadFile io.Reader) error {
 // GetStaticFile A safe method for getting a static file according to its
 // relative path to the site's static file directory.
 func (s *Site) GetStaticFile(path string) (http.File, error) {
-	filesRoot := filepath.Join(s.Location(), "static", "files")
+	filesRoot := filepath.Join(s.Location, "static", "files")
 
 	staticFSRoot := http.Dir(filesRoot)
 	return staticFSRoot.Open(path)
@@ -98,7 +98,7 @@ func (s *Site) RemoveStaticFile(path string) error {
 		return err
 	}
 
-	absPath, err := filepath.Abs(filepath.Join(s.Location(), "static", "files", path))
+	absPath, err := filepath.Abs(filepath.Join(s.Location, "static", "files", path))
 	if err == nil {
 		err = os.Remove(absPath)
 	}

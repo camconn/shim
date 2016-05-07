@@ -43,7 +43,7 @@ func findUserSite(rw http.ResponseWriter, req *http.Request) *Site {
 	if err == nil {
 		siteName = siteCookie.Value
 		for _, s := range allSites {
-			if len(siteName) == len(s.ShortName()) && siteName == s.ShortName() {
+			if len(siteName) == len(s.ShortName) && siteName == s.ShortName {
 				validSite = true
 				userSite = s
 				break
@@ -52,7 +52,7 @@ func findUserSite(rw http.ResponseWriter, req *http.Request) *Site {
 	}
 
 	if !validSite {
-		setUserSite(rw, req, userSite.ShortName())
+		setUserSite(rw, req, userSite.ShortName)
 	}
 
 	return userSite

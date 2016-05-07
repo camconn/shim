@@ -88,22 +88,13 @@ func (l *loginHandler) dynamicPreviewHandler(w http.ResponseWriter, r *http.Requ
 		return
 	}
 
-	filename := "index.html"
-	if mode == handlePreview &&
-		len(r.URL.Path) > 0 &&
-		!strings.HasSuffix(r.URL.Path, "index.html") {
-
-		filename = filepath.Join(r.URL.String(), "index.html")
-	} else if mode == handleFiles {
-		filename = strings.TrimLeft(r.URL.Path, "/files/")
-	}
+	filename := strings.TrimLeft(r.URL.Path, "/")
 
 	var location http.Dir
-
 	if mode == handlePreview {
-		location = http.Dir(filepath.Join(site.Location(), "preview"))
+		location = http.Dir(filepath.Join(site.Location, "preview"))
 	} else {
-		location = http.Dir(filepath.Join(site.Location(), "static", "files"))
+		location = http.Dir(filepath.Join(site.Location, "static", "files"))
 	}
 
 	file, err := location.Open(filename)
@@ -120,25 +111,25 @@ func (l *loginHandler) dynamicPreviewHandler(w http.ResponseWriter, r *http.Requ
 	if err != nil {
 		file.Close()
 		http.Error(w, "File not found", http.StatusNotFound)
-		return
 	} else if info.IsDir() {
 		file.Close()
 		file, err = location.Open(filepath.Join(filename, "index.html"))
 
 		if err != nil {
-			defer file.Close() // be sure to close it up here
-
 			if os.IsNotExist(err) {
 				http.Error(w, "Could not find index file to serve", http.StatusNotFound)
 			} else {
 				http.Error(w, "Had an issue serving you the file: "+err.Error(), http.StatusInternalServerError)
 			}
-
-			return
 		}
 	}
 
+	if err != nil || file == nil {
+		return
+	}
+
 	http.ServeContent(w, r, info.Name(), info.ModTime(), file)
+	file.Close()
 }
 
 func panicHandler(h http.Handler) http.Handler {

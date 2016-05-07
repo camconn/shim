@@ -157,15 +157,15 @@ func Admin(w http.ResponseWriter, req *http.Request) {
 		}
 	} else if status.Action == "switch" {
 		newSite := strings.TrimSpace(req.FormValue("newSite"))
-		if newSite == status.Site.ShortName() {
+		if newSite == status.Site.ShortName {
 			status.FailedMessage("You're already using that site!")
 		} else {
-			if newSite != status.Site.ShortName() {
+			if newSite != status.Site.ShortName {
 				setUserSite(w, req, newSite)
 
 				// Update to current site (bug workaround)
 				for _, site := range allSites {
-					if site.ShortName() == newSite {
+					if site.ShortName == newSite {
 						status.Site = site
 						break
 					}
@@ -466,9 +466,8 @@ func EditPost(w http.ResponseWriter, req *http.Request) {
 
 	postPath := string(postPathBytes)
 
-	contentDirPath := filepath.Join(wrapper.Site.Location(), wrapper.Site.ContentDir())
+	contentDirPath := filepath.Join(wrapper.Site.Location, wrapper.Site.ContentDir())
 	postLoc := fmt.Sprintf("%s.md", filepath.Join(contentDirPath, postPath))
-	fmt.Printf("location: %s\n", postLoc)
 	post, err := wrapper.Site.loadPost(postLoc, contentDirPath)
 	if err != nil {
 		http.Error(w, err.Error(), 500)
@@ -480,7 +479,6 @@ func EditPost(w http.ResponseWriter, req *http.Request) {
 
 		publish := false
 		values := req.Form
-
 		var postText string
 
 		for i, v := range values {
@@ -493,9 +491,9 @@ func EditPost(w http.ResponseWriter, req *http.Request) {
 				// Don't do anything, because we handled this earlier
 				publish = true
 			case "description":
-				post.manualDesc = value
+				post.ManualDesc = value
 			case "published":
-				post.published = nil
+				post.Published = nil
 				trimmedTime := strings.TrimSpace(value)
 				if len(trimmedTime) == 0 {
 					continue
@@ -507,12 +505,12 @@ func EditPost(w http.ResponseWriter, req *http.Request) {
 						"Please use a valid format, date, and time for time published.")
 					continue
 				}
-				post.published = &parsedTime
+				post.Published = &parsedTime
 				log.Printf("parsed time: %s\n", parsedTime.Format(time.RFC3339))
 			case "slug":
-				post.slug = value
+				post.Slug = value
 			case "title":
-				post.title = value
+				post.Title = value
 			case "articleSrc":
 				postText = value
 			case "aliases":
@@ -522,7 +520,7 @@ func EditPost(w http.ResponseWriter, req *http.Request) {
 				if len(individualValues) == 0 && len(individualValues[0]) < 1 {
 					// ignore taxonomy list with spaces only
 				} else {
-					post.aliases = individualValues
+					post.Aliases = individualValues
 				}
 			default:
 				if strings.Contains(i, "taxonomy.") {
@@ -536,7 +534,7 @@ func EditPost(w http.ResponseWriter, req *http.Request) {
 					individualValues := strings.Split(value, ",")
 					stripChars(&individualValues, " ")
 					removeDuplicates(&individualValues)
-					post.taxonomies[right] = individualValues
+					post.Taxonomies[right] = individualValues
 				} else {
 					log.Printf("edit post ignoring %s and %s.\n", i, value)
 				}
@@ -544,7 +542,7 @@ func EditPost(w http.ResponseWriter, req *http.Request) {
 		}
 
 		if publish {
-			post.draft = false
+			post.Draft = false
 			err = post.Publish(postText)
 			if err != nil {
 				log.Printf("Could not publish post: %s\n", err.Error())
@@ -553,7 +551,7 @@ func EditPost(w http.ResponseWriter, req *http.Request) {
 				wrapper.SuccessMessage("Post saved and published.")
 			}
 		} else {
-			post.draft = true
+			post.Draft = true
 			err = post.SavePost(postText)
 			if err != nil {
 				log.Printf("Error while saving post: %s\n", err.Error())
@@ -593,7 +591,7 @@ func NewPost(w http.ResponseWriter, req *http.Request) {
 		if len(newTitle) > 0 {
 			wrapper.Action = "build"
 
-			contentDirPath := filepath.Join(wrapper.Site.Location(), wrapper.Site.ContentDir())
+			contentDirPath := filepath.Join(wrapper.Site.Location, wrapper.Site.ContentDir())
 			var newPostPath string
 
 			if len(archeType) > 0 {
@@ -618,14 +616,14 @@ func NewPost(w http.ResponseWriter, req *http.Request) {
 				goto render
 			}
 
-			post.draft = true
-			post.slug = newSlug
-			post.title = newTitle
+			post.Draft = true
+			post.Slug = newSlug
+			post.Title = newTitle
 
 			// Force reset initial values
-			post.published = nil
-			for v := range post.TaxonomyMap() {
-				post.TaxonomyMap()[v] = ""
+			post.Published = nil
+			for v := range post.Taxonomies {
+				post.Taxonomies[v] = []string{}
 			}
 
 			err = post.SavePost("")
@@ -678,13 +676,13 @@ func RemovePost(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	fileLoc := filepath.Join(wrapper.Site.Location(), wrapper.Site.ContentDir(), relPath+".md")
+	fileLoc := filepath.Join(wrapper.Site.Location, wrapper.Site.ContentDir(), relPath+".md")
 	if _, err := os.Stat(fileLoc); os.IsNotExist(err) {
 		http.Error(w, "File not found :'(", 404)
 		return
 	}
 
-	contentDirPath := filepath.Join(wrapper.Site.Location(), wrapper.Site.ContentDir())
+	contentDirPath := filepath.Join(wrapper.Site.Location, wrapper.Site.ContentDir())
 	post, err := wrapper.Site.loadPost(fileLoc, contentDirPath)
 	if err != nil {
 		http.Error(w, err.Error(), 500)
@@ -730,15 +728,13 @@ func EditSite(w http.ResponseWriter, req *http.Request) {
 		wrapper.Site.canonifyurls = false
 
 		for i, v := range values {
-			//fmt.Printf("i: %s; v: %s\n", i, v)
-
 			value := v[0]
 
 			switch i {
 			case "title":
-				wrapper.Site.title = value
+				wrapper.Site.Title = value
 			case "baseurl":
-				wrapper.Site.baseurl = value
+				wrapper.Site.BaseURL = value
 			case "theme":
 				wrapper.Site.theme = value
 			case "canonifyurls":
@@ -748,7 +744,7 @@ func EditSite(w http.ResponseWriter, req *http.Request) {
 			case "params.author":
 				wrapper.Site.author = value
 			case "params.subtitle":
-				wrapper.Site.subtitle = value
+				wrapper.Site.Subtitle = value
 			default:
 				log.Printf("WTF IS %s and %s?\n", i, value)
 			}
@@ -778,7 +774,7 @@ func AdvancedConfig(w http.ResponseWriter, req *http.Request) {
 	wrapper := NewWrapper(w, req)
 
 	wrapper.Text = bytes.NewBuffer([]byte{})
-	configLoc := filepath.Join(wrapper.Site.Location(), "config.toml")
+	configLoc := filepath.Join(wrapper.Site.Location, "config.toml")
 	var file *os.File
 	var err error
 
