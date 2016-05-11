@@ -725,7 +725,7 @@ func EditSite(w http.ResponseWriter, req *http.Request) {
 		// get values
 		values := req.Form
 
-		wrapper.Site.canonifyurls = false
+		wrapper.Site.Canonify = false
 
 		for i, v := range values {
 			value := v[0]
@@ -738,7 +738,7 @@ func EditSite(w http.ResponseWriter, req *http.Request) {
 			case "theme":
 				wrapper.Site.Theme = value
 			case "canonifyurls":
-				wrapper.Site.canonifyurls = true
+				wrapper.Site.Canonify = true
 
 				// Now for site-wide params
 			case "params.author":

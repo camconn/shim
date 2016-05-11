@@ -40,17 +40,17 @@ type Site struct {
 	Title     string
 	Subtitle  string
 	BaseURL   string
-	author    string
+	author    string // use `author` getter method for reading
 	Theme     string
 
-	// The following directories are relative
+	BuildDrafts bool
+	Canonify    bool
+	Posts       SitePosts
+
+	// Below fields are purely internal to shim
 	contentDir string
 	layoutDir  string
 	publishDir string
-
-	builddrafts  bool
-	canonifyurls bool
-	Posts        SitePosts
 
 	// Don't prefer to modify this map directly! Instead, prefer to modify the fields
 	// of this Site struct, as they *overwrite* this hashmap!
@@ -132,7 +132,7 @@ func (s *Site) loadConfig(name string) error {
 	v.SetDefault("publishdir", "public")
 	v.SetDefault("builddrafts", false)
 	v.SetDefault("BaseURL", "http://myblog.example.com/")
-	v.SetDefault("canonifyurls", false)
+	v.SetDefault("Canonify", false)
 	v.SetDefault("title", "My Hugo+Shim Site")
 	v.SetDefault("theme", "slim")
 
@@ -146,8 +146,8 @@ func (s *Site) loadConfig(name string) error {
 	s.contentDir = v.GetString("contentdir")
 	s.layoutDir = v.GetString("layoutdir")
 	s.publishDir = v.GetString("publishdir")
-	s.builddrafts = v.GetBool("builddrafts")
-	s.canonifyurls = v.GetBool("canonifyurls")
+	s.BuildDrafts = v.GetBool("builddrafts")
+	s.Canonify = v.GetBool("Canonify")
 	s.Title = v.GetString("title")
 	s.Theme = v.GetString("theme")
 	s.Subtitle = v.GetString("params.Subtitle")
@@ -256,9 +256,9 @@ func (s Site) BuildPreview() (err error) {
 	// NOTE: The way that we are publishing these sites means that all of the URLs
 	// **CANNOT** be canonical. So what's happening here is that we're temporarily
 	// making the site not canonical for the entirety of this build process.
-	wasCanonical := s.Canonify()
+	wasCanonical := s.Canonify
 	if wasCanonical {
-		s.canonifyurls = false
+		s.Canonify = false
 	}
 
 	s.BaseURL = shimAssets.baseurl + "/preview/"
@@ -277,7 +277,7 @@ func (s Site) BuildPreview() (err error) {
 
 	// reset to original path
 	s.BaseURL = origPath
-	s.canonifyurls = wasCanonical
+	s.Canonify = wasCanonical
 	_ = s.SaveConfig()
 	log.Printf("Now %s\n", s.BaseURL)
 
@@ -350,7 +350,7 @@ func (s Site) SaveConfig() error {
 
 // internal method called by SaveConfig
 func (s *Site) updateMap() error {
-	if s.AllSettings() == nil {
+	if s.allSettings == nil {
 		fmt.Println("Writing a new map in updateMap(). This is scary!")
 		s.allSettings = make(map[string]interface{})
 	}
@@ -363,8 +363,8 @@ func (s *Site) updateMap() error {
 	s.allSettings["layoutdir"] = s.LayoutDir()
 	s.allSettings["publishdir"] = s.PublishDir()
 	s.allSettings["staticdir"] = "static"
-	s.allSettings["builddrafts"] = s.BuildDrafts()
-	s.allSettings["canonifyurls"] = s.Canonify()
+	s.allSettings["builddrafts"] = s.BuildDrafts
+	s.allSettings["Canonify"] = s.Canonify
 	s.allSettings["theme"] = s.Theme
 	s.allSettings["metadataformat"] = "toml"
 	s.allSettings["notimes"] = false
@@ -408,21 +408,6 @@ func (s Site) LayoutDir() string {
 // PublishDir - Where to publish the built site to
 func (s Site) PublishDir() string {
 	return s.publishDir
-}
-
-// BuildDrafts - Return the directory of content
-func (s Site) BuildDrafts() bool {
-	return s.builddrafts
-}
-
-// Canonify - Do we canonify URLs?
-func (s Site) Canonify() bool {
-	return s.canonifyurls
-}
-
-// AllSettings - Get a map of all settings for this site
-func (s Site) AllSettings() map[string]interface{} {
-	return s.allSettings
 }
 
 // Author - Default author for the site
