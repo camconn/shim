@@ -41,7 +41,7 @@ type Site struct {
 	Subtitle  string
 	BaseURL   string
 	author    string
-	theme     string
+	Theme     string
 
 	// The following directories are relative
 	contentDir string
@@ -149,7 +149,7 @@ func (s *Site) loadConfig(name string) error {
 	s.builddrafts = v.GetBool("builddrafts")
 	s.canonifyurls = v.GetBool("canonifyurls")
 	s.Title = v.GetString("title")
-	s.theme = v.GetString("theme")
+	s.Theme = v.GetString("theme")
 	s.Subtitle = v.GetString("params.Subtitle")
 	s.author = v.GetString("params.author")
 
@@ -365,7 +365,7 @@ func (s *Site) updateMap() error {
 	s.allSettings["staticdir"] = "static"
 	s.allSettings["builddrafts"] = s.BuildDrafts()
 	s.allSettings["canonifyurls"] = s.Canonify()
-	s.allSettings["theme"] = s.Theme()
+	s.allSettings["theme"] = s.Theme
 	s.allSettings["metadataformat"] = "toml"
 	s.allSettings["notimes"] = false
 	s.allSettings["paginate"] = 10
@@ -432,11 +432,6 @@ func (s Site) Author() string {
 	}
 
 	return s.author
-}
-
-// Theme - This site's theme
-func (s Site) Theme() string {
-	return s.theme
 }
 
 // Taxonomies - This site's taxonomies

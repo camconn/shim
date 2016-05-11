@@ -736,7 +736,7 @@ func EditSite(w http.ResponseWriter, req *http.Request) {
 			case "baseurl":
 				wrapper.Site.BaseURL = value
 			case "theme":
-				wrapper.Site.theme = value
+				wrapper.Site.Theme = value
 			case "canonifyurls":
 				wrapper.Site.canonifyurls = true
 
@@ -757,7 +757,7 @@ func EditSite(w http.ResponseWriter, req *http.Request) {
 			goto renderBasicConfig
 		}
 
-		err = ChangeTheme(wrapper.Site, wrapper.Site.Theme())
+		err = ChangeTheme(wrapper.Site, wrapper.Site.Theme)
 		if err != nil {
 			wrapper.FailedMessage(fmt.Sprintf("Failed to change theme: %s", err.Error()))
 			goto renderBasicConfig
