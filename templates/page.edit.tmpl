@@ -5,6 +5,7 @@
 		{{ template "meta" }}
 		<title>SHIM | Editor</title>
 		{{ template "stylesheets" $ }}
+		<script src="{{ $.Base }}/static/awesomplete.min.js"></script>
 	</head>
 	<body>
 		{{ template "navbar" $ }}
@@ -144,9 +145,27 @@
 						</div>
 						<div class="column">
 							<p class="control has-icon">
-							<input class="input" type="text" name='{{- printf "taxonomy.%s" $name | html -}}' value="{{- $joined | html -}}"
-								 placeholder="{{ $kind.Singular }}1, {{ $kind.Singular }}2, {{ $kind.Singular }}3, ...">
+								<input aws='{{- $name | html -}}' type="text" class="input"
+									 name='{{- printf "taxonomy.%s" $name | html -}}'
+									 value="{{- $joined | html -}}"
+									 placeholder="{{ $kind.Singular }}1, {{ $kind.Singular }}2, {{ $kind.Singular }}3, ..."
+									 data-list="{{- range $ind, $name := $kind.TermNames -}}
+													{{- if $ind -}}, {{ end -}}
+													{{- $name -}}
+												{{- end -}}">
 								<i class="fa icon icon-tag"></i>
+								<script type="text/javascript">
+									new Awesomplete("input[aws='{{ $name }}']", {
+										filter: function(text, input) {
+											return Awesomplete.FILTER_CONTAINS(text, input.match(/[^,]*$/)[0]);
+										},
+
+										replace: function(text) {
+											var before = this.input.value.match(/^.+,\s*|/)[0];
+											this.input.value = before + text + ", ";
+										}
+									});
+								</script>
 							</p>
 						</div>
 					</div>
@@ -165,6 +184,7 @@
 		{{template "footer"}}
 
 		<link rel="stylesheet" href="{{ $.Base }}/static/editor/simplemde.min.css">
+		<link rel="stylesheet" href="{{ $.Base }}/static/awesomplete.css">
 		<script type="text/javascript">document.getElementById("collapse").style.display = "none";</script>
 		<script src="{{ $.Base }}/static/editor/simplemde.min.js"></script>
 		<script>

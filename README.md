@@ -81,8 +81,17 @@ For now, there is no code of conduct for contributing to Shim. This may change
 in the future. For now, just use common sense and act mature whenever on interacting
 with others via official project channels.
 
-## License
+## Licensing
 Shim is released under the GNU Affero General Public License, Version 3 or any
 later version. A copy of this license can be found in the file `LICENSE`.
 
 The source code for this program is available on [Github](https://github.com/camconn/shim).
+
+Shim uses some third party libraries to enhance your experience. Specifically,
+Shim uses [Bulma](http://bulma.io),
+[Awesomplete](https://github.com/LeaVerou/awesomplete), and
+[SimpleMDE](https://github.com/NextStepWebs/simplemde-markdown-editor) which are
+all licensed under the MIT License.
+
+A copy of each license for third party resources may be found in the file
+`3RD-PARTY-LICENSES`.
