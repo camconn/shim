@@ -1,6 +1,21 @@
-[submodule "themes/slim"]
-	path = themes/slim
-	url = https://github.com/inexist3nce/hugo-theme-slim
 [submodule "casper-origin"]
 	path = themes/casper
 	url = https://github.com/vjeantet/hugo-theme-casper
+[submodule "vendor/github.com/BurntSushi/toml"]
+	path = vendor/github.com/BurntSushi/toml
+	url = https://github.com/BurntSushi/toml
+[submodule "vendor/github.com/justinas/alice"]
+	path = vendor/github.com/justinas/alice
+	url = https://github.com/justinas/alice
+[submodule "vendor/github.com/niemal/uman"]
+	path = vendor/github.com/niemal/uman
+	url = https://github.com/niemal/uman
+[submodule "vendor/github.com/spf13/viper"]
+	path = vendor/github.com/spf13/viper
+	url = https://github.com/spf13/viper
+[submodule "vendor/golang.org/x/text"]
+	path = vendor/golang.org/x/text
+	url = https://go.googlesource.com/text
+[submodule "themes/slim"]
+	path = themes/slim
+	url = https://github.com/camconn/hugo-theme-slim

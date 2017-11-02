@@ -36,16 +36,13 @@ Go 1.5 or later is installed, and that you have a working `$GOBIN`, `$GOPATH`,
 and `$GOROOT`.
 
 The first step is installing Hugo. After that, Shim's dependencies must be satisfied.
+To do this, we use the [manul](https://github.com/kovetskiy/manul). Next, run the following
+commands in a terminal:
 
 ```
-$ go get github.com/spf13/hugo
-$ git clone https://github.com/camconn/shim
-$ cd shim
-$ go get -v github.com/BurntSushi/toml \
-            github.com/justinas/alice \
-            github.com/niemal/uman \
-            github.com/spf13/viper
-$ git submodule init  # fetches default themes
+$ go get github.com/camconn/shim
+$ cd $GOPATH/src/github.com/camconn/shim
+$ manul -I
 $ go build
 $ ./shim
 # At this point, a message will printed out telling you the default credentials
